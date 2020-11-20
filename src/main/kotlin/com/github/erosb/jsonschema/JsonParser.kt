@@ -1,6 +1,7 @@
 package com.github.erosb.jsonschema
 
 import java.io.*
+import java.lang.StringBuilder
 
 private class SourceWalker(
         private val input: InputStream,
@@ -16,7 +17,7 @@ private class SourceWalker(
         }
         return currInt.toChar();
     }
-    
+
     private fun currInt(): Int {
         input.mark(1);
         val c = input.read()
@@ -33,11 +34,11 @@ private class SourceWalker(
                 input.reset()
                 break
             }
-            
+
             if (char == '\r' && currInt() == '\n'.toInt()) {
                 input.read();
             }
-            
+
             if (char == '\n' || char == '\r') {
                 position = 1;
                 ++lineNumber
@@ -52,7 +53,7 @@ private class SourceWalker(
     }
 
     fun consume(token: String) {
-        token.chars().forEach { i -> 
+        token.chars().forEach { i ->
             val ch = curr();
             val toChar = i.toChar()
             if (toChar != ch) {
@@ -61,6 +62,24 @@ private class SourceWalker(
             input.read()
             ++position
         }
+    }
+
+    fun forward() {
+        input.read();
+        ++position;
+    }
+
+    fun readUntil(terminator: Char): String {
+        val buffer = StringBuilder();
+        while (true) {
+            val ch = curr()
+            forward();
+            if (ch == terminator) {
+                break;
+            }
+            buffer.append(ch)
+        }
+        return buffer.toString()
     }
 
     val location: SourceLocation
@@ -75,25 +94,125 @@ class JsonParser(
     private val walker: SourceWalker = SourceWalker(schemaInputStream);
 
     fun parse(): LocatedJsonValue {
-        walker.skipWhitespaces()
-        val curr = walker.curr()
-        var jsonValue: LocatedJsonValue? = null;
-        if (curr == 'n') {
-            jsonValue = LocatedJsonNull(walker.location);
-            walker.consume("null")
-        }
-        
-        
-        if (jsonValue == null) {
-            TODO()
-        }
-        walker.skipWhitespaces();
+        val jsonValue = parseValue()
         if (!walker.reachedEOF()) {
             throw JsonParseException("Extraneous character found: ${walker.curr()}", walker.location);
         }
         return jsonValue;
     }
-    
+
+    private fun parseValue(): LocatedJsonValue {
+        walker.skipWhitespaces()
+        val curr = walker.curr()
+        val location = walker.location;
+        var jsonValue: LocatedJsonValue? = null;
+        if (curr == 'n') {
+            walker.consume("null")
+            jsonValue = LocatedJsonNull(location);
+        } else if (curr == '"') {
+            jsonValue = parseString()
+        } else if (curr == '[') {
+            walker.forward();
+            walker.skipWhitespaces();
+            val elements = mutableListOf<JsonValue>()
+            while (walker.curr() != ']') {
+                elements.add(parseValue() as JsonValue)
+                if (walker.curr() == ',') {
+                    walker.forward();
+                }
+                walker.skipWhitespaces();
+            }
+            walker.forward()
+            jsonValue = LocatedJsonArray(elements, location)
+        } else if (curr == '{') {
+            val properties = mutableMapOf<JsonString, JsonValue>()
+            walker.forward()
+            walker.skipWhitespaces()
+            while (walker.curr() != '}') {
+                val propName = parseString() as JsonString
+                walker.skipWhitespaces()
+                walker.consume(":")
+                walker.skipWhitespaces()
+                val propValue = parseValue() as JsonValue
+                properties.put(propName, propValue)
+                if (walker.curr() == ',') {
+                    walker.forward();
+                }
+                walker.skipWhitespaces()
+            }
+            walker.forward()
+            jsonValue = LocatedJsonObject(properties, location)
+        } else if (curr == 't') {
+            walker.consume("true");
+            jsonValue = LocatedJsonBoolean(true, location)
+        } else if (curr == 'f') {
+            walker.consume("false");
+            jsonValue = LocatedJsonBoolean(false, location)
+        } else if (curr == '-' || (curr in '1'..'9')) {
+            jsonValue = parseNumber()
+        }
+
+
+        if (jsonValue == null) {
+            TODO()
+        }
+        walker.skipWhitespaces();
+        return jsonValue
+    }
+
+    private fun parseNumber(): LocatedJsonNumber {
+        val location = walker.location
+        val buffer = StringBuilder()
+        optParseSign(buffer)
+        while(walker.curr() in '1'..'9' && !walker.reachedEOF()) {
+            buffer.append(walker.curr())
+            walker.forward()
+            if (walker.reachedEOF()) {
+                return LocatedJsonNumber(buffer.toString().toInt(), location)    
+            }
+        }
+        if (walker.curr() != '.') {
+            return LocatedJsonNumber(buffer.toString().toInt(), location)
+        }
+        buffer.append(".");
+        walker.forward()
+        if (appendDigits(buffer)) return LocatedJsonNumber(buffer.toString().toDouble(), location)
+        if (!(walker.curr() == 'e' || walker.curr() == 'E')) {
+            return LocatedJsonNumber(buffer.toString().toDouble(), location)    
+        }
+        buffer.append(walker.curr())
+        walker.forward()
+        optParseSign(buffer);
+        if (appendDigits(buffer)) return LocatedJsonNumber(buffer.toString().toDouble(), location)
+        return LocatedJsonNumber(buffer.toString().toDouble(), location)
+    }
+
+    private fun appendDigits(buffer: StringBuilder): Boolean {
+        while (walker.curr() in '1'..'9') {
+            buffer.append(walker.curr())
+            walker.forward()
+            if (walker.reachedEOF()) {
+                return true
+            }
+        }
+        return false
+    }
+
+    private fun optParseSign(buffer: StringBuilder) {
+        val curr = walker.curr()
+        if (curr == '-' || curr == '+') {
+            buffer.append(curr)
+            walker.forward()
+        }
+    }
+
+    private fun parseString(): LocatedJsonString {
+        val loc = walker.location;
+        walker.consume("\"")
+        val literal = walker.readUntil('"');
+        return LocatedJsonString(literal, loc)
+    }
+
     operator fun invoke(): LocatedJsonValue = parse()
 
 }

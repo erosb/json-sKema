@@ -2,13 +2,15 @@ package com.github.erosb.jsonschema
 
 data class JsonParseException(override val message: String, val location: TextLocation) : RuntimeException()
 
+data class JsonTypingException(val expectedType: String, val actualType: String, val location: SourceLocation): RuntimeException()
+
 data class DocumentSource(val filePath: String?)
 
 data class JsonPointer(val segments: List<String>)
 
 fun pointer(vararg segments: String) = JsonPointer(segments.toList())
 
-open class TextLocation(internal val lineNumber: Int, internal val position: Int) {
+open class TextLocation(val lineNumber: Int, val position: Int, val documentSource: DocumentSource? = null) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -35,7 +37,7 @@ open class TextLocation(internal val lineNumber: Int, internal val position: Int
 open class SourceLocation(lineNumber: Int,
                           position: Int,
                           val pointer: JsonPointer,
-                          val documentSource: DocumentSource? = null): TextLocation(lineNumber, position) {
+                          documentSource: DocumentSource? = null): TextLocation(lineNumber, position, documentSource) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -71,34 +73,50 @@ object UnknownSource : SourceLocation(0, 0, JsonPointer(emptyList())) {
 
 interface IJsonValue {
     val location: SourceLocation
-    fun requireString(): JsonValue
+    private fun unexpectedType(expected: String): JsonTypingException = JsonTypingException(expected, jsonTypeAsString(), location)
+    fun requireString(): IJsonString = throw unexpectedType("string")
+    fun requireNumber(): IJsonNumber = throw unexpectedType("number")
+    fun requireInt(): IJsonNumber {
+        val num = requireNumber();
+        if (num.value is Int) return num else throw unexpectedType("integer")
+    }
+    fun requireNull(): IJsonNull = throw unexpectedType("null")
+    fun requireObject(): IJsonNull = throw unexpectedType("object")
+    fun requireArray(): IJsonNull = throw unexpectedType("array")
+    fun jsonTypeAsString(): String
 }
 
 interface IJsonString: IJsonValue {
     val value: String
+    override fun jsonTypeAsString() = "string"
 }
 
 interface IJsonBoolean: IJsonValue {
     val value: Boolean
+    override fun jsonTypeAsString() = "boolean"
 }
 
 interface IJsonNumber: IJsonValue {
     val value: Number
+    override fun jsonTypeAsString() = "number"
+    override fun requireNumber(): IJsonNumber = this
 }
 
-interface IJsonNull: IJsonValue 
+interface IJsonNull: IJsonValue {
+    override fun jsonTypeAsString() = "null"
+}
 
 interface IJsonArray<T: IJsonValue>: IJsonValue {
     val elements: List<T>
+    override fun jsonTypeAsString() = "array"
 }
 
-interface IJsonObject<P: IJsonString, V: IJsonValue> {
+interface IJsonObject<P: IJsonString, V: IJsonValue>: IJsonValue {
     val properties: Map<P, V>
+    override fun jsonTypeAsString() = "object"
 }
 
-open class JsonValue(override val location: SourceLocation = UnknownSource): IJsonValue {
-    override fun requireString(): JsonValue = TODO("Not yet implemented")
-}
+abstract class JsonValue(override val location: SourceLocation = UnknownSource): IJsonValue
 
 data class JsonNull(override val location: SourceLocation = UnknownSource) : JsonValue(location), IJsonNull
 

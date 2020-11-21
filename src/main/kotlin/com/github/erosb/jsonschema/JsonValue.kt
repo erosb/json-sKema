@@ -71,7 +71,7 @@ object UnknownSource : SourceLocation(0, 0, JsonPointer(emptyList())) {
 
 interface IJsonValue {
     val location: SourceLocation
-    fun requireString(): JsonValue;
+    fun requireString(): JsonValue
 }
 
 interface IJsonString: IJsonValue {

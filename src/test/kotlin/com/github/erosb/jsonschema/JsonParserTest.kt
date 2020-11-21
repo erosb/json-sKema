@@ -9,30 +9,30 @@ class JsonParserTest {
 
     @Test
     fun `null parsing`() {
-        val actual = JsonParser("null")();
-        val expected = JsonNull(SourceLocation(1, 1, pointer()));
-        assertEquals(expected, actual);
+        val actual = JsonParser("null")()
+        val expected = JsonNull(SourceLocation(1, 1, pointer()))
+        assertEquals(expected, actual)
     }
 
     @Test
     fun `leading and trailing whitespaces`() {
-        val actual = JsonParser("\n\t \r null   \n")();
-        val expected = JsonNull(SourceLocation(3, 2, pointer()));
-        assertEquals(expected, actual);
+        val actual = JsonParser("\n\t \r null   \n")()
+        val expected = JsonNull(SourceLocation(3, 2, pointer()))
+        assertEquals(expected, actual)
     }
 
     @Test
     fun `CRLF counts as single line break`() {
-        val actual = JsonParser("\r\n\r\n\t null \t  \r")();
-        val expected = JsonNull(SourceLocation(3, 3, pointer()));
-        assertEquals(expected, actual);
+        val actual = JsonParser("\r\n\r\n\t null \t  \r")()
+        val expected = JsonNull(SourceLocation(3, 3, pointer()))
+        assertEquals(expected, actual)
     }
 
     @Test
     fun `extraneous token`() {
         val exception = assertThrows(JsonParseException::class.java) {
             JsonParser("\t  null   null")()
-        };
+        }
         assertEquals("Extraneous character found: n", exception.message)
     }
 
@@ -40,7 +40,7 @@ class JsonParserTest {
     fun `null token mismatch`() {
         val exception = assertThrows(JsonParseException::class.java) {
             JsonParser("nil")()
-        };
+        }
         assertEquals(JsonParseException("Unexpected character found: i", TextLocation(1, 2)), exception)
     }
 
@@ -48,7 +48,7 @@ class JsonParserTest {
     fun `EOF reached while reading token`() {
         val exception = assertThrows(JsonParseException::class.java) {
             JsonParser("nu")()
-        };
+        }
         assertEquals(JsonParseException("Unexpected EOF", TextLocation(1, 3)), exception)
     }
 
@@ -56,14 +56,14 @@ class JsonParserTest {
     fun `empty input`() {
         val exception = assertThrows(JsonParseException::class.java) {
             JsonParser("")()
-        };
+        }
         assertEquals(JsonParseException("Unexpected EOF", TextLocation(1, 1)), exception)
     }
 
     @Test
     fun `string parsing`() {
-        val actual = JsonParser("  \"string literal\"  ")();
-        val expected = JsonString("string literal", SourceLocation(1, 3, pointer()));
+        val actual = JsonParser("  \"string literal\"  ")()
+        val expected = JsonString("string literal", SourceLocation(1, 3, pointer()))
         assertEquals(expected, actual)
     }
 
@@ -71,37 +71,37 @@ class JsonParserTest {
     fun `unterminated string literal`() {
         val exception = assertThrows(JsonParseException::class.java) {
             JsonParser("\r\n  \"")()
-        };
+        }
         assertEquals(JsonParseException("Unexpected EOF", TextLocation(2, 4)), exception)
     }
 
     @Test
     fun `array read`() {
-        val actual = JsonParser(" [null, null\r\n]")();
+        val actual = JsonParser(" [null, null\r\n]")()
         val expected = JsonArray(
                 listOf(JsonNull(SourceLocation(1, 3, pointer("0"))), JsonNull(SourceLocation(1, 9, pointer("1")))),
                 SourceLocation(1, 2, pointer())
-        );
+        )
         assertEquals(expected, actual)
     }
 
     @Test
     fun `empty array`() {
-        val actual = JsonParser("[  \n ]")();
+        val actual = JsonParser("[  \n ]")()
         val expected = JsonArray(
                 emptyList(),
                 SourceLocation(1, 1, pointer())
-        );
+        )
         assertEquals(expected, actual)
     }
 
     @Test
     fun `single-element array`() {
-        val actual = JsonParser("[ null \n ]")();
+        val actual = JsonParser("[ null \n ]")()
         val expected = JsonArray(
                 listOf(JsonNull(SourceLocation(1, 3, pointer("0")))),
                 SourceLocation(1, 1, pointer())
-        );
+        )
         assertEquals(expected, actual)
     }
 
@@ -112,7 +112,7 @@ class JsonParserTest {
                 emptyMap(),
                 SourceLocation(1, 1, pointer())
         )
-        assertEquals(expected, actual);
+        assertEquals(expected, actual)
     }
 
     @Test
@@ -122,7 +122,7 @@ class JsonParserTest {
                 mapOf(Pair(JsonString("key", SourceLocation(1, 2, pointer("key"))), JsonString("value", SourceLocation(1, 8, pointer("key"))))),
                 SourceLocation(1, 1, pointer())
         )
-        assertEquals(expected, actual);
+        assertEquals(expected, actual)
     }
 
     @Test
@@ -135,21 +135,21 @@ class JsonParserTest {
                 ),
                 SourceLocation(1, 2, pointer())
         )
-        assertEquals(expected, actual);
+        assertEquals(expected, actual)
     }
 
     @Test
     fun `boolean true`() {
-        val actual = JsonParser("\ntrue")();
-        val expected = JsonBoolean(true, SourceLocation(2, 1, pointer()));
-        assertEquals(expected, actual);
+        val actual = JsonParser("\ntrue")()
+        val expected = JsonBoolean(true, SourceLocation(2, 1, pointer()))
+        assertEquals(expected, actual)
     }
 
     @Test
     fun `boolean false`() {
-        val actual = JsonParser("\n  false")();
-        val expected = JsonBoolean(false, SourceLocation(2, 3, pointer()));
-        assertEquals(expected, actual);
+        val actual = JsonParser("\n  false")()
+        val expected = JsonBoolean(false, SourceLocation(2, 3, pointer()))
+        assertEquals(expected, actual)
     }
 
     @Test

@@ -205,7 +205,7 @@ class JsonParserTest {
     fun `complex object`() {
         val actual = JsonParser("""
             {
-                "string": "my-str",
+                "string": "árvíztűrő tükörfúrógép",
                 "array": [null, true, 12.34],
                 "object": { "": 0 }
             }
@@ -213,8 +213,8 @@ class JsonParserTest {
    
         val expected = JsonObject(
                 mapOf(
-                        Pair(JsonString("array"), JsonArray(listOf(JsonNull(), JsonBoolean(true), JsonNumber(12.34.toDouble())))),
-                        Pair(JsonString("string"), JsonString("my-str")),
+                        Pair(JsonString("array"), JsonArray(listOf(JsonNull(), JsonBoolean(true), JsonNumber(12.34)))),
+                        Pair(JsonString("string"), JsonString("árvíztűrő tükörfúrógép")),
                         Pair(JsonString("object"), JsonObject(mapOf(
                                 Pair(JsonString(""), JsonNumber(0))
                         )))

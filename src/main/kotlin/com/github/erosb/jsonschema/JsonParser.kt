@@ -4,7 +4,7 @@ import java.io.*
 import java.lang.StringBuilder
 
 private class SourceWalker(
-        private val input: InputStream,
+        input: InputStream,
         private val reader: Reader = BufferedReader(InputStreamReader(input))) {
 
     private var lineNumber = 1;
@@ -19,24 +19,24 @@ private class SourceWalker(
     }
 
     private fun currInt(): Int {
-        input.mark(1);
-        val c = input.read()
-        input.reset();
+        reader.mark(1);
+        val c = reader.read()
+        reader.reset();
         return c;
     }
 
     fun skipWhitespaces() {
         while (true) {
-            input.mark(Int.MAX_VALUE)
-            val c = input.read();
+            reader.mark(1)
+            val c = reader.read();
             val char = c.toChar();
             if (c == -1 || !(char == ' ' || char == '\t' || char == '\n' || char == '\r')) {
-                input.reset()
+                reader.reset()
                 break
             }
 
             if (char == '\r' && currInt() == '\n'.toInt()) {
-                input.read();
+                reader.read();
             }
 
             if (char == '\n' || char == '\r') {
@@ -59,13 +59,13 @@ private class SourceWalker(
             if (toChar != ch) {
                 throw JsonParseException("Unexpected character found: $ch", location)
             }
-            input.read()
+            reader.read()
             ++position
         }
     }
 
     fun forward() {
-        input.read();
+        reader.read();
         ++position;
     }
 

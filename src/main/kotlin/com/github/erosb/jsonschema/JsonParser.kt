@@ -116,7 +116,7 @@ class JsonParser(
             walker.skipWhitespaces();
             val elements = mutableListOf<JsonValue>()
             while (walker.curr() != ']') {
-                elements.add(parseValue() as JsonValue)
+                elements.add(parseValue())
                 if (walker.curr() == ',') {
                     walker.forward();
                 }
@@ -130,11 +130,11 @@ class JsonParser(
             walker.forward()
             walker.skipWhitespaces()
             while (walker.curr() != '}') {
-                val propName = parseString() as JsonString
+                val propName = parseString()
                 walker.skipWhitespaces()
                 walker.consume(":")
                 walker.skipWhitespaces()
-                val propValue = parseValue() as JsonValue
+                val propValue = parseValue()
                 properties.put(propName, propValue)
                 if (walker.curr() == ',') {
                     walker.forward();

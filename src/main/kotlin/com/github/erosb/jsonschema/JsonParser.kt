@@ -25,7 +25,7 @@ private class SourceWalker(
         return c;
     }
 
-    fun skipWhitespaces() {
+    fun skipWhitespaces(): SourceWalker {
         while (true) {
             reader.mark(1)
             val c = reader.read();
@@ -46,13 +46,14 @@ private class SourceWalker(
                 ++position
             }
         }
+        return this;
     }
 
     fun reachedEOF(): Boolean {
         return currInt() == -1
     }
 
-    fun consume(token: String) {
+    fun consume(token: String): SourceWalker {
         token.chars().forEach { i ->
             val ch = curr();
             val toChar = i.toChar()
@@ -62,6 +63,7 @@ private class SourceWalker(
             reader.read()
             ++position
         }
+        return this;
     }
 
     fun forward() {
@@ -82,8 +84,8 @@ private class SourceWalker(
         return buffer.toString()
     }
 
-    val location: SourceLocation
-        get() = SourceLocation(lineNumber, position, null);
+    val location: TextLocation
+        get() = TextLocation(lineNumber, position);
 }
 
 class JsonParser(
@@ -93,6 +95,8 @@ class JsonParser(
 
     private val walker: SourceWalker = SourceWalker(schemaInputStream);
 
+    private val nestingPath: MutableList<String> = mutableListOf();
+    
     fun parse(): JsonValue {
         val jsonValue = parseValue()
         if (!walker.reachedEOF()) {
@@ -104,8 +108,8 @@ class JsonParser(
     private fun parseValue(): JsonValue {
         walker.skipWhitespaces()
         val curr = walker.curr()
-        val location = walker.location;
-        var jsonValue: JsonValue? = null;
+        val location = sourceLocation()
+        var jsonValue: JsonValue? = null
         if (curr == 'n') {
             walker.consume("null")
             jsonValue = JsonNull(location);
@@ -116,28 +120,29 @@ class JsonParser(
             walker.skipWhitespaces();
             val elements = mutableListOf<JsonValue>()
             while (walker.curr() != ']') {
-                elements.add(parseValue())
+                nestingPath.add(elements.size.toString())
+                val element = parseValue()
+                elements.add(element)
+                nestingPath.removeLast()
                 if (walker.curr() == ',') {
                     walker.forward();
                 }
                 walker.skipWhitespaces();
             }
             walker.forward()
-            jsonValue = JsonArray(elements.toList()
-                    , location)
+            jsonValue = JsonArray(elements.toList(), location)
         } else if (curr == '{') {
             val properties = mutableMapOf<JsonString, JsonValue>()
             walker.forward()
             walker.skipWhitespaces()
             while (walker.curr() != '}') {
-                val propName = parseString()
-                walker.skipWhitespaces()
-                walker.consume(":")
-                walker.skipWhitespaces()
+                val propName = parseString(true)
+                walker.skipWhitespaces().consume(":").skipWhitespaces()
                 val propValue = parseValue()
+                nestingPath.removeLast()
                 properties.put(propName, propValue)
                 if (walker.curr() == ',') {
-                    walker.forward();
+                    walker.forward()
                 }
                 walker.skipWhitespaces()
             }
@@ -161,8 +166,13 @@ class JsonParser(
         return jsonValue
     }
 
+    private fun sourceLocation(): SourceLocation{
+        val sourceLocation = SourceLocation(walker.location.lineNumber, walker.location.position, JsonPointer(nestingPath.toList()))
+        return sourceLocation
+    }
+
     private fun parseNumber(): JsonNumber {
-        val location = walker.location
+        val location = sourceLocation()
         val buffer = StringBuilder()
         optParseSign(buffer)
         while(walker.curr() in '0'..'9' && !walker.reachedEOF()) {
@@ -207,10 +217,15 @@ class JsonParser(
         }
     }
 
-    private fun parseString(): JsonString {
-        val loc = walker.location;
+    private fun parseString(putReadLiteralToNestingPath: Boolean = false): JsonString {
+        var loc = sourceLocation();
         walker.consume("\"")
         val literal = walker.readUntil('"');
+        if (putReadLiteralToNestingPath) {
+            nestingPath.add(literal)
+            loc = SourceLocation(loc.lineNumber, loc.position, JsonPointer(nestingPath.toList()));
+            // no removal from nestingPath, call-site responsibility
+        }
         return JsonString(literal, loc)
     }
 

@@ -32,11 +32,47 @@ object UnknownSource : SourceLocation(0, 0) {
     override fun toString(): String = "UNKNOWN"
 }
 
-open class JsonValue(location: SourceLocation = UnknownSource) 
+interface IJsonValue {
+    val location: SourceLocation
+}
 
-data class JsonNull(val location: SourceLocation = UnknownSource) : JsonValue(location)
+interface IJsonString: IJsonValue {
+    val value: String
+}
 
-data class JsonString(val value: String, val location: SourceLocation = UnknownSource) : JsonValue(location) {
+interface IJsonBoolean: IJsonValue {
+    val value: Boolean
+}
+
+interface IJsonNumber: IJsonValue {
+    val value: Number
+}
+
+interface IJsonNull: IJsonValue 
+
+interface IJsonArray<T: IJsonValue>: IJsonValue {
+    val elements: List<T>
+}
+
+interface IJsonObject<P: IJsonString, V: IJsonValue> {
+    val properties: Map<P, V>
+}
+
+open class JsonValue(override val location: SourceLocation = UnknownSource): IJsonValue
+
+data class JsonNull(override val location: SourceLocation = UnknownSource) : JsonValue(location), IJsonNull
+
+data class JsonBoolean(
+        override val value: Boolean,
+        override val location: SourceLocation = UnknownSource
+) : JsonValue(location), IJsonBoolean
+
+data class JsonNumber(
+        override val value: Number,
+        override val location: SourceLocation = UnknownSource
+) : JsonValue(location), IJsonNumber
+
+data class JsonString(override val value: String, override val location: SourceLocation = UnknownSource) : JsonValue(location), IJsonString {
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -50,10 +86,12 @@ data class JsonString(val value: String, val location: SourceLocation = UnknownS
     }
 }
 
-data class JsonArray(val elements: List<JsonValue>, val location: SourceLocation = UnknownSource) : JsonValue(location)
+data class JsonArray(
+        override val elements: List<JsonValue>,
+        override val location: SourceLocation = UnknownSource
+) : JsonValue(location), IJsonArray<JsonValue>
 
-data class JsonObject(open val properties: Map<JsonString, JsonValue>, val location: SourceLocation = UnknownSource) : JsonValue(location)
-
-data class JsonBoolean(open val value: Boolean, val location: SourceLocation = UnknownSource) : JsonValue(location)
-
-data class JsonNumber(open val value: Number, val location: SourceLocation = UnknownSource) : JsonValue(location)
+data class JsonObject(
+        override val properties: Map<JsonString, JsonValue>,
+        override val location: SourceLocation = UnknownSource
+) : JsonValue(location), IJsonObject<JsonString, JsonValue>

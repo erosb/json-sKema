@@ -93,7 +93,7 @@ class JsonParser(
 
     private val walker: SourceWalker = SourceWalker(schemaInputStream);
 
-    fun parse(): LocatedJsonValue {
+    fun parse(): JsonValue {
         val jsonValue = parseValue()
         if (!walker.reachedEOF()) {
             throw JsonParseException("Extraneous character found: ${walker.curr()}", walker.location);
@@ -101,14 +101,14 @@ class JsonParser(
         return jsonValue;
     }
 
-    private fun parseValue(): LocatedJsonValue {
+    private fun parseValue(): JsonValue {
         walker.skipWhitespaces()
         val curr = walker.curr()
         val location = walker.location;
-        var jsonValue: LocatedJsonValue? = null;
+        var jsonValue: JsonValue? = null;
         if (curr == 'n') {
             walker.consume("null")
-            jsonValue = LocatedJsonNull(location);
+            jsonValue = JsonNull(location);
         } else if (curr == '"') {
             jsonValue = parseString()
         } else if (curr == '[') {
@@ -123,7 +123,8 @@ class JsonParser(
                 walker.skipWhitespaces();
             }
             walker.forward()
-            jsonValue = LocatedJsonArray(elements, location)
+            jsonValue = JsonArray(elements.toList()
+                    , location)
         } else if (curr == '{') {
             val properties = mutableMapOf<JsonString, JsonValue>()
             walker.forward()
@@ -141,14 +142,14 @@ class JsonParser(
                 walker.skipWhitespaces()
             }
             walker.forward()
-            jsonValue = LocatedJsonObject(properties, location)
+            jsonValue = JsonObject(properties.toMap(), location)
         } else if (curr == 't') {
             walker.consume("true");
-            jsonValue = LocatedJsonBoolean(true, location)
+            jsonValue = JsonBoolean(true, location)
         } else if (curr == 'f') {
             walker.consume("false");
-            jsonValue = LocatedJsonBoolean(false, location)
-        } else if (curr == '-' || (curr in '1'..'9')) {
+            jsonValue = JsonBoolean(false, location)
+        } else if (curr == '-' || (curr in '0'..'9')) {
             jsonValue = parseNumber()
         }
 
@@ -160,35 +161,35 @@ class JsonParser(
         return jsonValue
     }
 
-    private fun parseNumber(): LocatedJsonNumber {
+    private fun parseNumber(): JsonNumber {
         val location = walker.location
         val buffer = StringBuilder()
         optParseSign(buffer)
-        while(walker.curr() in '1'..'9' && !walker.reachedEOF()) {
+        while(walker.curr() in '0'..'9' && !walker.reachedEOF()) {
             buffer.append(walker.curr())
             walker.forward()
             if (walker.reachedEOF()) {
-                return LocatedJsonNumber(buffer.toString().toInt(), location)    
+                return JsonNumber(buffer.toString().toInt(), location)    
             }
         }
         if (walker.curr() != '.') {
-            return LocatedJsonNumber(buffer.toString().toInt(), location)
+            return JsonNumber(buffer.toString().toInt(), location)
         }
         buffer.append(".");
         walker.forward()
-        if (appendDigits(buffer)) return LocatedJsonNumber(buffer.toString().toDouble(), location)
+        if (appendDigits(buffer)) return JsonNumber(buffer.toString().toDouble(), location)
         if (!(walker.curr() == 'e' || walker.curr() == 'E')) {
-            return LocatedJsonNumber(buffer.toString().toDouble(), location)    
+            return JsonNumber(buffer.toString().toDouble(), location)    
         }
         buffer.append(walker.curr())
         walker.forward()
         optParseSign(buffer);
-        if (appendDigits(buffer)) return LocatedJsonNumber(buffer.toString().toDouble(), location)
-        return LocatedJsonNumber(buffer.toString().toDouble(), location)
+        if (appendDigits(buffer)) return JsonNumber(buffer.toString().toDouble(), location)
+        return JsonNumber(buffer.toString().toDouble(), location)
     }
 
     private fun appendDigits(buffer: StringBuilder): Boolean {
-        while (walker.curr() in '1'..'9') {
+        while (walker.curr() in '0'..'9') {
             buffer.append(walker.curr())
             walker.forward()
             if (walker.reachedEOF()) {
@@ -206,13 +207,13 @@ class JsonParser(
         }
     }
 
-    private fun parseString(): LocatedJsonString {
+    private fun parseString(): JsonString {
         val loc = walker.location;
         walker.consume("\"")
         val literal = walker.readUntil('"');
-        return LocatedJsonString(literal, loc)
+        return JsonString(literal, loc)
     }
 
-    operator fun invoke(): LocatedJsonValue = parse()
+    operator fun invoke(): JsonValue = parse()
 
 }

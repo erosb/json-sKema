@@ -1,53 +1,59 @@
 package com.github.erosb.jsonschema
 
+data class JsonParseException(override val message: String, val location: SourceLocation) : RuntimeException()
+
 data class DocumentSource(val filePath: String?)
 
-data class SourceLocation(val lineNumber: Int, val position: Int, val documentSource: DocumentSource? = null)
+open class SourceLocation(val lineNumber: Int, val position: Int, val documentSource: DocumentSource? = null) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is SourceLocation) return false
 
-open class JsonValue
+        if (lineNumber != other.lineNumber) return false
+        if (position != other.position) return false
+        if (documentSource != other.documentSource) return false
 
-interface LocatedJsonValue {
-    val location: SourceLocation
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = lineNumber
+        result = 31 * result + position
+        result = 31 * result + (documentSource?.hashCode() ?: 0)
+        return result
+    }
+
+    override fun toString(): String {
+        return "line ${lineNumber}, character ${position}"
+    }
 }
 
-data class JsonParseException(override val message: String, val location: SourceLocation): RuntimeException()
+object UnknownSource : SourceLocation(0, 0) {
+    override fun toString(): String = "UNKNOWN"
+}
 
-open class JsonNull : JsonValue()
+open class JsonValue(location: SourceLocation = UnknownSource) 
 
-data class LocatedJsonNull(override val location: SourceLocation): JsonNull(), LocatedJsonValue
+data class JsonNull(val location: SourceLocation = UnknownSource) : JsonValue(location)
 
-open class JsonString(open val value: String): JsonValue()
+data class JsonString(val value: String, val location: SourceLocation = UnknownSource) : JsonValue(location) {
 
-data class LocatedJsonString(
-        override val value: String,
-        override val location: SourceLocation
-): JsonString(value), LocatedJsonValue
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is JsonString) return false
+        if (value != other.value) return false
+        return true
+    }
 
-open class JsonArray(open val elements: List<JsonValue>): JsonValue()
+    override fun hashCode(): Int {
+        return value.hashCode()
+    }
+}
 
-data class LocatedJsonArray(
-        override val elements: List<JsonValue>,
-        override val location: SourceLocation
-): JsonArray(elements), LocatedJsonValue
+data class JsonArray(val elements: List<JsonValue>, val location: SourceLocation = UnknownSource) : JsonValue(location)
 
-open class JsonObject(open val properties: Map<JsonString, JsonValue>): JsonValue()
+data class JsonObject(open val properties: Map<JsonString, JsonValue>, val location: SourceLocation = UnknownSource) : JsonValue(location)
 
-data class LocatedJsonObject(
-        override val properties: Map<JsonString, JsonValue>,
-        override val location: SourceLocation
-): JsonObject(properties), LocatedJsonValue
+data class JsonBoolean(open val value: Boolean, val location: SourceLocation = UnknownSource) : JsonValue(location)
 
-open class JsonBoolean(open val value: Boolean): JsonValue()
-
-data class LocatedJsonBoolean(
-        override val value: Boolean,
-        override val location: SourceLocation
-): JsonBoolean(value), LocatedJsonValue
-
-
-open class JsonNumber(open val value: Number): JsonValue();
-
-data class LocatedJsonNumber(
-        override val value: Number,
-        override val location: SourceLocation
-): JsonNumber(value), LocatedJsonValue
+data class JsonNumber(open val value: Number, val location: SourceLocation = UnknownSource) : JsonValue(location)

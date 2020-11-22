@@ -88,12 +88,17 @@ private class SourceWalker(
         get() = TextLocation(lineNumber, position)
 }
 
-class JsonParser(
-        schemaJson: String,
-        schemaInputStream: InputStream = ByteArrayInputStream(schemaJson.toByteArray())
-) {
-
-    private val walker: SourceWalker = SourceWalker(schemaInputStream)
+class JsonParser {
+    
+    private val walker: SourceWalker;
+    
+    constructor(schemaJson: String) {
+        this.walker = SourceWalker(ByteArrayInputStream(schemaJson.toByteArray())) 
+    }
+    
+    constructor(schemaInputStream: InputStream) {
+        this.walker = SourceWalker(schemaInputStream);
+    }
 
     private val nestingPath: MutableList<String> = mutableListOf()
     

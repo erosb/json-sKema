@@ -80,6 +80,7 @@ object UnknownSource : SourceLocation(0, 0, JsonPointer(emptyList())) {
 interface IJsonValue {
     val location: SourceLocation
     private fun unexpectedType(expected: String): JsonTypingException = JsonTypingException(expected, jsonTypeAsString(), location)
+    fun requireBoolean(): IJsonBoolean = throw unexpectedType("boolean")
     fun requireString(): IJsonString = throw unexpectedType("string")
     fun requireNumber(): IJsonNumber = throw unexpectedType("number")
     fun requireInt(): Int {
@@ -88,19 +89,21 @@ interface IJsonValue {
     }
 
     fun requireNull(): IJsonNull = throw unexpectedType("null")
-    fun requireObject(): IJsonNull = throw unexpectedType("object")
-    fun requireArray(): IJsonNull = throw unexpectedType("array")
+    fun requireObject(): IJsonObject<*, *> = throw unexpectedType("object")
+    fun requireArray(): IJsonArray<*> = throw unexpectedType("array")
     fun jsonTypeAsString(): String
 }
 
 interface IJsonString : IJsonValue {
     val value: String
     override fun jsonTypeAsString() = "string"
+    override fun requireString(): IJsonString = this
 }
 
 interface IJsonBoolean : IJsonValue {
     val value: Boolean
     override fun jsonTypeAsString() = "boolean"
+    override fun requireBoolean(): IJsonBoolean = this
 }
 
 interface IJsonNumber : IJsonValue {
@@ -111,16 +114,19 @@ interface IJsonNumber : IJsonValue {
 
 interface IJsonNull : IJsonValue {
     override fun jsonTypeAsString() = "null"
+    override fun requireNull(): IJsonNull = this
 }
 
 interface IJsonArray<T : IJsonValue> : IJsonValue {
     val elements: List<T>
     override fun jsonTypeAsString() = "array"
+    override fun requireArray(): IJsonArray<T> = this
 }
 
 interface IJsonObject<P : IJsonString, V : IJsonValue> : IJsonValue {
     val properties: Map<P, V>
     override fun jsonTypeAsString() = "object"
+    override fun requireObject(): IJsonObject<P, V> = this
 }
 
 abstract class JsonValue(override val location: SourceLocation = UnknownSource) : IJsonValue

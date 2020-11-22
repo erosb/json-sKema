@@ -25,15 +25,37 @@ class SchemaLoader(
 
     private fun createCompositeSchema(schemaJson: IJsonObject<*, *>): Schema {
         val subschemas = mutableSetOf<Schema>()
+        var title: IJsonString? = null
+        var description: IJsonString? = null
+        var readOnly: IJsonBoolean? = null
+        var writeOnly: IJsonBoolean? = null
+        var deprecated: IJsonBoolean? = null
+        var default: IJsonValue? = null
         schemaJson.properties.forEach { (name, value) ->
-            var subschema: Schema
+            var subschema: Schema? = null
             when (name.value) {
                 "minLength" -> subschema = MinLengthSchema(value.requireInt(), name.location)
+                "maxLength" -> subschema = MaxLengthSchema(value.requireInt(), name.location)
+                "title" -> title = value.requireString()
+                "description" -> description = value.requireString()
+                "readOnly" -> readOnly = value.requireBoolean()
+                "writeOnly" -> writeOnly = value.requireBoolean()
+                "deprecated" -> deprecated = value.requireBoolean()
+                "default" -> default = value
                 else -> TODO()
             }
-            subschemas.add(subschema)
+            if (subschema != null) subschemas.add(subschema)
         }
-        return CompositeSchema(subschemas, schemaJson.location)
+        return CompositeSchema(
+                subschemas = subschemas,
+                location = schemaJson.location,
+                title = title,
+                description = description,
+                readOnly = readOnly,
+                writeOnly = writeOnly,
+                deprecated = deprecated,
+                default = default
+        )
     }
 
 }

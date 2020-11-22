@@ -1,8 +1,11 @@
 package com.github.erosb.jsonschema
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Disabled
+import java.net.URL
 
 class SchemaLoaderTest {
 
@@ -33,9 +36,48 @@ class SchemaLoaderTest {
                     { "minLength": 20.0}
                 """.trimIndent())()
         }
-        println(exc)
         assertThat(exc).isEqualTo(JsonTypingException("integer", "number", SourceLocation(1, 16, pointer("minLength"))))
     }
     
+    @Test fun `loads maxLength schema`() {
+        val underTest = createSchemaLoaderForString("""
+            { "maxLength": 20}
+        """.trimIndent())
+        assertThat(underTest()).isEqualTo(CompositeSchema(setOf(
+                MaxLengthSchema(20, SourceLocation(1, 3, pointer("maxLength")))
+        ),
+                SourceLocation(1, 1, pointer())
+        ))
+    }
     
+    @Test fun `basic metadata loading`() {
+        val actual = createSchemaLoaderForString("""
+            {
+                "title": "My title",
+                "description": "My description",
+                "writeOnly": false,
+                "readOnly": true,
+                "deprecated": false,
+                "default": null
+            }
+        """.trimIndent())()
+        val expected = CompositeSchema(
+                subschemas = emptySet(),
+                location = UnknownSource,
+                title = JsonString("My title"),
+                description = JsonString("My description"),
+                readOnly = JsonBoolean(true),
+                writeOnly = JsonBoolean(false),
+                deprecated = JsonBoolean(false),
+                default = JsonNull()
+        )
+        assertThat(actual).usingRecursiveComparison()
+                .ignoringFieldsOfTypes(SourceLocation::class.java)
+                .isEqualTo(expected)
+    }
+    
+    @Test @Disabled fun `$ref resolution`(){
+        val json = JsonParser(javaClass.getResourceAsStream("ref-resolution.json"))()
+        val actual = SchemaLoader(json)()
+    }
 }

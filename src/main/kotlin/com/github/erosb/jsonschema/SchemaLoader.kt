@@ -28,7 +28,7 @@ class SchemaLoader(
         schemaJson.properties.forEach { (name, value) ->
             var subschema: Schema
             when (name.value) {
-                "minLength" -> subschema = MinLengthSchema(value.requireInt().value.toInt() , name.location)
+                "minLength" -> subschema = MinLengthSchema(value.requireInt(), name.location)
                 else -> TODO()
             }
             subschemas.add(subschema)

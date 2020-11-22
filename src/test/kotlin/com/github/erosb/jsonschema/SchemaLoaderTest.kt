@@ -6,20 +6,17 @@ import org.junit.jupiter.api.Assertions.assertThrows
 
 class SchemaLoaderTest {
 
-    @Test
-    fun `loads true schema`() {
+    @Test fun `loads true schema`() {
         val underTest = createSchemaLoaderForString("true")
         assertThat(underTest()).isEqualTo(TrueSchema(SourceLocation(1, 1, pointer())))
     }
 
-    @Test
-    fun `loads false schema`() {
+    @Test fun `loads false schema`() {
         val underTest = createSchemaLoaderForString("false");
         assertThat(underTest()).isEqualTo(FalseSchema(SourceLocation(1, 1, pointer())))
     }
 
-    @Test
-    fun `loads minLength schema`() {
+    @Test fun `loads minLength schema`() {
         val underTest = createSchemaLoaderForString("""
             { "minLength": 20}
         """.trimIndent())
@@ -30,13 +27,15 @@ class SchemaLoaderTest {
         ))
     }
 
-    @Test
-    fun `invalid minLength fractional`() {
+    @Test fun `invalid minLength fractional`() {
         val exc = assertThrows(JsonTypingException::class.java) {
             createSchemaLoaderForString("""
                     { "minLength": 20.0}
                 """.trimIndent())()
         }
+        println(exc)
         assertThat(exc).isEqualTo(JsonTypingException("integer", "number", SourceLocation(1, 16, pointer("minLength"))))
     }
+    
+    
 }

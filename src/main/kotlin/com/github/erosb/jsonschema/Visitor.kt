@@ -6,4 +6,6 @@ interface Visitor {
     fun visitFalseSchema(schema: FalseSchema)
     fun visitMinLengthSchema(schema: MinLengthSchema)
     fun visitMaxLengthSchema(schema: MaxLengthSchema)
+    fun visitAllOfSchema(schema: AllOfSchema)
+    fun visitReferenceSchema(schema: ReferenceSchema)
 }

@@ -2,7 +2,7 @@
   "title": "root schema",
   "allOf": [
     {
-      "title": "subsschema 0",
+      "title": "subschema 0",
       "$ref": "#"
     }
   ]

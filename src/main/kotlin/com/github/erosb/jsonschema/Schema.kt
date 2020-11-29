@@ -43,3 +43,7 @@ data class MinLengthSchema(val minLength: Int, override val location: SourceLoca
 data class MaxLengthSchema(val maxLength: Int, override val location: SourceLocation): Schema(location) {
     override fun accept(visitor: Visitor) = visitor.visitMaxLengthSchema(this)
 }
+
+data class AdditionalPropertiesSchema(val subschema: Schema, override val location: SourceLocation): Schema(location) {
+    override fun accept(visitor: Visitor) = visitor.visitAdditionalPropertiesSchema(this)
+}

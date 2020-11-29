@@ -8,4 +8,6 @@ interface Visitor {
     fun visitMaxLengthSchema(schema: MaxLengthSchema)
     fun visitAllOfSchema(schema: AllOfSchema)
     fun visitReferenceSchema(schema: ReferenceSchema)
+    fun visitAdditionalPropertiesSchema(schema: AdditionalPropertiesSchema)
 }
+

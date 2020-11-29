@@ -18,8 +18,10 @@ private data class Reference(
         val ref: String
 )
 
-private data class LoadingState(val pendingReferences: MutableMap<Reference, ReferenceSchema> = mutableMapOf(),
-                                val identifiedSchemas: MutableMap<String, Schema> = mutableMapOf()
+private data class LoadingState(
+        val pendingReferences: MutableMap<Reference, ReferenceSchema> = mutableMapOf(),
+        val identifiedSchemas: MutableMap<String, Schema> = mutableMapOf(),
+        var baseURI: URI? = null
 )
 
 class SchemaLoader(
@@ -62,13 +64,24 @@ class SchemaLoader(
         var writeOnly: IJsonBoolean? = null
         var deprecated: IJsonBoolean? = null
         var default: IJsonValue? = null
-        var id: IJsonString? = null
+        var id: IJsonString? = schemaJson.properties[JsonString("\$id")]?.requireString()
+        var origBaseURI: URI? = null
+        if (id != null) {
+            origBaseURI = loadingState.baseURI
+            if (loadingState.baseURI != null) {
+                loadingState.baseURI = loadingState.baseURI!!.resolve(id.value);
+            } else {
+                println("setting baseURI to ${id.value}")
+                loadingState.baseURI = URI(id.value);
+            }
+        }
         schemaJson.properties.forEach { (name, value) ->
             var subschema: Schema? = null
             when (name.value) {
                 "minLength" -> subschema = MinLengthSchema(value.requireInt(), name.location)
                 "maxLength" -> subschema = MaxLengthSchema(value.requireInt(), name.location)
                 "allOf" -> subschema = createAllOfSubschema(name.location, value.requireArray())
+                "additionalProperties" -> subschema = AdditionalPropertiesSchema(loadChild(value), name.location)
                 "\$ref" -> subschema = createReferenceSchema(name.location, value.requireString())
                 "\$id" -> id = value.requireString()
                 "title" -> title = value.requireString()
@@ -93,12 +106,15 @@ class SchemaLoader(
                 default = default
         )
         if (id != null) loadingState.identifiedSchemas[id!!.value] = retval
+        loadingState.baseURI = origBaseURI
         return retval
     }
 
     private fun createReferenceSchema(location: SourceLocation, ref: IJsonString): Schema {
-        val referenceSchema = ReferenceSchema(attemptLookup(ref.value), location)
-        loadingState.pendingReferences.put(Reference(location, ref.value), referenceSchema)
+        val referenceSchema = ReferenceSchema(null, location)
+        val s: String = (loadingState.baseURI?.resolve(ref.value) ?: ref.value).toString()
+        val absoluteRef = if (loadingState.baseURI == null) ref.value else loadingState.baseURI!!.resolve(ref.value).toString()
+        loadingState.pendingReferences.put(Reference(location, absoluteRef), referenceSchema)
         return referenceSchema
     }
 

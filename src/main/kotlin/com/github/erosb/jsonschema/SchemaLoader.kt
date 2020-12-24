@@ -40,7 +40,7 @@ class SchemaLoader(
     operator fun invoke(): Schema {
         val retval = loadSchema()
         loadingState.identifiedSchemas["#"] = retval
-        loadingState.pendingReferences.forEach { ref, refSchema ->
+        loadingState.pendingReferences.forEach { (ref, refSchema) ->
             refSchema.referredSchema = attemptLookup(ref.ref)
         }
         return retval
@@ -71,7 +71,6 @@ class SchemaLoader(
             if (loadingState.baseURI != null) {
                 loadingState.baseURI = loadingState.baseURI!!.resolve(id.value);
             } else {
-                println("setting baseURI to ${id.value}")
                 loadingState.baseURI = URI(id.value);
             }
         }

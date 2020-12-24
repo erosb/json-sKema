@@ -1,7 +1,8 @@
 package com.github.erosb.jsonschema
 
 abstract class Schema(open val location: SourceLocation) {
-    abstract fun accept(visitor: Visitor);
+    abstract fun <P> accept(visitor: Visitor<P>): P?
+    open fun subschemas(): Collection<Schema> = emptyList()
 }
 
 data class CompositeSchema(
@@ -14,36 +15,40 @@ data class CompositeSchema(
         val readOnly: IJsonBoolean? = null,
         val writeOnly: IJsonBoolean? = null,
         val default: IJsonValue? = null): Schema(location) {
-    override fun accept(visitor: Visitor) = visitor.visitCompositeSchema(this)
+    override fun <P> accept(visitor: Visitor<P>) = visitor.visitCompositeSchema(this)
+    override fun subschemas() = subschemas
 }
 
 data class AllOfSchema(
         val subschemas: List<Schema>,
         override val location: SourceLocation
 ): Schema(location) {
-    override fun accept(visitor: Visitor) = visitor.visitAllOfSchema(this)
+    override fun <P> accept(visitor: Visitor<P>) = visitor.visitAllOfSchema(this)
+    override fun subschemas(): Collection<Schema> = subschemas
 }
 
 data class ReferenceSchema(var referredSchema: Schema?, override val location: SourceLocation): Schema(location) {
-    override fun accept(visitor: Visitor) = visitor.visitReferenceSchema(this)
+    override fun <P> accept(visitor: Visitor<P>) = visitor.visitReferenceSchema(this)
+    override fun subschemas() = referredSchema?.let { listOf(it) } ?: emptyList()
 }
 
 data class TrueSchema(override val location: SourceLocation): Schema(location) {
-    override fun accept(visitor: Visitor) = visitor.visitTrueSchema(this)
+    override fun <P> accept(visitor: Visitor<P>) = visitor.visitTrueSchema(this)
 }
 
 data class FalseSchema(override val location: SourceLocation): Schema(location) {
-    override fun accept(visitor: Visitor) = visitor.visitFalseSchema(this)
+    override fun <P> accept(visitor: Visitor<P>) = visitor.visitFalseSchema(this)
 }
 
 data class MinLengthSchema(val minLength: Int, override val location: SourceLocation): Schema(location){
-    override fun accept(visitor: Visitor) = visitor.visitMinLengthSchema(this)
+    override fun <P> accept(visitor: Visitor<P>) = visitor.visitMinLengthSchema(this)
 }
 
 data class MaxLengthSchema(val maxLength: Int, override val location: SourceLocation): Schema(location) {
-    override fun accept(visitor: Visitor) = visitor.visitMaxLengthSchema(this)
+    override fun <P> accept(visitor: Visitor<P>) = visitor.visitMaxLengthSchema(this)
 }
 
 data class AdditionalPropertiesSchema(val subschema: Schema, override val location: SourceLocation): Schema(location) {
-    override fun accept(visitor: Visitor) = visitor.visitAdditionalPropertiesSchema(this)
+    override fun <P> accept(visitor: Visitor<P>) = visitor.visitAdditionalPropertiesSchema(this)
+    override fun subschemas() = listOf(subschema)
 }

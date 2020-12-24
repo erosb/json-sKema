@@ -1,6 +1,5 @@
 package com.github.erosb.jsonschema
 
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.net.URI
@@ -52,7 +51,7 @@ class ReferenceResolutionTest {
 
     @Test
     fun `base URI alteration with relative URI`() {
-        val actual = SchemaLoader(schemaJson = JsonParser("""
+        val root = SchemaLoader(schemaJson = JsonParser("""
                 {
                     "$id": "http://example.org/root.json",
                     "additionalProperties": {
@@ -66,6 +65,28 @@ class ReferenceResolutionTest {
                             "title": "referred schema"
                         }
                     """.trimIndent())))() as CompositeSchema
-        assertThat(((((actual.subschemas.iterator().next() as AdditionalPropertiesSchema).subschema as CompositeSchema).subschemas.iterator().next() as ReferenceSchema).referredSchema as CompositeSchema).title!!.value).isEqualTo("referred schema")
+        
+        val ref: ReferenceSchema =  root.accept(TraversingVisitor("additionalProperties", "$ref"))!!
+        val referred: CompositeSchema = ref.referredSchema as CompositeSchema
+        assertThat(referred.title!!.value).isEqualTo("referred schema");
+    }
+    
+    @Test
+    fun `recursive use of $ref`() {
+        val actual = SchemaLoader(schemaJson = JsonParser("""
+                {
+                    "$id": "http://example.org/root.json",
+                    "additionalProperties": {
+                        "$id": "http://example.org/path/",
+                        "$ref": "other.json"
+                    }
+                }
+            """.trimIndent())(), config = SchemaLoaderConfig(TestingSchemaClient()
+                .defineResource(URI("http://example.org/path/other.json"), """
+                        {
+                            "title": "referred schema",
+                            "$ref": "http://example.org/root.json"
+                        }
+                    """.trimIndent())))() as CompositeSchema
     }
 }

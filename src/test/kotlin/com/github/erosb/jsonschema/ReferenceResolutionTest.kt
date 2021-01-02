@@ -73,7 +73,7 @@ class ReferenceResolutionTest {
     
     @Test
     fun `recursive use of $ref`() {
-        val actual = SchemaLoader(schemaJson = JsonParser("""
+        val root = SchemaLoader(schemaJson = JsonParser("""
                 {
                     "$id": "http://example.org/root.json",
                     "additionalProperties": {
@@ -88,5 +88,10 @@ class ReferenceResolutionTest {
                             "$ref": "http://example.org/root.json"
                         }
                     """.trimIndent())))() as CompositeSchema
+        val referred = root.accept(TraversingVisitor<ReferenceSchema>("additionalProperties", "$ref"))!!.referredSchema as CompositeSchema
+        assertThat(referred.title!!.value).isEqualTo("referred schema")
+        
+        val secondRef = referred.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema
+        assertThat(secondRef).isSameAs(root)
     }
 }

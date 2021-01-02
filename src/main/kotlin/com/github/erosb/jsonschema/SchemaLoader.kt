@@ -40,9 +40,17 @@ class SchemaLoader(
     operator fun invoke(): Schema {
         val retval = loadSchema()
         loadingState.identifiedSchemas["#"] = retval
-        loadingState.pendingReferences.forEach { (ref, refSchema) ->
-            refSchema.referredSchema = attemptLookup(ref.ref)
-        }
+        var lookupSucceeded: Boolean
+        do {
+            lookupSucceeded = false;
+            loadingState.pendingReferences.forEach { (ref, refSchema) ->
+                refSchema.referredSchema = attemptLookup(ref.ref)
+                if (refSchema.referredSchema != null) {
+                    lookupSucceeded = true       
+                }
+            }
+            loadingState.pendingReferences.entries.removeIf { e -> e.value.referredSchema != null }
+        } while (lookupSucceeded)
         return retval
     }
 

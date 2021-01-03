@@ -4,6 +4,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
+import java.math.BigDecimal
+import java.math.BigInteger
 
 class JsonParserTest {
 
@@ -171,6 +173,19 @@ class JsonParserTest {
         val actual = JsonParser("-123")()
         val expected = JsonNumber(-123, SourceLocation(1, 1, pointer()))
         assertEquals(expected, actual)
+    }
+    
+    @Test
+    fun `Big Integer`() {
+        val actual = JsonParser("9007199254740992")()
+        assertEquals(BigInteger("9007199254740992"), actual.requireNumber().value);
+    }
+    
+    @Test
+    fun `Big Decimal`() {
+        val str = "999" + Double.MAX_VALUE.toString();
+        val actual = JsonParser(str)()
+        assertEquals(BigDecimal(str), actual.requireNumber().value);
     }
 
     @Test

@@ -121,12 +121,15 @@ interface IJsonArray<T : IJsonValue> : IJsonValue {
     val elements: List<T>
     override fun jsonTypeAsString() = "array"
     override fun requireArray(): IJsonArray<T> = this
+    operator fun get(index: Int) = elements[index]
+    fun length() = elements.size
 }
 
 interface IJsonObject<P : IJsonString, V : IJsonValue> : IJsonValue {
     val properties: Map<P, V>
     override fun jsonTypeAsString() = "object"
     override fun requireObject(): IJsonObject<P, V> = this
+    operator fun get(key: String) = properties[JsonString(key) as P]
 }
 
 abstract class JsonValue(override val location: SourceLocation = UnknownSource) : IJsonValue

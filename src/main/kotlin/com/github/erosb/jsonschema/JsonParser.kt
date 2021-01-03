@@ -1,7 +1,10 @@
 package com.github.erosb.jsonschema
 
 import java.io.*
+import java.lang.NumberFormatException
 import java.lang.StringBuilder
+import java.math.BigDecimal
+import java.math.BigInteger
 
 private class SourceWalker(
         input: InputStream,
@@ -175,6 +178,26 @@ class JsonParser {
         val sourceLocation = SourceLocation(walker.location.lineNumber, walker.location.position, JsonPointer(nestingPath.toList()))
         return sourceLocation
     }
+    
+    private fun toNumber(str: String, location: SourceLocation): JsonNumber {
+        try {
+            return JsonNumber(str.toInt(), location)
+        } catch (ex: NumberFormatException) {
+            return JsonNumber(BigInteger(str), location)
+        }
+    }
+    
+    private fun toDouble(str: String, location: SourceLocation): JsonNumber {
+        try {
+            val value = str.toDouble()
+            if (value.isInfinite()) {
+                return JsonNumber(BigDecimal(str), location)
+            }
+            return JsonNumber(value, location)
+        } catch (ex: NumberFormatException) {
+            return JsonNumber(BigDecimal(str), location);
+        }
+    }
 
     private fun parseNumber(): JsonNumber {
         val location = sourceLocation()
@@ -184,23 +207,23 @@ class JsonParser {
             buffer.append(walker.curr())
             walker.forward()
             if (walker.reachedEOF()) {
-                return JsonNumber(buffer.toString().toInt(), location)    
+                return toNumber(buffer.toString(), location)    
             }
         }
         if (walker.curr() != '.') {
-            return JsonNumber(buffer.toString().toInt(), location)
+            return toNumber(buffer.toString(), location)
         }
         buffer.append(".")
         walker.forward()
-        if (appendDigits(buffer)) return JsonNumber(buffer.toString().toDouble(), location)
+        if (appendDigits(buffer)) return toDouble(buffer.toString(), location)
         if (!(walker.curr() == 'e' || walker.curr() == 'E')) {
-            return JsonNumber(buffer.toString().toDouble(), location)    
+            return toDouble(buffer.toString(), location)    
         }
         buffer.append(walker.curr())
         walker.forward()
         optParseSign(buffer)
-        if (appendDigits(buffer)) return JsonNumber(buffer.toString().toDouble(), location)
-        return JsonNumber(buffer.toString().toDouble(), location)
+        if (appendDigits(buffer)) return toDouble(buffer.toString(), location)
+        return toDouble(buffer.toString(), location)
     }
 
     private fun appendDigits(buffer: StringBuilder): Boolean {

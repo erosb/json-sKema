@@ -66,13 +66,20 @@ class JsonParserTest {
         val expected = JsonString("string literal", SourceLocation(1, 3, pointer()))
         assertEquals(expected, actual)
     }
+    
+    @Test
+    fun `escaped doublequotes in string`() {
+        val actual = JsonParser("\"str\\\"ab\\\\c\\\"\"")()
+        val expected = JsonString("str\"ab\\c\"", SourceLocation(1, 1, pointer()))
+        assertEquals(expected, actual)
+    }
 
     @Test
     fun `unterminated string literal`() {
         val exception = assertThrows(JsonParseException::class.java) {
             JsonParser("\r\n  \"")()
         }
-        assertEquals(JsonParseException("Unexpected EOF", TextLocation(2, 4)), exception)
+        assertEquals(JsonParseException("Unexpected EOF", SourceLocation(2, 4, pointer())), exception)
     }
 
     @Test

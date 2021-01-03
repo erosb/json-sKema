@@ -210,10 +210,10 @@ class JsonParser {
                 return toNumber(buffer.toString(), location)    
             }
         }
-        if (walker.curr() != '.') {
+        if (walker.curr() != '.' && walker.curr().toLowerCase() != 'e') {
             return toNumber(buffer.toString(), location)
         }
-        buffer.append(".")
+        buffer.append(walker.curr())
         walker.forward()
         if (appendDigits(buffer)) return toDouble(buffer.toString(), location)
         if (!(walker.curr() == 'e' || walker.curr() == 'E')) {

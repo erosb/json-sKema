@@ -208,6 +208,13 @@ class JsonParserTest {
         val expected = JsonNumber(12.34e-22, SourceLocation(1, 1, pointer()))
         assertEquals(expected, actual)
     }
+    
+    @Test
+    fun `exponential without fractal`() {
+        val actual = JsonParser("1e3")()
+        val expected = JsonNumber(1e3, SourceLocation(1, 1, pointer()))
+        assertEquals(expected, actual)
+    }
 
     @Test
     fun `real with Exponent 12_34E+22`() {

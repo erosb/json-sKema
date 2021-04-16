@@ -8,9 +8,10 @@ fun interface SchemaClient {
     fun get(uri: URI): InputStream
 }
 
-class DefaultSchemaClient : SchemaClient{
+internal class DefaultSchemaClient : SchemaClient{
     
     override fun get(uri: URI): InputStream {
+        println("GET $uri")
         try {
             val u = uri.toURL()
             val conn = u.openConnection()
@@ -23,3 +24,14 @@ class DefaultSchemaClient : SchemaClient{
 
 }
         
+internal class MemoizingSchemaClient(private val delegate: SchemaClient): SchemaClient {
+    
+    val cache: MutableMap<URI, ByteArray> = mutableMapOf();
+    
+    override fun get(uri: URI): InputStream = ByteArrayInputStream(cache.computeIfAbsent(uri) {
+        val out = ByteArrayOutputStream()
+        delegate.get(it).transferTo(out)
+        return@computeIfAbsent out.toByteArray()
+    })
+
+}

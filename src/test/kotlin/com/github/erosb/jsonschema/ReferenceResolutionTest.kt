@@ -94,4 +94,20 @@ class ReferenceResolutionTest {
         val secondRef = referred.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema
         assertThat(secondRef).isSameAs(root)
     }
+    
+    @Test
+    fun `$anchor resolution without $id`() {
+        val root = SchemaLoader(schemaJson = JsonParser("""
+            {
+                "$id": "http://example.org",
+                "$ref": "http://example.org/bar#foo",
+                "$defs": {
+                    "A": {
+                        "$id": "bar",
+                        "$anchor": "foo"
+                    }
+                }
+            }
+                """.trimIndent())())() as CompositeSchema
+    }
 }

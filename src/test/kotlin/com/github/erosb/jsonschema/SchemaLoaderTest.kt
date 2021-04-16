@@ -2,14 +2,17 @@ package com.github.erosb.jsonschema
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.mock
-import java.io.*
+import java.io.ByteArrayInputStream
+import java.io.IOException
+import java.io.InputStream
+import java.io.UncheckedIOException
 import java.net.URI
 
 val id = "\$id"
 val ref = "\$ref"
+val defs = "\$defs"
+val anchor = "\$anchor"
 
 class TestingSchemaClient : SchemaClient {
 

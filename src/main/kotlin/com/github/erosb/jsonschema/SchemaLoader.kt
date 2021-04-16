@@ -62,7 +62,6 @@ class SchemaLoader(
     operator fun invoke(): Schema = loadSchema()
 
     private fun loadSchema(): Schema {
-        println("loading ${schemaJson.location}")
         val retval: Schema = doLoadSchema(schemaJson)
         loadingState.identifiedSchemas["#"] = retval
         var lookupSucceeded: Boolean
@@ -162,7 +161,7 @@ class SchemaLoader(
     }
 
     private fun attemptLookup(refValue: String): Schema? {
-        println("attemptLookup $refValue")
+//        println("attemptLookup $refValue")
         if (loadingState.identifiedSchemas[refValue] != null) {
             return loadingState.identifiedSchemas[refValue] 
         }

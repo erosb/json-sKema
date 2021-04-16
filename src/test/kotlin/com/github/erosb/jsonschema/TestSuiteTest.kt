@@ -60,7 +60,7 @@ class TestCase(input: IJsonObject<*,*>, schemaTest: IJsonObject<*,*>, fileName: 
 class TestSuiteTest {
     companion object {
         @JvmStatic
-        fun params(): Stream<Arguments> = loadParamsFromPackage("com.github.erosb.jsonschema.tests.draft201909").stream()
+        fun params(): Stream<Arguments> = loadParamsFromPackage("com.github.erosb.jsonschema.tests.draft202012").stream()
         
         private val server = JettyWrapper("/com/github/erosb/jsonschema/tests/remotes")
         

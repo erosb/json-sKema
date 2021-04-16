@@ -13,6 +13,11 @@ fun createSchemaLoaderForString(schemaJson: String): SchemaLoader {
     return SchemaLoader(schemaJson = JsonParser(schemaJson)())
 }
 
+/**
+ * http://json-schema.org/draft/2020-12/json-schema-core.html#initial-base
+ */
+val DEFAULT_BASE_URI: String = "mem://input";
+
 private data class Reference(
         val refLocation: SourceLocation,
         val ref: String
@@ -34,7 +39,7 @@ private data class LoadingState(
     
     fun registerRawSchema(id: String, json: IJsonValue): Anchor {
         anchors[id] = Anchor(json)
-        return anchors[id]
+        return anchors[id]!!
     }
     
 }
@@ -82,7 +87,7 @@ class SchemaLoader(
             }
             is IJsonObject<*, *> -> {
                 if (loadingState.baseURI == null) {
-                    loadingState.baseURI = URI("mem://input")
+                    loadingState.baseURI = URI(DEFAULT_BASE_URI)
                 }
                 val anchor = loadingState.registerRawSchema(loadingState.baseURI.toString() + schemaJson.location.pointer, schemaJson)
                 anchor.underLoading = true;

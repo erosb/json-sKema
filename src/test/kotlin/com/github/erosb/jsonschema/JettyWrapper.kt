@@ -33,8 +33,13 @@ internal class IssueServlet(documentRoot: String) : HttpServlet() {
         println("GET " + req.pathInfo)
         try {
             resp.contentType = "application/json"
+            val stream = openStream(req.pathInfo)
+            if (stream == null) {
+                resp.status = 404
+                return
+            }
             BufferedReader(
-                InputStreamReader(openStream(req.pathInfo))
+                InputStreamReader(stream)
             ).use { bis ->
                 var line: String?
                 while (bis.readLine().also { line = it } != null) {

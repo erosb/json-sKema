@@ -6,7 +6,7 @@ import java.util.stream.Collectors.toList
 class SchemaLoaderConfig(val schemaClient: SchemaClient)
 
 internal fun createDefaultConfig() = SchemaLoaderConfig(
-        schemaClient = MemoizingSchemaClient(DefaultSchemaClient())
+    schemaClient = MemoizingSchemaClient(DefaultSchemaClient())
 )
 
 fun createSchemaLoaderForString(schemaJson: String): SchemaLoader {
@@ -19,47 +19,72 @@ fun createSchemaLoaderForString(schemaJson: String): SchemaLoader {
 val DEFAULT_BASE_URI: String = "mem://input";
 
 private data class Reference(
-        val refLocation: SourceLocation,
-        val ref: String
+    val refLocation: SourceLocation,
+    val ref: String
 )
 
 private data class Anchor(
-    val json: IJsonValue,
-    val schema: Schema? = null,
-    var underLoading: Boolean = false 
+    val json: IJsonValue? = null,
+    var schema: Schema? = null,
+    var underLoading: Boolean = false,
+    val referenceSchemas: MutableList<ReferenceSchema> = mutableListOf()
 )
 
 private data class LoadingState(
-        val documentRoot: IJsonValue,
-        val pendingReferences: MutableMap<Reference, ReferenceSchema> = mutableMapOf(),
-        val identifiedSchemas: MutableMap<String, Schema> = mutableMapOf(),
-        var baseURI: URI? = null,
-        private val anchors: MutableMap<String, Anchor> = mutableMapOf()
+    val documentRoot: IJsonValue,
+    val pendingReferences: MutableMap<Reference, ReferenceSchema> = mutableMapOf(),
+    val identifiedSchemas: MutableMap<String, Schema> = mutableMapOf(),
+    var baseURI: URI? = null,
+    private val anchors: MutableMap<String, Anchor> = mutableMapOf()
 ) {
-    
+
     fun registerRawSchema(id: String, json: IJsonValue): Anchor {
         anchors[id] = Anchor(json)
         return anchors[id]!!
     }
-    
+
 }
 
 class SchemaLoader(
-        val schemaJson: IJsonValue,
-        val config: SchemaLoaderConfig = createDefaultConfig(),
-        private val documentRoot: IJsonValue = schemaJson
+    val schemaJson: IJsonValue,
+    val config: SchemaLoaderConfig = createDefaultConfig(),
+    private val documentRoot: IJsonValue = schemaJson
 ) {
 
-    private constructor(schemaJson: IJsonValue,
-                        config: SchemaLoaderConfig,
-                        loadingState: LoadingState,
-                        documentRoot: IJsonValue) : this(schemaJson, config, documentRoot) {
+    private constructor(
+        schemaJson: IJsonValue,
+        config: SchemaLoaderConfig,
+        loadingState: LoadingState,
+        documentRoot: IJsonValue
+    ) : this(schemaJson, config, documentRoot) {
         this.loadingState = loadingState
     }
 
     private var loadingState: LoadingState = LoadingState(schemaJson)
 
-    operator fun invoke(): Schema = loadSchema()
+    private val schemasByURI: MutableMap<String, Anchor> = hashMapOf()
+
+    operator fun invoke(): Schema = loadRootSchema();
+
+    private fun lookupAnchors(json: IJsonValue, baseURI: URI) {
+        when(json) {
+            is IJsonObject<*,*> -> {
+                val anchor = json.get("\$anchor");
+                if (anchor != null) {
+                    val resolvedAnchor = baseURI.resolve("#" + anchor.requireString().value)
+                    schemasByURI[resolvedAnchor.toString()] = Anchor(json)
+                }
+                json.properties.forEach { (key, value) ->
+                    lookupAnchors(value, baseURI)
+                }           
+            }
+        }
+    }
+
+    private fun loadRootSchema(): Schema {
+        lookupAnchors(schemaJson, if (loadingState.baseURI != null) loadingState.baseURI!! else URI(DEFAULT_BASE_URI))
+        return loadSchema()
+    }
 
     private fun loadSchema(): Schema {
         val retval: Schema = doLoadSchema(schemaJson)
@@ -88,7 +113,8 @@ class SchemaLoader(
                 if (loadingState.baseURI == null) {
                     loadingState.baseURI = URI(DEFAULT_BASE_URI)
                 }
-                val anchor = loadingState.registerRawSchema(loadingState.baseURI.toString() + schemaJson.location.pointer, schemaJson)
+                val anchor =
+                    loadingState.registerRawSchema(loadingState.baseURI.toString() + schemaJson.location.pointer, schemaJson)
                 anchor.underLoading = true;
                 val compSchema = createCompositeSchema(schemaJson)
                 anchor.underLoading = false;
@@ -108,7 +134,7 @@ class SchemaLoader(
         var writeOnly: IJsonBoolean? = null
         var deprecated: IJsonBoolean? = null
         var default: IJsonValue? = null
-        var id: IJsonString? = schemaJson.properties[JsonString("\$id")]?.requireString()
+        var id: IJsonString? = schemaJson["\$id"]?.requireString()
         val origBaseURI: URI = loadingState.baseURI!!
         if (id != null) {
             if (loadingState.baseURI != null) {
@@ -137,15 +163,15 @@ class SchemaLoader(
             if (subschema != null) subschemas.add(subschema)
         }
         val retval = CompositeSchema(
-                subschemas = subschemas,
-                location = schemaJson.location,
-                id = id,
-                title = title,
-                description = description,
-                readOnly = readOnly,
-                writeOnly = writeOnly,
-                deprecated = deprecated,
-                default = default
+            subschemas = subschemas,
+            location = schemaJson.location,
+            id = id,
+            title = title,
+            description = description,
+            readOnly = readOnly,
+            writeOnly = writeOnly,
+            deprecated = deprecated,
+            default = default
         )
         if (id != null) loadingState.identifiedSchemas[id!!.value] = retval
         loadingState.baseURI = origBaseURI
@@ -153,17 +179,20 @@ class SchemaLoader(
     }
 
     private fun createReferenceSchema(location: SourceLocation, ref: IJsonString): Schema {
-        val referenceSchema = ReferenceSchema(null, location)
         val s: String = (loadingState.baseURI?.resolve(ref.value) ?: ref.value).toString()
-        val absoluteRef = if (loadingState.baseURI == null) ref.value else loadingState.baseURI!!.resolve(ref.value).toString()
-        loadingState.pendingReferences.put(Reference(location, absoluteRef), referenceSchema)
+        val referenceSchema = ReferenceSchema(null, location)
+        val anchor = schemasByURI.getOrPut(s) { Anchor() }
+        anchor.referenceSchemas.add(referenceSchema);
         return referenceSchema
+//        val absoluteRef = if (loadingState.baseURI == null) ref.value else loadingState.baseURI!!.resolve(ref.value).toString()
+//        loadingState.pendingReferences.put(Reference(location, absoluteRef), referenceSchema)
+//        return referenceSchema
     }
 
     private fun attemptLookup(refValue: String): Schema? {
 //        println("attemptLookup $refValue")
         if (loadingState.identifiedSchemas[refValue] != null) {
-            return loadingState.identifiedSchemas[refValue] 
+            return loadingState.identifiedSchemas[refValue]
         }
         val lookupResult = lookupReference(refValue);
         if (lookupResult != null) {
@@ -173,7 +202,7 @@ class SchemaLoader(
 //        loadingState.identifiedSchemas.computeIfAbsent(refValue, {lookupReference(it)})
 //        return loadingState.identifiedSchemas[refValue] ?: lookupReference(refValue)
     }
-    
+
     private fun lookupReference(refValue: String): Schema? {
         val uri = parseUri(refValue);
         if (uri.toBeQueried == URI("mem://input")) {
@@ -188,10 +217,10 @@ class SchemaLoader(
     }
 
     private fun createAllOfSubschema(location: SourceLocation, subschemas: IJsonArray<*>) = AllOfSchema(
-            subschemas.elements.stream()
-                    .map { schemaJson -> loadChild(schemaJson) }
-                    .collect(toList()),
-            location
+        subschemas.elements.stream()
+            .map { schemaJson -> loadChild(schemaJson) }
+            .collect(toList()),
+        location
     )
 
 }

@@ -45,7 +45,7 @@ data class ReferenceSchema(var referredSchema: Schema?, override val location: S
     }
 
     override fun toString(): String {
-        return "{\"\$ref\": \"...\"}"
+        return "{\"\$ref\": \"${location}\"}"
     }
 }
 

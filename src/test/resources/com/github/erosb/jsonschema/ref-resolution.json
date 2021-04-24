@@ -1,9 +1,0 @@
-{
-  "title": "root schema",
-  "allOf": [
-    {
-      "title": "subschema 0",
-      "$ref": "#"
-    }
-  ]
-}

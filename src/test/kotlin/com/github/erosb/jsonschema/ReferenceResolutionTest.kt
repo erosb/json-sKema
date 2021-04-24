@@ -5,10 +5,37 @@ import org.junit.jupiter.api.Test
 import java.net.URI
 
 class ReferenceResolutionTest {
+    
+    @Test
+    fun `$anchor ref intra-document`() {
+        val actual: CompositeSchema = createSchemaLoaderForString("""
+            {
+                "$ref": "#myAnchor",
+                "$defs": {
+                   "ddd": {
+                        "title": "my title",
+                        "$anchor": "myAnchor"
+                   }
+                }
+            }
+        """.trimIndent())() as CompositeSchema
+        val referred = actual.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema as CompositeSchema
+        assertThat("my title").isEqualTo(referred)
+    }
 
     @Test
     fun `$ref is #`() {
-        val json = JsonParser(javaClass.getResourceAsStream("ref-resolution.json"))()
+        val json = JsonParser("""
+            {
+              "title": "root schema",
+              "allOf": [
+                {
+                  "title": "subschema 0",
+                  "$ref": "#"
+                }
+              ]
+            }
+        """.trimIndent())()
         val actual = SchemaLoader(json)() as CompositeSchema
         assertThat(actual.title!!.value).isEqualTo("root schema")
         val allOf = actual.subschemas.iterator().next() as AllOfSchema

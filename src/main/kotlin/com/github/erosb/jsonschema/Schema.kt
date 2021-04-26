@@ -27,7 +27,7 @@ data class AllOfSchema(
     override fun subschemas(): Collection<Schema> = subschemas
 }
 
-data class ReferenceSchema(var referredSchema: Schema?, override val location: SourceLocation): Schema(location) {
+data class ReferenceSchema(var referredSchema: Schema?, val ref: String, override val location: SourceLocation): Schema(location) {
     override fun <P> accept(visitor: Visitor<P>) = visitor.visitReferenceSchema(this)
     override fun subschemas() = referredSchema?.let { listOf(it) } ?: emptyList()
     
@@ -45,7 +45,7 @@ data class ReferenceSchema(var referredSchema: Schema?, override val location: S
     }
 
     override fun toString(): String {
-        return "{\"\$ref\": \"${location}\"}"
+        return "{\"\$ref\": \"${ref}\", \"resolved\":\"${referredSchema !== null}\"}"
     }
 }
 

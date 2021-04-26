@@ -20,7 +20,7 @@ class ReferenceResolutionTest {
             }
         """.trimIndent())() as CompositeSchema
         val referred = actual.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema as CompositeSchema
-        assertThat("my title").isEqualTo(referred)
+        assertThat("my title").isEqualTo(referred.title!!.value)
     }
 
     @Test
@@ -42,7 +42,7 @@ class ReferenceResolutionTest {
         val combinedContainingRef = allOf.subschemas[0] as CompositeSchema
         assertThat(combinedContainingRef.title!!.value).isEqualTo("subschema 0")
         val refSchema = combinedContainingRef.subschemas.iterator().next() as ReferenceSchema
-        assertThat(refSchema).isEqualTo(ReferenceSchema(actual, SourceLocation(6, 7, pointer("allOf", "0", "\$ref"))))
+        assertThat(refSchema).isEqualTo(ReferenceSchema(actual, "#", SourceLocation(6, 7, pointer("allOf", "0", "\$ref"))))
     }
 
     @Test

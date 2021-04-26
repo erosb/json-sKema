@@ -35,7 +35,7 @@ private data class Anchor(
         println("created ref $rval")
         return rval
     }
-    
+
     fun resolveWith(schema: Schema) {
         referenceSchemas.forEach {
             it.referredSchema = schema
@@ -44,16 +44,14 @@ private data class Anchor(
         this.schema = schema
         underLoading = false
     }
-    
+
     fun isLoaded() = schema !== null
-    
+
     fun isLoadable() = !isLoaded() && json !== null
 }
 
 private data class LoadingState(
     val documentRoot: IJsonValue,
-    val pendingReferences: MutableMap<Reference, ReferenceSchema> = mutableMapOf(),
-    val identifiedSchemas: MutableMap<String, Schema> = mutableMapOf(),
     var baseURI: URI? = null,
     private val anchors: MutableMap<String, Anchor> = mutableMapOf()
 ) {
@@ -70,8 +68,8 @@ private data class LoadingState(
     fun nextLoadableAnchor(): Anchor? = anchors.values.find { it.isLoadable() }
 
     fun nextUnresolvedAnchor(): Anchor? = anchors.values.find { it.json === null }
-    
-    fun getAnchorByURI(uri: String): Anchor = anchors.getOrPut(uri) {Anchor()}
+
+    fun getAnchorByURI(uri: String): Anchor = anchors.getOrPut(uri) { Anchor() }
 
 }
 
@@ -97,17 +95,16 @@ class SchemaLoader(
     operator fun invoke(): Schema = loadRootSchema();
 
     private fun lookupAnchors(json: IJsonValue, baseURI: URI) {
-        when(json) {
-            is IJsonObject<*,*> -> {
+        when (json) {
+            is IJsonObject<*, *> -> {
                 val anchor = json.get("\$anchor");
                 if (anchor != null) {
                     val resolvedAnchor = baseURI.resolve("#" + anchor.requireString().value)
                     loadingState.registerRawSchema(resolvedAnchor.toString(), json)
-//                    schemasByURI[resolvedAnchor.toString()] = Anchor(json)
                 }
                 json.properties.forEach { (key, value) ->
                     lookupAnchors(value, baseURI)
-                }           
+                }
             }
         }
     }
@@ -119,12 +116,11 @@ class SchemaLoader(
         }
         return loadSchema()
     }
-    
+
     private fun loadSchema(): Schema {
         val finalRef = createReferenceSchema(schemaJson.location, JsonString("#"))
         loadingState.registerRawSchema((loadingState.baseURI?.resolve("#") ?: "#").toString(), schemaJson)
-            
-//        schemasByURI[(loadingState.baseURI?.resolve("#") ?: "#").toString()]!!.json = schemaJson;
+
         do {
             val anchor: Anchor? = loadingState.nextLoadableAnchor()
             if (anchor === null) {
@@ -150,22 +146,15 @@ class SchemaLoader(
     }
 
     private fun doLoadSchema(schemaJson: IJsonValue): Schema {
-        val retval: Schema
-        when (schemaJson) {
-            is IJsonBoolean -> {
-                retval = if (schemaJson.value) TrueSchema(schemaJson.location) else FalseSchema(schemaJson.location)
+        val retval: Schema =
+            when (schemaJson) {
+                is IJsonBoolean -> if (schemaJson.value)
+                    TrueSchema(schemaJson.location)
+                else
+                    FalseSchema(schemaJson.location)
+                is IJsonObject<*, *> -> createCompositeSchema(schemaJson)
+                else -> TODO()
             }
-            is IJsonObject<*, *> -> {
-                val anchor = loadingState.getAnchorByURI(loadingState.baseURI!!.resolve(schemaJson.location.pointer.toString()).toString())
-                anchor.json = schemaJson;
-                anchor.underLoading = true;
-                val compSchema = createCompositeSchema(schemaJson)
-                anchor.underLoading = false;
-                loadingState.identifiedSchemas[loadingState.baseURI!!.toString()] = compSchema
-                retval = compSchema
-            }
-            else -> TODO()
-        }
         return retval
     }
 
@@ -216,7 +205,6 @@ class SchemaLoader(
             deprecated = deprecated,
             default = default
         )
-        if (id != null) loadingState.identifiedSchemas[id!!.value] = retval
         loadingState.baseURI = origBaseURI
         return retval
     }

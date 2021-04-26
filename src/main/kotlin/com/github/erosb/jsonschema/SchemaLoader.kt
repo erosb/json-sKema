@@ -59,9 +59,19 @@ private data class LoadingState(
 ) {
 
     fun registerRawSchema(id: String, json: IJsonValue): Anchor {
-        anchors[id] = Anchor(json)
-        return anchors[id]!!
+        val anchor = anchors.getOrPut(id) { Anchor() }
+        if (anchor.json !== null) {
+            throw IllegalStateException("raw schema already registered by URI $id")
+        }
+        anchor.json = json;
+        return anchor
     }
+
+    fun nextLoadableAnchor(): Anchor? = anchors.values.find { it.isLoadable() }
+
+    fun nextUnresolvedAnchor(): Anchor? = anchors.values.find { it.json === null }
+    
+    fun getAnchorByURI(uri: String): Anchor = anchors.getOrPut(uri) {Anchor()}
 
 }
 
@@ -82,7 +92,7 @@ class SchemaLoader(
 
     private var loadingState: LoadingState = LoadingState(schemaJson)
 
-    private val schemasByURI: MutableMap<String, Anchor> = hashMapOf()
+//    private val schemasByURI: MutableMap<String, Anchor> = hashMapOf()
 
     operator fun invoke(): Schema = loadRootSchema();
 
@@ -92,7 +102,8 @@ class SchemaLoader(
                 val anchor = json.get("\$anchor");
                 if (anchor != null) {
                     val resolvedAnchor = baseURI.resolve("#" + anchor.requireString().value)
-                    schemasByURI[resolvedAnchor.toString()] = Anchor(json)
+                    loadingState.registerRawSchema(resolvedAnchor.toString(), json)
+//                    schemasByURI[resolvedAnchor.toString()] = Anchor(json)
                 }
                 json.properties.forEach { (key, value) ->
                     lookupAnchors(value, baseURI)
@@ -109,17 +120,15 @@ class SchemaLoader(
         return loadSchema()
     }
     
-    private fun nextLoadableAnchor(): Anchor? = schemasByURI.values.find { it.isLoadable() }
-    
-    private fun nextUnresolvedAnchor(): Anchor? = schemasByURI.values.find { it.json === null }
-
     private fun loadSchema(): Schema {
         val finalRef = createReferenceSchema(schemaJson.location, JsonString("#"))
-        schemasByURI[(loadingState.baseURI?.resolve("#") ?: "#").toString()]!!.json = schemaJson;
+        loadingState.registerRawSchema((loadingState.baseURI?.resolve("#") ?: "#").toString(), schemaJson)
+            
+//        schemasByURI[(loadingState.baseURI?.resolve("#") ?: "#").toString()]!!.json = schemaJson;
         do {
-            val anchor: Anchor? = nextLoadableAnchor()
+            val anchor: Anchor? = loadingState.nextLoadableAnchor()
             if (anchor === null) {
-                val unresolved: Anchor? = nextUnresolvedAnchor()
+                val unresolved: Anchor? = loadingState.nextUnresolvedAnchor()
                 if (unresolved === null) {
                     println("breaking")
                     break
@@ -147,8 +156,8 @@ class SchemaLoader(
                 retval = if (schemaJson.value) TrueSchema(schemaJson.location) else FalseSchema(schemaJson.location)
             }
             is IJsonObject<*, *> -> {
-                val anchor =
-                    loadingState.registerRawSchema(loadingState.baseURI.toString() + schemaJson.location.pointer, schemaJson)
+                val anchor = loadingState.getAnchorByURI(loadingState.baseURI!!.resolve(schemaJson.location.pointer.toString()).toString())
+                anchor.json = schemaJson;
                 anchor.underLoading = true;
                 val compSchema = createCompositeSchema(schemaJson)
                 anchor.underLoading = false;
@@ -215,8 +224,7 @@ class SchemaLoader(
     private fun createReferenceSchema(location: SourceLocation, ref: IJsonString): ReferenceSchema {
         val s: String = (loadingState.baseURI?.resolve(ref.value) ?: ref.value).toString()
         println("create/lookup anchor for ${s}")
-        val anchor = schemasByURI.getOrPut(s) { Anchor() }
-        println(schemasByURI.size)
+        val anchor = loadingState.getAnchorByURI(s)
         return anchor.createReference(location, ref.value)
     }
 

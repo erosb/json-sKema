@@ -59,7 +59,7 @@ internal data class LoadingState(
 ) {
 
     fun registerRawSchema(id: String, json: IJsonValue): Anchor {
-        val anchor = anchors.getOrPut(id) { Anchor() }
+        val anchor = getAnchorByURI(id)
         if (anchor.json !== null) {
             throw IllegalStateException("raw schema already registered by URI $id")
         }
@@ -71,9 +71,13 @@ internal data class LoadingState(
 
     fun nextUnresolvedAnchor(): Anchor? = anchors.values.find { it.json === null }
 
-    fun getAnchorByURI(uri: String): Anchor = anchors.getOrPut(uri) { Anchor() }
-    
-    fun anchorByURI(ref: String): Anchor? = anchors[ref]
+    fun getAnchorByURI(uri: String): Anchor = anchors.getOrPut(removeEmptyFragment(uri)) { Anchor() }
+
+    fun anchorByURI(ref: String): Anchor? = anchors[removeEmptyFragment(ref)]
+
+    private fun removeEmptyFragment(uri: String): String {
+        return if (uri.endsWith("#")) uri.substring(0, uri.length - 1) else uri
+    }
 
 }
 
@@ -135,7 +139,7 @@ class SchemaLoader(
 
     private fun loadSchema(): Schema {
         val finalRef = createReferenceSchema(schemaJson.location, JsonString("#"))
-        loadingState.registerRawSchema((loadingState.baseURI?.resolve("#") ?: "#").toString(), schemaJson)
+        loadingState.registerRawSchema(loadingState.baseURI.toString(), schemaJson)
 
         do {
             val anchor: Anchor? = loadingState.nextLoadableAnchor()
@@ -145,7 +149,6 @@ class SchemaLoader(
                     println("breaking")
                     break
                 }
-                println("itt")
                 unresolved.json = resolve(unresolved.referenceSchemas[0])
             } else {
                 anchor.underLoading = true;
@@ -159,21 +162,22 @@ class SchemaLoader(
 
     private fun resolve(referenceSchema: ReferenceSchema): IJsonValue {
         val ref = referenceSchema.ref
-        println(ref)
-        val byURI = loadingState.anchorByURI(ref)
+        println("resolve($ref)")
+        val uri = parseUri(ref)
+        val continingRoot: IJsonValue?
+        val byURI = loadingState.anchorByURI(uri.toBeQueried.toString())
         if (byURI !== null && byURI.json !== null) {
-            return byURI.json!!
-        }
-        if (ref.startsWith("#")) {
-            TODO("Not yet implemented")       
+            println("   found anchor by-uri ")
+            continingRoot = byURI.json!!
         } else {
-            val uri = parseUri(ref);
             val reader = BufferedReader(InputStreamReader(config.schemaClient.get(uri.toBeQueried)))
             val string = reader.readText()
-            val json: IJsonValue = JsonParser(string)()
-            return json
-//            return lookup(URL(ref), config.schemaClient, loadingState)
+            continingRoot = JsonParser(string)()
         }
+        if (uri.fragment.isEmpty() || uri.fragment == "#") {
+            return continingRoot;
+        }
+        TODO("json pointer lookup: not implemented")
     }
 
     private fun doLoadSchema(schemaJson: IJsonValue): Schema {
@@ -233,7 +237,7 @@ class SchemaLoader(
     }
 
     private fun createReferenceSchema(location: SourceLocation, ref: IJsonString): ReferenceSchema {
-        val s: String = (loadingState.baseURI?.resolve(ref.value) ?: ref.value).toString()
+        val s: String = loadingState.baseURI.resolve(ref.value).toString()
         println("create/lookup anchor for ${s}")
         val anchor = loadingState.getAnchorByURI(s)
         return anchor.createReference(location, loadingState.baseURI.resolve(ref.value).toString())

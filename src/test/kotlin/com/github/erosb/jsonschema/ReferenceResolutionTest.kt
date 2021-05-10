@@ -56,13 +56,29 @@ class ReferenceResolutionTest {
                 {
                     "title": "root schema",
                     "$id": "http://example.org/schema",
-                    "$ref": "http://example.org/schema#"
+                    "$ref": "http://example.org/schema"
                 }
             """.trimIndent()
         )() as CompositeSchema
 
         val refSchema = actual.subschemas.iterator().next() as ReferenceSchema
         assertThat(refSchema.referredSchema).isSameAs(actual)
+    }
+    
+    @Test
+    fun `$ref references root with empty fragment`() {
+        val actual: CompositeSchema = createSchemaLoaderForString(
+            """
+                {
+                    "title": "root schema",
+                    "$id": "http://example.org/schema",
+                    "$ref": "http://example.org/schema#"
+                }
+            """.trimIndent()
+        )() as CompositeSchema
+        
+        val referred = actual.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema
+        assertThat(referred).isSameAs(actual)
     }
 
     @Test

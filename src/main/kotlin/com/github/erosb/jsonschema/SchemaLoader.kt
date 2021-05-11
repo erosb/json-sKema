@@ -110,9 +110,9 @@ class SchemaLoader(
                     val resolvedAnchor = loadingState.baseURI.resolve("#" + anchor.requireString().value)
                     loadingState.registerRawSchema(resolvedAnchor.toString(), json)
                 }
-                json.properties.forEach { (key, value) ->
-                    lookupAnchors(value, baseURI)
-                }
+                json.properties
+                    .filter { (key, _) -> key.value != "enum" && key.value != "const" }
+                    .forEach { (key, value) -> lookupAnchors(value, baseURI) }
                 loadingState.baseURI = origBaseUri;
             }
         }

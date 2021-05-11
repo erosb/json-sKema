@@ -34,14 +34,12 @@ internal data class Anchor(
     fun createReference(location: SourceLocation, refText: String): ReferenceSchema {
         val rval = ReferenceSchema(schema, refText, location)
         referenceSchemas.add(rval)
-        println("created ref $rval")
         return rval
     }
 
     fun resolveWith(schema: Schema) {
         referenceSchemas.forEach {
             it.referredSchema = schema
-            println("resolved ${it.ref}")
         }
         this.schema = schema
         underLoading = false
@@ -124,8 +122,6 @@ class SchemaLoader(
                 val id: IJsonString? = json["\$id"]?.requireString()
                 id?.let {
                     loadingState.baseURI = loadingState.baseURI.resolve(it.value)
-//                    loadingState.registerRawSchema(loadingState.baseURI.toString(), json)
-                    println("entering schema with context ${id.value} -> baseURI := ${loadingState.baseURI}")
                 }
             }
         }
@@ -146,7 +142,6 @@ class SchemaLoader(
             if (anchor === null) {
                 val unresolved: Anchor? = loadingState.nextUnresolvedAnchor()
                 if (unresolved === null) {
-                    println("breaking")
                     break
                 }
                 unresolved.json = resolve(unresolved.referenceSchemas[0])
@@ -162,12 +157,10 @@ class SchemaLoader(
 
     private fun resolve(referenceSchema: ReferenceSchema): IJsonValue {
         val ref = referenceSchema.ref
-        println("resolve($ref)")
         val uri = parseUri(ref)
         val continingRoot: IJsonValue?
         val byURI = loadingState.anchorByURI(uri.toBeQueried.toString())
         if (byURI !== null && byURI.json !== null) {
-            println("   found anchor by-uri ")
             continingRoot = byURI.json!!
         } else {
             val reader = BufferedReader(InputStreamReader(config.schemaClient.get(uri.toBeQueried)))
@@ -238,7 +231,6 @@ class SchemaLoader(
 
     private fun createReferenceSchema(location: SourceLocation, ref: IJsonString): ReferenceSchema {
         val s: String = loadingState.baseURI.resolve(ref.value).toString()
-        println("create/lookup anchor for ${s}")
         val anchor = loadingState.getAnchorByURI(s)
         return anchor.createReference(location, loadingState.baseURI.resolve(ref.value).toString())
     }

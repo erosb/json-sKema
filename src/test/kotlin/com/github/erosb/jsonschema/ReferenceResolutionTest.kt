@@ -187,4 +187,73 @@ class ReferenceResolutionTest {
             )()
         )() as CompositeSchema
     }
+
+    @Test
+    fun `$anchor resolution in remote`() {
+        val root = SchemaLoader(
+            schemaJson = JsonParser(
+                """
+            {
+                "$id": "http://original"
+                "$ref": "http://remote#myAnchor"
+            }
+        """.trimIndent()
+            )(),
+            config = SchemaLoaderConfig(
+                TestingSchemaClient()
+                    .defineResource(
+                        URI("http://remote"), """
+                {
+                    "$id": "http://remote",
+                    "title": "remote root title",
+                    "$defs": {
+                        "MySubschema": {
+                            "$anchor": "myAnchor",
+                            "title": "MySubschema title"
+                        }
+                    }
+                }
+            """.trimIndent()
+                    )
+            )
+        )() as CompositeSchema
+        val actualMySubschemaTitle =
+            (root.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema as CompositeSchema).title;
+
+        assertThat(actualMySubschemaTitle!!.value).isEqualTo("MySubschema title")
+    }
+
+    @Test
+    fun `no explicit $id in remote`() {
+        val root = SchemaLoader(
+            schemaJson = JsonParser(
+                """
+            {
+                "$id": "http://original"
+                "$ref": "http://remote#myAnchor"
+            }
+        """.trimIndent()
+            )(),
+            config = SchemaLoaderConfig(
+                TestingSchemaClient()
+                    .defineResource(
+                        URI("http://remote"), """
+                {
+                    "title": "remote root title",
+                    "$defs": {
+                        "MySubschema": {
+                            "$anchor": "myAnchor",
+                            "title": "MySubschema title"
+                        }
+                    }
+                }
+            """.trimIndent()
+                    )
+            )
+        )() as CompositeSchema
+        val actualMySubschemaTitle =
+            (root.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema as CompositeSchema).title;
+
+        assertThat(actualMySubschemaTitle!!.value).isEqualTo("MySubschema title")
+    }
 }

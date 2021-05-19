@@ -166,9 +166,15 @@ class SchemaLoader(
             val reader = BufferedReader(InputStreamReader(config.schemaClient.get(uri.toBeQueried)))
             val string = reader.readText()
             continingRoot = JsonParser(string)()
+            val origBaseURI = loadingState.baseURI;
+            loadingState.baseURI = URI(ref)
+            adjustBaseURI(continingRoot)
+            lookupAnchors(continingRoot, uri.toBeQueried)
+            loadingState.baseURI = origBaseURI;
         }
-        if (uri.fragment.isEmpty() || uri.fragment == "#") {
-            return continingRoot;
+        val byURIWithAnchor = loadingState.anchorByURI(ref)
+        if (byURIWithAnchor?.json !== null) {
+            return byURIWithAnchor.json!!
         }
         TODO("json pointer lookup: not implemented")
     }

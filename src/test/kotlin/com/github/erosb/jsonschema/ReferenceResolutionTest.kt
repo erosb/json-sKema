@@ -259,6 +259,23 @@ class ReferenceResolutionTest {
 
     @Test
     fun `intra-document json pointer lookup`() {
-        TODO()
+        val root = SchemaLoader(schemaJson = JsonParser("""
+            {
+                "$ref": "#/$defs/MySchema",
+                "$defs": {
+                    "MySchema": {
+                        "title": "my schema"
+                    }
+                }
+            }
+        """.trimIndent())())() as CompositeSchema
+        val actual = root.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema as CompositeSchema
+        
+        assertThat(actual.title!!.value).isEqualTo("my schema")
+    }
+    
+    @Test
+    fun `json pointer escaping`(){
+        
     }
 }

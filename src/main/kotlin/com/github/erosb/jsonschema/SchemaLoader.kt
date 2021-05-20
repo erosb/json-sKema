@@ -3,6 +3,7 @@ package com.github.erosb.jsonschema
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.URI
+import java.util.*
 import java.util.stream.Collectors.toList
 
 class SchemaLoaderConfig(val schemaClient: SchemaClient)
@@ -179,6 +180,7 @@ class SchemaLoader(
             val reader = BufferedReader(InputStreamReader(config.schemaClient.get(uri.toBeQueried)))
             val string = reader.readText()
             continingRoot = JsonParser(string)()
+            loadingState.registerRawSchema(uri.toBeQueried.toString(), continingRoot)
             val origBaseURI = loadingState.baseURI;
             loadingState.baseURI = URI(ref)
             adjustBaseURI(continingRoot)
@@ -192,7 +194,33 @@ class SchemaLoader(
         if (byURIWithAnchor?.json !== null) {
             return byURIWithAnchor.json!!
         }
-        TODO("json pointer lookup: not implemented")
+        return evaluateJsonPointer(continingRoot, uri.fragment)
+    }
+
+    private fun evaluateJsonPointer(root: IJsonValue, pointer: String): IJsonValue {
+        val segments = LinkedList(pointer.split("/"))
+        if ("#" != segments.poll()) {
+            throw Error("invalid json pointer: $pointer")
+        }
+        fun lookupNext(root: IJsonValue, segments: LinkedList<String>): IJsonValue {
+            if (segments.isEmpty()) {
+                return root
+            }
+            val segment = segments.poll()
+            when (root) {
+                is IJsonObject<*, *> -> {
+                    val child = root[segment]
+                    if (child === null) {
+                        throw Error("json pointer evaluation error: could not resolve property $segment")
+                    }
+                    return lookupNext(child, segments)
+                }
+                else -> {
+                    throw Error("json pointer evaluation error: could not resolve property $segment")
+                }
+            }    
+        }
+        return lookupNext(root, segments)
     }
 
     private fun doLoadSchema(schemaJson: IJsonValue): Schema {

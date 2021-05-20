@@ -94,6 +94,16 @@ class SchemaLoader(
         this.loadingState = loadingState
     }
 
+    private fun <R> withBaseUriAdjustment(json: IJsonValue, runnable: () -> R): R {
+        val origBaseUri = loadingState.baseURI;
+        adjustBaseURI(json)
+        try {
+            return runnable()
+        } finally {
+            loadingState.baseURI = origBaseUri
+        }
+    }
+
     private var loadingState: LoadingState = LoadingState(schemaJson)
 
     operator fun invoke(): Schema = loadRootSchema();
@@ -101,17 +111,17 @@ class SchemaLoader(
     private fun lookupAnchors(json: IJsonValue, baseURI: URI) {
         when (json) {
             is IJsonObject<*, *> -> {
-                val origBaseUri = loadingState.baseURI;
-                adjustBaseURI(json)
-                val anchor = json.get("\$anchor");
-                if (anchor != null) {
-                    val resolvedAnchor = loadingState.baseURI.resolve("#" + anchor.requireString().value)
-                    loadingState.registerRawSchema(resolvedAnchor.toString(), json)
+                withBaseUriAdjustment(json) {
+                    when (val anchor = json.get("\$anchor")) {
+                        is IJsonString -> {
+                            val resolvedAnchor = loadingState.baseURI.resolve("#" + anchor.requireString().value)
+                            loadingState.registerRawSchema(resolvedAnchor.toString(), json)
+                        }
+                    }
+                    json.properties
+                        .filter { (key, _) -> key.value != "enum" && key.value != "const" }
+                        .forEach { (key, value) -> lookupAnchors(value, baseURI) }
                 }
-                json.properties
-                    .filter { (key, _) -> key.value != "enum" && key.value != "const" }
-                    .forEach { (key, value) -> lookupAnchors(value, baseURI) }
-                loadingState.baseURI = origBaseUri;
             }
         }
     }
@@ -119,9 +129,12 @@ class SchemaLoader(
     private fun adjustBaseURI(json: IJsonValue) {
         when (json) {
             is IJsonObject<*, *> -> {
-                val id: IJsonString? = json["\$id"]?.requireString()
-                id?.let {
-                    loadingState.baseURI = loadingState.baseURI.resolve(it.value)
+                when (val id: IJsonValue? = json["\$id"]) {
+                    is IJsonString -> {
+                        id.let {
+                            loadingState.baseURI = loadingState.baseURI.resolve(it.value)
+                        }
+                    }
                 }
             }
         }
@@ -172,6 +185,9 @@ class SchemaLoader(
             lookupAnchors(continingRoot, uri.toBeQueried)
             loadingState.baseURI = origBaseURI;
         }
+        if (uri.fragment.isEmpty() || uri.fragment == "#") {
+            return continingRoot;
+        }
         val byURIWithAnchor = loadingState.anchorByURI(ref)
         if (byURIWithAnchor?.json !== null) {
             return byURIWithAnchor.json!!
@@ -200,39 +216,38 @@ class SchemaLoader(
         var writeOnly: IJsonBoolean? = null
         var deprecated: IJsonBoolean? = null
         var default: IJsonValue? = null
-        val origBaseURI: URI = loadingState.baseURI!!
         adjustBaseURI(schemaJson)
-        schemaJson.properties.forEach { (name, value) ->
-            var subschema: Schema? = null
-            when (name.value) {
-                "minLength" -> subschema = MinLengthSchema(value.requireInt(), name.location)
-                "maxLength" -> subschema = MaxLengthSchema(value.requireInt(), name.location)
-                "allOf" -> subschema = createAllOfSubschema(name.location, value.requireArray())
-                "additionalProperties" -> subschema = AdditionalPropertiesSchema(loadChild(value), name.location)
-                "\$ref" -> subschema = createReferenceSchema(name.location, value.requireString())
-                "title" -> title = value.requireString()
-                "description" -> description = value.requireString()
-                "readOnly" -> readOnly = value.requireBoolean()
-                "writeOnly" -> writeOnly = value.requireBoolean()
-                "deprecated" -> deprecated = value.requireBoolean()
-                "default" -> default = value
+        return withBaseUriAdjustment(schemaJson) {
+            schemaJson.properties.forEach { (name, value) ->
+                var subschema: Schema? = null
+                when (name.value) {
+                    "minLength" -> subschema = MinLengthSchema(value.requireInt(), name.location)
+                    "maxLength" -> subschema = MaxLengthSchema(value.requireInt(), name.location)
+                    "allOf" -> subschema = createAllOfSubschema(name.location, value.requireArray())
+                    "additionalProperties" -> subschema = AdditionalPropertiesSchema(loadChild(value), name.location)
+                    "\$ref" -> subschema = createReferenceSchema(name.location, value.requireString())
+                    "title" -> title = value.requireString()
+                    "description" -> description = value.requireString()
+                    "readOnly" -> readOnly = value.requireBoolean()
+                    "writeOnly" -> writeOnly = value.requireBoolean()
+                    "deprecated" -> deprecated = value.requireBoolean()
+                    "default" -> default = value
 //                else -> TODO("unhandled property ${name.value}")
+                }
+                if (subschema != null) subschemas.add(subschema)
             }
-            if (subschema != null) subschemas.add(subschema)
-        }
-        val retval = CompositeSchema(
-            subschemas = subschemas,
-            location = schemaJson.location,
+            return@withBaseUriAdjustment CompositeSchema(
+                subschemas = subschemas,
+                location = schemaJson.location,
 //            id = id,
-            title = title,
-            description = description,
-            readOnly = readOnly,
-            writeOnly = writeOnly,
-            deprecated = deprecated,
-            default = default
-        )
-        loadingState.baseURI = origBaseURI
-        return retval
+                title = title,
+                description = description,
+                readOnly = readOnly,
+                writeOnly = writeOnly,
+                deprecated = deprecated,
+                default = default
+            )
+        }
     }
 
     private fun createReferenceSchema(location: SourceLocation, ref: IJsonString): ReferenceSchema {

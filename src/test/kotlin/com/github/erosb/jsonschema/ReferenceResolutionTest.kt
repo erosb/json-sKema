@@ -256,4 +256,9 @@ class ReferenceResolutionTest {
 
         assertThat(actualMySubschemaTitle!!.value).isEqualTo("MySubschema title")
     }
+
+    @Test
+    fun `intra-document json pointer lookup`() {
+        TODO()
+    }
 }

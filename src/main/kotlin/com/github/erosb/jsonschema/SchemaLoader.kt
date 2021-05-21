@@ -19,11 +19,6 @@ internal fun createDefaultConfig() = SchemaLoaderConfig(
  */
 val DEFAULT_BASE_URI: String = "mem://input";
 
-private data class Reference(
-    val refLocation: SourceLocation,
-    val ref: String
-)
-
 internal data class Anchor(
     var json: IJsonValue? = null,
     var schema: Schema? = null,
@@ -80,16 +75,14 @@ internal data class LoadingState(
 
 class SchemaLoader(
     val schemaJson: IJsonValue,
-    val config: SchemaLoaderConfig = createDefaultConfig(),
-    private val documentRoot: IJsonValue = schemaJson
+    val config: SchemaLoaderConfig = createDefaultConfig()
 ) {
 
     private constructor(
         schemaJson: IJsonValue,
         config: SchemaLoaderConfig,
-        loadingState: LoadingState,
-        documentRoot: IJsonValue
-    ) : this(schemaJson, config, documentRoot) {
+        loadingState: LoadingState
+    ) : this(schemaJson, config) {
         this.loadingState = loadingState
     }
 
@@ -171,9 +164,11 @@ class SchemaLoader(
         val ref = referenceSchema.ref
         val uri = parseUri(ref)
         val continingRoot: IJsonValue?
+        println(uri)
         val byURI = loadingState.anchorByURI(uri.toBeQueried.toString())
         if (byURI !== null && byURI.json !== null) {
             continingRoot = byURI.json!!
+            println("containingRoot := $continingRoot")
         } else {
             val reader = BufferedReader(InputStreamReader(config.schemaClient.get(uri.toBeQueried)))
             val string = reader.readText()
@@ -212,7 +207,7 @@ class SchemaLoader(
                 is IJsonObject<*, *> -> {
                     val child = root[segment]
                     if (child === null) {
-                        throw Error("json pointer evaluation error: could not resolve property $segment")
+                        throw Error("json pointer evaluation error: could not resolve property $segment in $root")
                     }
                     return lookupNext(child, segments)
                 }
@@ -286,7 +281,7 @@ class SchemaLoader(
     }
 
     private fun loadChild(schemaJson: IJsonValue): Schema {
-        return SchemaLoader(schemaJson, config, loadingState, documentRoot).doLoadSchema(schemaJson)
+        return SchemaLoader(schemaJson, config, loadingState).doLoadSchema(schemaJson)
     }
 
     private fun createAllOfSubschema(location: SourceLocation, subschemas: IJsonArray<*>) = AllOfSchema(

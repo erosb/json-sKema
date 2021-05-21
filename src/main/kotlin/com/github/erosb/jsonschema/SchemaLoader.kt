@@ -3,6 +3,8 @@ package com.github.erosb.jsonschema
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.URI
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.stream.Collectors.toList
 
@@ -198,11 +200,14 @@ class SchemaLoader(
         if ("#" != segments.poll()) {
             throw Error("invalid json pointer: $pointer")
         }
+        fun unescape(s: String) = URLDecoder.decode(s, StandardCharsets.UTF_8)
+            .replace("~1", "/")
+            .replace("~0", "~")
         fun lookupNext(root: IJsonValue, segments: LinkedList<String>): IJsonValue {
             if (segments.isEmpty()) {
                 return root
             }
-            val segment = segments.poll()
+            val segment = unescape(segments.poll())
             when (root) {
                 is IJsonObject<*, *> -> {
                     val child = root[segment]

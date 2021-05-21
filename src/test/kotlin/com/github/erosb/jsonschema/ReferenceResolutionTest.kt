@@ -264,6 +264,19 @@ class ReferenceResolutionTest {
     
     @Test
     fun `json pointer escaping`(){
-        mapOf(Pair("", ""))
+        val root = createSchemaLoaderForString("""
+            {
+                "$ref": "#/$defs/%25child~0node/My~1Subschema",
+                "$defs": {
+                    "%child~node": {
+                        "My/Subschema": {
+                            "title": "my title"
+                        }
+                    }
+                }
+            }
+        """)()
+        val ref = root.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema as CompositeSchema
+        assertThat(ref.title!!.value).isEqualTo("my title")
     }
 }

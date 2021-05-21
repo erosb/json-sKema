@@ -72,7 +72,7 @@ class ReferenceResolutionTest {
         val refSchema = actual.subschemas.iterator().next() as ReferenceSchema
         assertThat(refSchema.referredSchema).isSameAs(actual)
     }
-    
+
     @Test
     fun `$ref references root with empty fragment`() {
         val actual: CompositeSchema = createSchemaLoaderForString(
@@ -84,7 +84,7 @@ class ReferenceResolutionTest {
                 }
             """.trimIndent()
         )() as CompositeSchema
-        
+
         val referred = actual.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema
         assertThat(referred).isSameAs(actual)
     }
@@ -169,7 +169,7 @@ class ReferenceResolutionTest {
     @Test
     fun `$anchor resolution without $id`() {
         val root = createSchemaLoaderForString(
-                """
+            """
             {
                 "$id": "http://example.org/",
                 "$ref": "http://example.org/bar#foo",
@@ -181,7 +181,7 @@ class ReferenceResolutionTest {
                 }
             }
                 """.trimIndent()
-            )()
+        )()
     }
 
     @Test
@@ -247,7 +247,8 @@ class ReferenceResolutionTest {
 
     @Test
     fun `intra-document json pointer lookup`() {
-        val root = createSchemaLoaderForString("""
+        val root = createSchemaLoaderForString(
+            """
             {
                 "$ref": "#/$defs/MySchema",
                 "$defs": {
@@ -256,15 +257,17 @@ class ReferenceResolutionTest {
                     }
                 }
             }
-        """)() as CompositeSchema
+        """
+        )() as CompositeSchema
         val actual = root.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema as CompositeSchema
-        
+
         assertThat(actual.title!!.value).isEqualTo("my schema")
     }
-    
+
     @Test
-    fun `json pointer escaping`(){
-        val root = createSchemaLoaderForString("""
+    fun `json pointer escaping`() {
+        val root = createSchemaLoaderForString(
+            """
             {
                 "$ref": "#/$defs/%25child~0node/My~1Subschema",
                 "$defs": {
@@ -275,8 +278,32 @@ class ReferenceResolutionTest {
                     }
                 }
             }
-        """)()
+        """
+        )()
         val ref = root.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema as CompositeSchema
         assertThat(ref.title!!.value).isEqualTo("my title")
+    }
+
+    @Test
+    fun `json pointer lookup in remote document`() {
+        val root = createSchemaLoaderForString(
+            """
+            {
+                "$ref": "http://remote#/$defs/entryPoint"
+            }
+        """, mapOf(
+                Pair(
+                    "http://remote", """
+            {
+                "$defs": {
+                    "entryPoint": {
+                        "$ref": "#/defs/referred"
+                    }
+                }
+            }
+        """.trimIndent()
+                )
+            )
+        )()
     }
 }

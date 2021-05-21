@@ -12,10 +12,6 @@ internal fun createDefaultConfig() = SchemaLoaderConfig(
     schemaClient = MemoizingSchemaClient(DefaultSchemaClient())
 )
 
-fun createSchemaLoaderForString(schemaJson: String): SchemaLoader {
-    return SchemaLoader(schemaJson = JsonParser(schemaJson)())
-}
-
 /**
  * http://json-schema.org/draft/2020-12/json-schema-core.html#initial-base
  */

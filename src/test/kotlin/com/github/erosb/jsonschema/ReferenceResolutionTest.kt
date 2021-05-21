@@ -4,6 +4,15 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.net.URI
 
+
+fun createSchemaLoaderForString(schemaJson: String, remoteDocuments: Map<String, String> = mapOf()): SchemaLoader {
+    val client = TestingSchemaClient()
+    remoteDocuments.forEach { (uri, json) ->
+        client.defineResource(URI(uri), json)
+    }
+    return SchemaLoader(schemaJson = JsonParser(schemaJson)(), config = SchemaLoaderConfig(client))
+}
+
 class ReferenceResolutionTest {
 
     @Test
@@ -27,7 +36,7 @@ class ReferenceResolutionTest {
 
     @Test
     fun `$ref is #`() {
-        val json = JsonParser(
+        val actual = createSchemaLoaderForString(
             """
             {
               "title": "root schema",
@@ -39,8 +48,7 @@ class ReferenceResolutionTest {
               ]
             }
         """.trimIndent()
-        )()
-        val actual = SchemaLoader(json)() as CompositeSchema
+        )() as CompositeSchema
         assertThat(actual.title!!.value).isEqualTo("root schema")
         val allOf = actual.subschemas.iterator().next() as AllOfSchema
         val combinedContainingRef = allOf.subschemas[0] as CompositeSchema
@@ -83,21 +91,17 @@ class ReferenceResolutionTest {
 
     @Test
     fun `$ref references external schema root`() {
-        val actual = SchemaLoader(
-            schemaJson = JsonParser(
-                """
+        val actual = createSchemaLoaderForString(
+            """
                 {
                     "$ref": "http://example.com/schema"
                 }
-            """.trimIndent()
-            )(),
-            config = SchemaLoaderConfig(
-                TestingSchemaClient()
-                    .defineResource(
-                        URI("http://example.com/schema"), """
+            """, mapOf(
+                Pair(
+                    "http://example.com/schema", """
                                 {"title": "remote schema"}
-                            """.trimIndent()
-                    )
+                            """
+                )
             )
         )() as CompositeSchema
 
@@ -107,9 +111,8 @@ class ReferenceResolutionTest {
 
     @Test
     fun `base URI alteration with relative URI`() {
-        val root = SchemaLoader(
-            schemaJson = JsonParser(
-                """
+        val root = createSchemaLoaderForString(
+            """
                 {
                     "$id": "http://example.org/root.json",
                     "additionalProperties": {
@@ -117,18 +120,16 @@ class ReferenceResolutionTest {
                         "$ref": "other.json"
                     }
                 }
-            """.trimIndent()
-            )(), config = SchemaLoaderConfig(
-                TestingSchemaClient()
-                    .defineResource(
-                        URI("http://example.org/path/other.json"), """
+            """, mapOf(
+                Pair(
+                    "http://example.org/path/other.json", """
                         {
                             "title": "referred schema"
                         }
-                    """.trimIndent()
-                    )
+                    """
+                )
             )
-        )() as CompositeSchema
+        )()
 
         val ref: ReferenceSchema = root.accept(TraversingVisitor("additionalProperties", "$ref"))!!
         val referred: CompositeSchema = ref.referredSchema as CompositeSchema
@@ -137,29 +138,26 @@ class ReferenceResolutionTest {
 
     @Test
     fun `recursive use of $ref`() {
-        val root = SchemaLoader(
-            schemaJson = JsonParser(
-                """
-                {
+        val root = createSchemaLoaderForString(
+            """
+            {
                     "$id": "http://example.org/root.json",
                     "additionalProperties": {
                         "$id": "http://example.org/path/",
                         "$ref": "other.json"
                     }
                 }
-            """.trimIndent()
-            )(), config = SchemaLoaderConfig(
-                TestingSchemaClient()
-                    .defineResource(
-                        URI("http://example.org/path/other.json"), """
+        """, mapOf(
+                Pair(
+                    "http://example.org/path/other.json", """
                         {
                             "title": "referred schema",
                             "$ref": "http://example.org/root.json#"
                         }
-                    """.trimIndent()
-                    )
+        """
+                )
             )
-        )() as CompositeSchema
+        )()
         val referred =
             root.accept(TraversingVisitor<ReferenceSchema>("additionalProperties", "$ref"))!!.referredSchema as CompositeSchema
         assertThat(referred.title!!.value).isEqualTo("referred schema")
@@ -170,8 +168,7 @@ class ReferenceResolutionTest {
 
     @Test
     fun `$anchor resolution without $id`() {
-        val root = SchemaLoader(
-            schemaJson = JsonParser(
+        val root = createSchemaLoaderForString(
                 """
             {
                 "$id": "http://example.org/",
@@ -185,24 +182,19 @@ class ReferenceResolutionTest {
             }
                 """.trimIndent()
             )()
-        )() as CompositeSchema
     }
 
     @Test
     fun `$anchor resolution in remote`() {
-        val root = SchemaLoader(
-            schemaJson = JsonParser(
-                """
+        val root = createSchemaLoaderForString(
+            """
             {
                 "$id": "http://original"
                 "$ref": "http://remote#myAnchor"
             }
-        """.trimIndent()
-            )(),
-            config = SchemaLoaderConfig(
-                TestingSchemaClient()
-                    .defineResource(
-                        URI("http://remote"), """
+        """, mapOf(
+                Pair(
+                    "http://remote", """
                 {
                     "$id": "http://remote",
                     "title": "remote root title",
@@ -213,10 +205,10 @@ class ReferenceResolutionTest {
                         }
                     }
                 }
-            """.trimIndent()
-                    )
+            """
+                )
             )
-        )() as CompositeSchema
+        )()
         val actualMySubschemaTitle =
             (root.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema as CompositeSchema).title;
 
@@ -225,19 +217,15 @@ class ReferenceResolutionTest {
 
     @Test
     fun `no explicit $id in remote`() {
-        val root = SchemaLoader(
-            schemaJson = JsonParser(
-                """
+        val root = createSchemaLoaderForString(
+            """
             {
                 "$id": "http://original"
                 "$ref": "http://remote#myAnchor"
             }
-        """.trimIndent()
-            )(),
-            config = SchemaLoaderConfig(
-                TestingSchemaClient()
-                    .defineResource(
-                        URI("http://remote"), """
+        """, mapOf(
+                Pair(
+                    "http://remote", """
                 {
                     "title": "remote root title",
                     "$defs": {
@@ -247,10 +235,10 @@ class ReferenceResolutionTest {
                         }
                     }
                 }
-            """.trimIndent()
-                    )
+        """
+                )
             )
-        )() as CompositeSchema
+        )()
         val actualMySubschemaTitle =
             (root.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema as CompositeSchema).title;
 
@@ -259,7 +247,7 @@ class ReferenceResolutionTest {
 
     @Test
     fun `intra-document json pointer lookup`() {
-        val root = SchemaLoader(schemaJson = JsonParser("""
+        val root = createSchemaLoaderForString("""
             {
                 "$ref": "#/$defs/MySchema",
                 "$defs": {
@@ -268,7 +256,7 @@ class ReferenceResolutionTest {
                     }
                 }
             }
-        """.trimIndent())())() as CompositeSchema
+        """)() as CompositeSchema
         val actual = root.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema as CompositeSchema
         
         assertThat(actual.title!!.value).isEqualTo("my schema")
@@ -276,6 +264,6 @@ class ReferenceResolutionTest {
     
     @Test
     fun `json pointer escaping`(){
-        
+        mapOf(Pair("", ""))
     }
 }

@@ -17,7 +17,7 @@ class ReferenceResolutionTest {
 
     @Test
     fun `$anchor ref intra-document`() {
-        val actual: CompositeSchema = createSchemaLoaderForString(
+        val root: CompositeSchema = createSchemaLoaderForString(
             """
             {
                 "$ref": "#myAnchor",
@@ -30,8 +30,8 @@ class ReferenceResolutionTest {
             }
         """.trimIndent()
         )() as CompositeSchema
-        val referred = actual.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema as CompositeSchema
-        assertThat("my title").isEqualTo(referred.title!!.value)
+        val actual = root.accept(TraversingVisitor<String>("$ref", "title"))!!
+        assertThat(actual).isEqualTo("my title")
     }
 
     @Test
@@ -85,7 +85,7 @@ class ReferenceResolutionTest {
             """.trimIndent()
         )() as CompositeSchema
 
-        val referred = actual.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema
+        val referred = actual.accept(TraversingVisitor<CompositeSchema>("$ref"))!!
         assertThat(referred).isSameAs(actual)
     }
 
@@ -131,9 +131,8 @@ class ReferenceResolutionTest {
             )
         )()
 
-        val ref: ReferenceSchema = root.accept(TraversingVisitor("additionalProperties", "$ref"))!!
-        val referred: CompositeSchema = ref.referredSchema as CompositeSchema
-        assertThat(referred.title!!.value).isEqualTo("referred schema");
+        val ref: String = root.accept(TraversingVisitor("additionalProperties", "$ref", "title"))!!
+        assertThat(ref).isEqualTo("referred schema");
     }
 
     @Test
@@ -158,11 +157,10 @@ class ReferenceResolutionTest {
                 )
             )
         )()
-        val referred =
-            root.accept(TraversingVisitor<ReferenceSchema>("additionalProperties", "$ref"))!!.referredSchema as CompositeSchema
+        val referred = root.accept(TraversingVisitor<CompositeSchema>("additionalProperties", "$ref"))!!
         assertThat(referred.title!!.value).isEqualTo("referred schema")
 
-        val secondRef = referred.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema
+        val secondRef = referred.accept(TraversingVisitor<CompositeSchema>("$ref"))!!
         assertThat(secondRef).isSameAs(root)
     }
 
@@ -210,9 +208,8 @@ class ReferenceResolutionTest {
             )
         )()
         val actualMySubschemaTitle =
-            (root.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema as CompositeSchema).title;
-
-        assertThat(actualMySubschemaTitle!!.value).isEqualTo("MySubschema title")
+            root.accept(TraversingVisitor<String>("$ref", "title"))!!
+        assertThat(actualMySubschemaTitle).isEqualTo("MySubschema title")
     }
 
     @Test
@@ -239,10 +236,8 @@ class ReferenceResolutionTest {
                 )
             )
         )()
-        val actualMySubschemaTitle =
-            (root.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema as CompositeSchema).title;
-
-        assertThat(actualMySubschemaTitle!!.value).isEqualTo("MySubschema title")
+        val actualMySubschemaTitle = root.accept(TraversingVisitor<String>("$ref", "title"))!!
+        assertThat(actualMySubschemaTitle).isEqualTo("MySubschema title")
     }
 
     @Test
@@ -259,7 +254,7 @@ class ReferenceResolutionTest {
             }
         """
         )() as CompositeSchema
-        val actual = root.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema as CompositeSchema
+        val actual = root.accept(TraversingVisitor<CompositeSchema>("$ref"))!!
 
         assertThat(actual.title!!.value).isEqualTo("my schema")
     }
@@ -280,8 +275,8 @@ class ReferenceResolutionTest {
             }
         """
         )()
-        val ref = root.accept(TraversingVisitor<ReferenceSchema>("$ref"))!!.referredSchema as CompositeSchema
-        assertThat(ref.title!!.value).isEqualTo("my title")
+        val actual = root.accept(TraversingVisitor<String>("$ref", "title"))!!
+        assertThat(actual).isEqualTo("my title")
     }
 
     @Test

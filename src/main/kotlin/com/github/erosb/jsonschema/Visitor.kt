@@ -25,7 +25,7 @@ interface Visitor<P> {
 
 internal class SchemaNotFoundException(expectedKey: String, actualKey: String) : RuntimeException("expected key: $expectedKey, but found: $actualKey")
 
-internal class TraversingVisitor<P : Schema>(vararg keys: String) : Visitor<P> {
+internal class TraversingVisitor<P>(vararg keys: String) : Visitor<P> {
 
     private val remainingKeys = keys.asList().toMutableList()
 
@@ -37,12 +37,31 @@ internal class TraversingVisitor<P : Schema>(vararg keys: String) : Visitor<P> {
             }
             return cb()
         }
-        throw SchemaNotFoundException("additionalProperties", remainingKeys[0]);
+        throw SchemaNotFoundException(key, remainingKeys[0]);
+    }
+
+    override fun visitCompositeSchema(schema: CompositeSchema): P? {
+        if (remainingKeys[0] == "title") {
+            remainingKeys.removeAt(0)
+            if (remainingKeys.isEmpty()) {
+                return schema.title!!.value as P
+            }
+            throw SchemaNotFoundException("cannot traverse keys of string 'title'", "")
+        }
+        return super.visitCompositeSchema(schema)
     }
 
     override fun visitAdditionalPropertiesSchema(schema: AdditionalPropertiesSchema): P? = consume(schema, "additionalProperties")
     { super.visitAdditionalPropertiesSchema(schema) }
 
-    override fun visitReferenceSchema(schema: ReferenceSchema): P? = consume(schema, "\$ref")
-    { super.visitReferenceSchema(schema) }
+    override fun visitReferenceSchema(schema: ReferenceSchema): P? {
+        if (remainingKeys[0] == "\$ref") {
+            remainingKeys.removeAt(0);
+            if (remainingKeys.isEmpty()) {
+                return schema.referredSchema as P
+            }
+            return schema.referredSchema!!.accept(this)
+        }
+        throw SchemaNotFoundException("\$ref", remainingKeys[0]);
+    }
 }

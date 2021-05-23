@@ -52,7 +52,7 @@ internal data class LoadingState(
 
     fun registerRawSchema(id: String, json: IJsonValue): Anchor {
         val anchor = getAnchorByURI(id)
-        if (anchor.json !== null) {
+        if (anchor.json !== null && anchor.json !== json) {
             throw IllegalStateException("raw schema already registered by URI $id")
         }
         anchor.json = json;
@@ -104,9 +104,14 @@ class SchemaLoader(
         when (json) {
             is IJsonObject<*, *> -> {
                 withBaseUriAdjustment(json) {
+                    when (val id = json.get("\$id")) {
+                        is IJsonString -> {
+                            loadingState.registerRawSchema(loadingState.baseURI.resolve(id.value).toString(), json);
+                        }
+                    }
                     when (val anchor = json.get("\$anchor")) {
                         is IJsonString -> {
-                            val resolvedAnchor = loadingState.baseURI.resolve("#" + anchor.requireString().value)
+                            val resolvedAnchor = loadingState.baseURI.resolve("#" + anchor.value)
                             loadingState.registerRawSchema(resolvedAnchor.toString(), json)
                         }
                     }

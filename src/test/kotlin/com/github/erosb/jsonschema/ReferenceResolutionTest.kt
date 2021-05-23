@@ -330,7 +330,34 @@ class ReferenceResolutionTest {
     
     @Test
     fun `json pointer lookup in remote compound schema`() {
-        
+        val root = createSchemaLoaderForString("""
+            {"$ref": "https://remote"}
+        """, mapOf(Pair("https://remote",
+            """
+            {
+                "$id": "https://remote#",
+                "$ref": "https://compound-root/my-domain.json#/$defs/MySchema",
+                "$defs": {
+                    "my-root-schema": {
+                        "$id": "https://compound-root",
+                        "$defs": {
+                            "MyDomain": {
+                                "$id": "/my-domain.json",
+                                "$defs": {
+                                    "MySchema": {
+                                        "title": "my title"
+                                    }
+                                }
+                            }
+                        }
+                        "$anchor": "MyRootSchema",
+                        "title": "my root schema title"
+                    }
+                }
+            }
+        """)))()
+        val actual = root.accept(TraversingVisitor<String>("$ref", "$ref", "title"))
+        assertThat(actual).isEqualTo("my title")
     }
     
     @Test

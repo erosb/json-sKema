@@ -11,4 +11,8 @@ internal fun parseUri(raw: String): Uri {
         Uri(URI(raw.substring(0, poundIdx)), raw.substring(poundIdx))
 }
 
-internal data class Uri(val toBeQueried: URI, val fragment: String)
+internal data class Uri(val toBeQueried: URI, val fragment: String) {
+    
+    override fun toString() = toBeQueried.toString() + fragment
+    
+}

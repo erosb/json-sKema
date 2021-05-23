@@ -5,6 +5,7 @@ import java.lang.NumberFormatException
 import java.lang.StringBuilder
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.net.URI
 
 private class SourceWalker(
         input: InputStream,
@@ -93,14 +94,17 @@ private class SourceWalker(
 
 class JsonParser {
     
-    private val walker: SourceWalker;
+    private val walker: SourceWalker
+    private val documentSource: URI?
     
-    constructor(schemaJson: String) {
-        this.walker = SourceWalker(ByteArrayInputStream(schemaJson.toByteArray())) 
+    constructor(schemaJson: String, documentSource: URI? = null) {
+        this.walker = SourceWalker(ByteArrayInputStream(schemaJson.toByteArray()))
+        this.documentSource = documentSource
     }
     
-    constructor(schemaInputStream: InputStream) {
+    constructor(schemaInputStream: InputStream, documentSource: URI? = null) {
         this.walker = SourceWalker(schemaInputStream);
+        this.documentSource = documentSource
     }
 
     private val nestingPath: MutableList<String> = mutableListOf()
@@ -175,7 +179,12 @@ class JsonParser {
     }
 
     private fun sourceLocation(): SourceLocation{
-        val sourceLocation = SourceLocation(walker.location.lineNumber, walker.location.position, JsonPointer(nestingPath.toList()))
+        val sourceLocation = SourceLocation(
+            walker.location.lineNumber,
+            walker.location.position,
+            JsonPointer(nestingPath.toList()),
+            documentSource
+        )
         return sourceLocation
     }
     

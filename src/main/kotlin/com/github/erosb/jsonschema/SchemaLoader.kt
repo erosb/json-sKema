@@ -152,7 +152,24 @@ class SchemaLoader(
                 unresolved.json = resolve(unresolved.referenceSchemas[0])
             } else {
                 anchor.underLoading = true;
+
+                val json = anchor.json!!
+                val baseURIofRoot: String = json.location.documentSource?.toString() ?: when (json) {
+                    is IJsonObject<*, *> -> {
+                        json["\$id"]?.requireString()?.value ?: DEFAULT_BASE_URI
+                    }
+                    else -> {
+                        DEFAULT_BASE_URI
+                    }
+                }
+
+
+                val origBaseURI = loadingState.baseURI
+                loadingState.baseURI = URI(baseURIofRoot)
+
                 val schema = doLoadSchema(anchor.json!!)
+                loadingState.baseURI = origBaseURI;
+
                 anchor.resolveWith(schema);
                 anchor.underLoading = false;
             }
@@ -164,15 +181,13 @@ class SchemaLoader(
         val ref = referenceSchema.ref
         val uri = parseUri(ref)
         val continingRoot: IJsonValue?
-        println(uri)
         val byURI = loadingState.anchorByURI(uri.toBeQueried.toString())
         if (byURI !== null && byURI.json !== null) {
             continingRoot = byURI.json!!
-            println("containingRoot := $continingRoot")
         } else {
             val reader = BufferedReader(InputStreamReader(config.schemaClient.get(uri.toBeQueried)))
             val string = reader.readText()
-            continingRoot = JsonParser(string)()
+            continingRoot = JsonParser(string, uri.toBeQueried)()
             loadingState.registerRawSchema(uri.toBeQueried.toString(), continingRoot)
             val origBaseURI = loadingState.baseURI;
             loadingState.baseURI = URI(ref)
@@ -198,6 +213,7 @@ class SchemaLoader(
         fun unescape(s: String) = URLDecoder.decode(s, StandardCharsets.UTF_8)
             .replace("~1", "/")
             .replace("~0", "~")
+
         fun lookupNext(root: IJsonValue, segments: LinkedList<String>): IJsonValue {
             if (segments.isEmpty()) {
                 return root
@@ -214,9 +230,11 @@ class SchemaLoader(
                 else -> {
                     throw Error("json pointer evaluation error: could not resolve property $segment")
                 }
-            }    
+            }
         }
-        return lookupNext(root, segments)
+
+        val retval = lookupNext(root, segments)
+        return retval
     }
 
     private fun doLoadSchema(schemaJson: IJsonValue): Schema {
@@ -277,7 +295,7 @@ class SchemaLoader(
     private fun createReferenceSchema(location: SourceLocation, ref: IJsonString): ReferenceSchema {
         val s: String = loadingState.baseURI.resolve(ref.value).toString()
         val anchor = loadingState.getAnchorByURI(s)
-        return anchor.createReference(location, loadingState.baseURI.resolve(ref.value).toString())
+        return anchor.createReference(location, s)
     }
 
     private fun loadChild(schemaJson: IJsonValue): Schema {

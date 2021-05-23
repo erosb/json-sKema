@@ -292,7 +292,10 @@ class ReferenceResolutionTest {
             {
                 "$defs": {
                     "entryPoint": {
-                        "$ref": "#/defs/referred"
+                        "$ref": "#/$defs/referred"
+                    },
+                    "referred": {
+                        "title": "my title"
                     }
                 }
             }
@@ -300,5 +303,38 @@ class ReferenceResolutionTest {
                 )
             )
         )()
+        
+        val actual = root.accept(TraversingVisitor<String>("$ref", "$ref", "title"))
+        assertThat(actual).isEqualTo("my title")
+    }
+    
+    @Test
+    fun `anchor lookup in remote schema`() {
+        val root = createSchemaLoaderForString("""
+            {"$ref": "http://remote"}
+        """, mapOf(Pair("http://remote",
+        """
+            {
+                "$ref": "#MyRootSchema",
+                "$defs": {
+                    "my-root-schema": {
+                        "$anchor": "MyRootSchema",
+                        "title": "my title"
+                    }
+                }
+            }
+        """)))()
+        val actual = root.accept(TraversingVisitor<String>("$ref", "$ref", "title"))
+        assertThat(actual).isEqualTo("my title")
+    }
+    
+    @Test
+    fun `json pointer lookup in remote compound schema`() {
+        
+    }
+    
+    @Test
+    fun `json pointer in remote, remote root $id mismatches source URI`() {
+        
     }
 }

@@ -362,6 +362,23 @@ class ReferenceResolutionTest {
     
     @Test
     fun `json pointer in remote, remote root $id mismatches source URI`() {
-        
+        val root = createSchemaLoaderForString("""
+            {
+                "$ref": "https://remote"
+            }
+        """, mapOf(Pair("https://remote", """
+            {
+                "$id": "https://mismatching-remote",
+                "$ref": "https://mismatching-remote#MySchema"
+                "$defs": {
+                    "MySchema": {
+                        "$anchor": "MySchema",
+                        "title": "my title"
+                    }
+                }
+            }
+        """)))()
+        val actual = root.accept(TraversingVisitor<String>("$ref", "$ref", "title"))!!
+        assertThat(actual).isEqualTo("my title")
     }
 }

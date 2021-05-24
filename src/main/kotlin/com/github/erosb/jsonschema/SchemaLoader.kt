@@ -104,12 +104,12 @@ class SchemaLoader(
         when (json) {
             is IJsonObject<*, *> -> {
                 withBaseUriAdjustment(json) {
-                    when (val id = json.get("\$id")) {
+                    when (val id = json["\$id"]) {
                         is IJsonString -> {
                             loadingState.registerRawSchema(loadingState.baseURI.resolve(id.value).toString(), json);
                         }
                     }
-                    when (val anchor = json.get("\$anchor")) {
+                    when (val anchor = json["\$anchor"]) {
                         is IJsonString -> {
                             val resolvedAnchor = loadingState.baseURI.resolve("#" + anchor.value)
                             loadingState.registerRawSchema(resolvedAnchor.toString(), json)
@@ -126,11 +126,9 @@ class SchemaLoader(
     private fun adjustBaseURI(json: IJsonValue) {
         when (json) {
             is IJsonObject<*, *> -> {
-                when (val id: IJsonValue? = json["\$id"]) {
+                when (val id = json["\$id"]) {
                     is IJsonString -> {
-                        id.let {
-                            loadingState.baseURI = loadingState.baseURI.resolve(it.value)
-                        }
+                        loadingState.baseURI = loadingState.baseURI.resolve(id.value)
                     }
                 }
             }
@@ -159,15 +157,14 @@ class SchemaLoader(
                 anchor.underLoading = true;
 
                 val json = anchor.json!!
-                val baseURIofRoot: String = json.location.documentSource?.toString() ?: when (json) {
-                    is IJsonObject<*, *> -> {
-                        json["\$id"]?.requireString()?.value ?: DEFAULT_BASE_URI
-                    }
-                    else -> {
-                        DEFAULT_BASE_URI
-                    }
+                
+                val idKeywordValue: String? = when (json) {
+                    is IJsonObject<*,*> -> json["\$id"]?.requireString()?.value
+                    else -> null
                 }
-
+                val baseURIofRoot: String = idKeywordValue
+                    ?: json.location.documentSource?.toString()
+                    ?: DEFAULT_BASE_URI
 
                 val origBaseURI = loadingState.baseURI
                 loadingState.baseURI = URI(baseURIofRoot)

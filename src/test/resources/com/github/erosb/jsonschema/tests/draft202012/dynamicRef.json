@@ -230,7 +230,7 @@
                         "items": {
                             "$comment": "This is only needed to give the reference somewhere to resolve to when it behaves like $ref",
                             "$anchor": "items",
-                            "$dynamicAnchor": "foo"
+                            "$dynamicAnchor": "fooí"
                         }
                     }
                 }

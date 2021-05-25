@@ -303,17 +303,20 @@ class ReferenceResolutionTest {
                 )
             )
         )()
-        
+
         val actual = root.accept(TraversingVisitor<String>("$ref", "$ref", "title"))
         assertThat(actual).isEqualTo("my title")
     }
-    
+
     @Test
     fun `anchor lookup in remote schema`() {
-        val root = createSchemaLoaderForString("""
+        val root = createSchemaLoaderForString(
+            """
             {"$ref": "http://remote"}
-        """, mapOf(Pair("http://remote",
-        """
+        """, mapOf(
+                Pair(
+                    "http://remote",
+                    """
             {
                 "$ref": "#MyRootSchema",
                 "$defs": {
@@ -323,17 +326,23 @@ class ReferenceResolutionTest {
                     }
                 }
             }
-        """)))()
+        """
+                )
+            )
+        )()
         val actual = root.accept(TraversingVisitor<String>("$ref", "$ref", "title"))
         assertThat(actual).isEqualTo("my title")
     }
-    
+
     @Test
     fun `json pointer lookup in remote compound schema`() {
-        val root = createSchemaLoaderForString("""
-            {"$ref": "https://remote"}
-        """, mapOf(Pair("https://remote",
+        val root = createSchemaLoaderForString(
             """
+            {"$ref": "https://remote"}
+        """, mapOf(
+                Pair(
+                    "https://remote",
+                    """
             {
                 "$id": "https://remote#",
                 "$ref": "https://compound-root/my-domain.json#/$defs/MySchema",
@@ -355,18 +364,24 @@ class ReferenceResolutionTest {
                     }
                 }
             }
-        """)))()
+        """
+                )
+            )
+        )()
         val actual = root.accept(TraversingVisitor<String>("$ref", "$ref", "title"))
         assertThat(actual).isEqualTo("my title")
     }
-    
+
     @Test
     fun `json pointer in remote, remote root $id mismatches source URI`() {
-        val root = createSchemaLoaderForString("""
+        val root = createSchemaLoaderForString(
+            """
             {
                 "$ref": "https://remote"
             }
-        """, mapOf(Pair("https://remote", """
+        """, mapOf(
+                Pair(
+                    "https://remote", """
             {
                 "$id": "https://mismatching-remote",
                 "$ref": "https://mismatching-remote#MySchema"
@@ -377,7 +392,42 @@ class ReferenceResolutionTest {
                     }
                 }
             }
-        """)))()
+        """
+                )
+            )
+        )()
+        val actual = root.accept(TraversingVisitor<String>("$ref", "$ref", "title"))!!
+        assertThat(actual).isEqualTo("my title")
+    }
+
+    @Test
+    fun `json pointer base URI change in a child of containingRoot`() {
+        val root = createSchemaLoaderForString(
+            """
+            {"$ref": "https://remote#/parent/child/MySchema"}
+        """, mapOf(
+                Pair(
+                    "https://remote", """
+            {
+                "parent": {
+                    "$id": "/my-domain.json"
+                    "child": {
+                        "MySchema": {
+                            "$ref": "#other"
+                        },
+                        "other": {
+                            "$anchor": "other",
+                            "title": "my title"
+                        }
+                    }
+                },
+                "other": {
+                    "$anchor": "other",
+                    "title": "wrong result"
+                }
+            }
+        """
+                )))()
         val actual = root.accept(TraversingVisitor<String>("$ref", "$ref", "title"))!!
         assertThat(actual).isEqualTo("my title")
     }

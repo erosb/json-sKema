@@ -21,6 +21,7 @@ val DEFAULT_BASE_URI: String = "mem://input";
 
 internal data class Anchor(
     var json: IJsonValue? = null,
+    var lexicalContextBaseURI: URI? = null,
     var schema: Schema? = null,
     var underLoading: Boolean = false,
     val referenceSchemas: MutableList<ReferenceSchema> = mutableListOf()
@@ -152,23 +153,17 @@ class SchemaLoader(
                 if (unresolved === null) {
                     break
                 }
-                unresolved.json = resolve(unresolved.referenceSchemas[0])
+                val pair = resolve(unresolved.referenceSchemas[0])
+                unresolved.json = pair.first
+                unresolved.lexicalContextBaseURI = pair.second
             } else {
                 anchor.underLoading = true;
 
-                val json = anchor.json!!
-                
-                val idKeywordValue: String? = when (json) {
-                    is IJsonObject<*,*> -> json["\$id"]?.requireString()?.value
-                    else -> null
-                }
-                val baseURIofRoot: String = idKeywordValue
-                    ?: json.location.documentSource?.toString()
-                    ?: DEFAULT_BASE_URI
-
                 val origBaseURI = loadingState.baseURI
-                loadingState.baseURI = URI(baseURIofRoot)
 
+                anchor.lexicalContextBaseURI?.let {
+                    loadingState.baseURI = it
+                }
                 val schema = doLoadSchema(anchor.json!!)
                 loadingState.baseURI = origBaseURI;
 
@@ -179,7 +174,7 @@ class SchemaLoader(
         return finalRef.referredSchema!!
     }
 
-    private fun resolve(referenceSchema: ReferenceSchema): IJsonValue {
+    private fun resolve(referenceSchema: ReferenceSchema): Pair<IJsonValue, URI> {
         val ref = referenceSchema.ref
         val uri = parseUri(ref)
         val continingRoot: IJsonValue?
@@ -198,16 +193,16 @@ class SchemaLoader(
             loadingState.baseURI = origBaseURI;
         }
         if (uri.fragment.isEmpty() || uri.fragment == "#") {
-            return continingRoot;
+            return Pair(continingRoot, uri.toBeQueried);
         }
         val byURIWithAnchor = loadingState.anchorByURI(ref)
         if (byURIWithAnchor?.json !== null) {
-            return byURIWithAnchor.json!!
+            return Pair(byURIWithAnchor.json!!, URI(ref))
         }
         return evaluateJsonPointer(continingRoot, uri.fragment)
     }
 
-    private fun evaluateJsonPointer(root: IJsonValue, pointer: String): IJsonValue {
+    private fun evaluateJsonPointer(root: IJsonValue, pointer: String): Pair<IJsonValue, URI> {
         val segments = LinkedList(pointer.split("/"))
         if ("#" != segments.poll()) {
             throw Error("invalid json pointer: $pointer")
@@ -216,26 +211,40 @@ class SchemaLoader(
             .replace("~1", "/")
             .replace("~0", "~")
 
-        fun lookupNext(root: IJsonValue, segments: LinkedList<String>): IJsonValue {
-            if (segments.isEmpty()) {
-                return root
-            }
-            val segment = unescape(segments.poll())
-            when (root) {
-                is IJsonObject<*, *> -> {
-                    val child = root[segment]
-                    if (child === null) {
-                        throw Error("json pointer evaluation error: could not resolve property $segment in $root")
-                    }
-                    return lookupNext(child, segments)
+        fun lookupNext(root: IJsonValue, segments: LinkedList<String>): Pair<IJsonValue, URI> {
+            return withBaseUriAdjustment(root) {
+                if (segments.isEmpty()) {
+                    return@withBaseUriAdjustment Pair(root, loadingState.baseURI)
                 }
-                else -> {
-                    throw Error("json pointer evaluation error: could not resolve property $segment")
+                val segment = unescape(segments.poll())
+                when (root) {
+                    is IJsonObject<*, *> -> {
+                        val child = root[segment]
+                        if (child === null) {
+                            throw Error("json pointer evaluation error: could not resolve property $segment in $root")
+                        }
+                        return@withBaseUriAdjustment lookupNext(child, segments)
+                    }
+                    else -> {
+                        throw Error("json pointer evaluation error: could not resolve property $segment")
+                    }
                 }
             }
         }
 
+        val idKeywordValue: String? = when (root) {
+            is IJsonObject<*, *> -> root["\$id"]?.requireString()?.value
+            else -> null
+        }
+        val baseURIofRoot: String = idKeywordValue
+            ?: root.location.documentSource?.toString()
+            ?: DEFAULT_BASE_URI
+
+        val origBaseURI = loadingState.baseURI
+        loadingState.baseURI = URI(baseURIofRoot)
+
         val retval = lookupNext(root, segments)
+        loadingState.baseURI = origBaseURI;
         return retval
     }
 

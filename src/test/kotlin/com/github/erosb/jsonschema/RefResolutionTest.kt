@@ -13,7 +13,7 @@ fun createSchemaLoaderForString(schemaJson: String, remoteDocuments: Map<String,
     return SchemaLoader(schemaJson = JsonParser(schemaJson)(), config = SchemaLoaderConfig(client))
 }
 
-class ReferenceResolutionTest {
+class RefResolutionTest {
 
     @Test
     fun `$anchor ref intra-document`() {

@@ -13,6 +13,8 @@ val id = "\$id"
 val ref = "\$ref"
 val defs = "\$defs"
 val anchor = "\$anchor"
+val dynamicRef = "\$dynamicRef"
+val dynamicAnchor = "\$dynamicAnchor"
 
 class TestingSchemaClient : SchemaClient {
 

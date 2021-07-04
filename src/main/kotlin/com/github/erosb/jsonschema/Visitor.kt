@@ -10,6 +10,7 @@ interface Visitor<P> {
     fun visitMaxLengthSchema(schema: MaxLengthSchema): P? = visitChildren(schema)
     fun visitAllOfSchema(schema: AllOfSchema): P? = visitChildren(schema)
     fun visitReferenceSchema(schema: ReferenceSchema): P? = visitChildren(schema)
+    fun visitDynamicRefSchema(schema: DynamicRefSchema): P? = visitChildren(schema)
     fun visitAdditionalPropertiesSchema(schema: AdditionalPropertiesSchema): P? = visitChildren(schema)
     fun identity(): P? = null
     fun accumulate(previous: P?, current: P?): P? = current ?: previous
@@ -47,8 +48,16 @@ internal class TraversingVisitor<P>(vararg keys: String) : Visitor<P> {
                 return schema.title!!.value as P
             }
             throw SchemaNotFoundException("cannot traverse keys of string 'title'", "")
+        } else if (remainingKeys[0] == "properties") {
+            remainingKeys.removeAt(0)
+            val propName = remainingKeys.removeAt(0)
+            return schema.propertySchemas[propName]?.accept(this)
         }
         return super.visitCompositeSchema(schema)
+    }
+
+    override fun visitDynamicRefSchema(schema: DynamicRefSchema): P? = consume(schema, "\$dynamicRef") {
+        schema.referredSchema?.accept(this)
     }
 
     override fun visitAdditionalPropertiesSchema(schema: AdditionalPropertiesSchema): P? = consume(schema, "additionalProperties")

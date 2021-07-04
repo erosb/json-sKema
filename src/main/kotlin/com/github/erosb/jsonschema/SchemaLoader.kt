@@ -48,7 +48,8 @@ internal data class Anchor(
 internal data class LoadingState(
     val documentRoot: IJsonValue,
     var baseURI: URI = URI(DEFAULT_BASE_URI),
-    private val anchors: MutableMap<String, Anchor> = mutableMapOf()
+    private val anchors: MutableMap<String, Anchor> = mutableMapOf(),
+    private val dynamicAnchors: MutableMap<String, IJsonObject<*, *>> = mutableMapOf()  
 ) {
 
     fun registerRawSchema(id: String, json: IJsonValue): Anchor {
@@ -70,6 +71,10 @@ internal data class LoadingState(
 
     private fun removeEmptyFragment(uri: String): String {
         return if (uri.endsWith("#")) uri.substring(0, uri.length - 1) else uri
+    }
+
+    fun registerDynamicAnchor(anchorName: String, json: IJsonObject<*, *>) {
+        dynamicAnchors[anchorName] = json
     }
 
 }
@@ -140,6 +145,33 @@ class SchemaLoader(
         adjustBaseURI(schemaJson)
         lookupAnchors(schemaJson, loadingState.baseURI)
         return loadSchema()
+    }
+    
+    private fun attemptRefResolution(): Boolean {
+        val anchor: Anchor? = loadingState.nextLoadableAnchor()
+        if (anchor === null) {
+            val unresolved: Anchor? = loadingState.nextUnresolvedAnchor()
+            if (unresolved === null) {
+                return false;
+            }
+            val pair = resolve(unresolved.referenceSchemas[0])
+            unresolved.json = pair.first
+            unresolved.lexicalContextBaseURI = pair.second
+        } else {
+            anchor.underLoading = true;
+
+            val origBaseURI = loadingState.baseURI
+
+            anchor.lexicalContextBaseURI?.let {
+                loadingState.baseURI = it
+            }
+            val schema = doLoadSchema(anchor.json!!)
+            loadingState.baseURI = origBaseURI;
+
+            anchor.resolveWith(schema);
+            anchor.underLoading = false;
+        }
+        return true;
     }
 
     private fun loadSchema(): Schema {
@@ -270,6 +302,7 @@ class SchemaLoader(
         var deprecated: IJsonBoolean? = null
         var default: IJsonValue? = null
         adjustBaseURI(schemaJson)
+        var propertySchemas: Map<String, Schema> = emptyMap()
         return withBaseUriAdjustment(schemaJson) {
             schemaJson.properties.forEach { (name, value) ->
                 var subschema: Schema? = null
@@ -278,7 +311,9 @@ class SchemaLoader(
                     "maxLength" -> subschema = MaxLengthSchema(value.requireInt(), name.location)
                     "allOf" -> subschema = createAllOfSubschema(name.location, value.requireArray())
                     "additionalProperties" -> subschema = AdditionalPropertiesSchema(loadChild(value), name.location)
+//                    "properties" -> propertySchemas = loadPropertySchemas(value.requireObject())
                     "\$ref" -> subschema = createReferenceSchema(name.location, value.requireString())
+//                    "\$dynamicRef" -> subschema = createDynamicRefSchema(name.location, value.requireString())
                     "title" -> title = value.requireString()
                     "description" -> description = value.requireString()
                     "readOnly" -> readOnly = value.requireBoolean()
@@ -298,9 +333,22 @@ class SchemaLoader(
                 readOnly = readOnly,
                 writeOnly = writeOnly,
                 deprecated = deprecated,
-                default = default
+                default = default,
+                propertySchemas = propertySchemas
             )
         }
+    }
+
+    private fun createDynamicRefSchema(location: SourceLocation, dynamicRef: IJsonString): Schema? {
+        return DynamicRefSchema(null, dynamicRef.value, location);
+    }
+
+    private fun loadPropertySchemas(schemasMap: IJsonObject<*, *>): Map<String, Schema> {
+        val rval = mutableMapOf<String, Schema>()
+        schemasMap.properties.forEach { (name, value) ->
+            rval[name.value] = loadChild(value)
+        }
+        return rval.toMap()
     }
 
     private fun createReferenceSchema(location: SourceLocation, ref: IJsonString): ReferenceSchema {

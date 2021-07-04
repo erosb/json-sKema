@@ -10,6 +10,8 @@ import java.util.stream.Collectors.toList
 
 class SchemaLoaderConfig(val schemaClient: SchemaClient)
 
+class SchemaLoadingException(msg: String, cause: Throwable): RuntimeException(msg, cause)
+
 internal fun createDefaultConfig() = SchemaLoaderConfig(
     schemaClient = MemoizingSchemaClient(DefaultSchemaClient())
 )
@@ -123,7 +125,7 @@ class SchemaLoader(
                     }
                     json.properties
                         .filter { (key, _) -> key.value != "enum" && key.value != "const" }
-                        .forEach { (key, value) -> lookupAnchors(value, baseURI) }
+                        .forEach { (_, value) -> lookupAnchors(value, baseURI) }
                 }
             }
         }
@@ -216,7 +218,11 @@ class SchemaLoader(
         } else {
             val reader = BufferedReader(InputStreamReader(config.schemaClient.get(uri.toBeQueried)))
             val string = reader.readText()
-            continingRoot = JsonParser(string, uri.toBeQueried)()
+            try {
+                continingRoot = JsonParser(string, uri.toBeQueried)()
+            } catch (ex: JsonParseException) {
+                throw SchemaLoadingException("failed to parse json content returned from ${uri.toBeQueried}", ex)
+            }
             loadingState.registerRawSchema(uri.toBeQueried.toString(), continingRoot)
             val origBaseURI = loadingState.baseURI;
             loadingState.baseURI = URI(ref)
@@ -311,7 +317,7 @@ class SchemaLoader(
                     "maxLength" -> subschema = MaxLengthSchema(value.requireInt(), name.location)
                     "allOf" -> subschema = createAllOfSubschema(name.location, value.requireArray())
                     "additionalProperties" -> subschema = AdditionalPropertiesSchema(loadChild(value), name.location)
-//                    "properties" -> propertySchemas = loadPropertySchemas(value.requireObject())
+                    "properties" -> propertySchemas = loadPropertySchemas(value.requireObject())
                     "\$ref" -> subschema = createReferenceSchema(name.location, value.requireString())
 //                    "\$dynamicRef" -> subschema = createDynamicRefSchema(name.location, value.requireString())
                     "title" -> title = value.requireString()

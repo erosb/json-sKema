@@ -114,7 +114,7 @@ class SchemaLoader(
                 withBaseUriAdjustment(json) {
                     when (val id = json["\$id"]) {
                         is IJsonString -> {
-                            loadingState.registerRawSchema(loadingState.baseURI.resolve(id.value).toString(), json);
+                            loadingState.registerRawSchema(loadingState.baseURI.toString(), json);
                         }
                     }
                     when (val anchor = json["\$anchor"]) {
@@ -147,33 +147,6 @@ class SchemaLoader(
         adjustBaseURI(schemaJson)
         lookupAnchors(schemaJson, loadingState.baseURI)
         return loadSchema()
-    }
-    
-    private fun attemptRefResolution(): Boolean {
-        val anchor: Anchor? = loadingState.nextLoadableAnchor()
-        if (anchor === null) {
-            val unresolved: Anchor? = loadingState.nextUnresolvedAnchor()
-            if (unresolved === null) {
-                return false;
-            }
-            val pair = resolve(unresolved.referenceSchemas[0])
-            unresolved.json = pair.first
-            unresolved.lexicalContextBaseURI = pair.second
-        } else {
-            anchor.underLoading = true;
-
-            val origBaseURI = loadingState.baseURI
-
-            anchor.lexicalContextBaseURI?.let {
-                loadingState.baseURI = it
-            }
-            val schema = doLoadSchema(anchor.json!!)
-            loadingState.baseURI = origBaseURI;
-
-            anchor.resolveWith(schema);
-            anchor.underLoading = false;
-        }
-        return true;
     }
 
     private fun loadSchema(): Schema {
@@ -224,11 +197,11 @@ class SchemaLoader(
                 throw SchemaLoadingException("failed to parse json content returned from ${uri.toBeQueried}", ex)
             }
             loadingState.registerRawSchema(uri.toBeQueried.toString(), continingRoot)
-            val origBaseURI = loadingState.baseURI;
-            loadingState.baseURI = URI(ref)
-            adjustBaseURI(continingRoot)
-            lookupAnchors(continingRoot, uri.toBeQueried)
-            loadingState.baseURI = origBaseURI;
+
+            runWithChangedBaseURI(URI(ref)) {
+                adjustBaseURI(continingRoot)
+                lookupAnchors(continingRoot, uri.toBeQueried)
+            }
         }
         if (uri.fragment.isEmpty() || uri.fragment == "#") {
             return Pair(continingRoot, uri.toBeQueried);
@@ -278,12 +251,19 @@ class SchemaLoader(
             ?: root.location.documentSource?.toString()
             ?: DEFAULT_BASE_URI
 
-        val origBaseURI = loadingState.baseURI
-        loadingState.baseURI = URI(baseURIofRoot)
+        return runWithChangedBaseURI(URI(baseURIofRoot)) {
+            lookupNext(root, segments)
+        }
+    }
 
-        val retval = lookupNext(root, segments)
-        loadingState.baseURI = origBaseURI;
-        return retval
+    private fun <T> runWithChangedBaseURI(changedBaseURI: URI, task: () -> T): T {
+        val origBaseURI = loadingState.baseURI;
+        loadingState.baseURI = changedBaseURI;
+        try {
+            return task()
+        } finally {
+            loadingState.baseURI = origBaseURI
+        }
     }
 
     private fun doLoadSchema(schemaJson: IJsonValue): Schema {

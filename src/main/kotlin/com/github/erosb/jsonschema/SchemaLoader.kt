@@ -79,6 +79,10 @@ internal data class LoadingState(
         dynamicAnchors[anchorName] = json
     }
 
+    fun addDynamicRef(ref: DynamicRefSchema) {
+        TODO("Not yet implemented")
+    }
+
 }
 
 class SchemaLoader(
@@ -158,7 +162,11 @@ class SchemaLoader(
             if (anchor === null) {
                 val unresolved: Anchor? = loadingState.nextUnresolvedAnchor()
                 if (unresolved === null) {
-                    break
+                    if (!tryResolvingDynamicRef()) {
+                        break
+                    } else {
+                        continue
+                    }
                 }
                 val pair = resolve(unresolved.referenceSchemas[0])
                 unresolved.json = pair.first
@@ -179,6 +187,10 @@ class SchemaLoader(
             }
         } while (true)
         return finalRef.referredSchema!!
+    }
+
+    private fun tryResolvingDynamicRef(): Boolean {
+        return false
     }
 
     private fun resolve(referenceSchema: ReferenceSchema): Pair<IJsonValue, URI> {
@@ -299,7 +311,7 @@ class SchemaLoader(
                     "additionalProperties" -> subschema = AdditionalPropertiesSchema(loadChild(value), name.location)
                     "properties" -> propertySchemas = loadPropertySchemas(value.requireObject())
                     "\$ref" -> subschema = createReferenceSchema(name.location, value.requireString())
-//                    "\$dynamicRef" -> subschema = createDynamicRefSchema(name.location, value.requireString())
+                    "\$dynamicRef" -> subschema = createDynamicRefSchema(name.location, value.requireString())
                     "title" -> title = value.requireString()
                     "description" -> description = value.requireString()
                     "readOnly" -> readOnly = value.requireBoolean()
@@ -325,8 +337,10 @@ class SchemaLoader(
         }
     }
 
-    private fun createDynamicRefSchema(location: SourceLocation, dynamicRef: IJsonString): Schema? {
-        return DynamicRefSchema(null, dynamicRef.value, location);
+    private fun createDynamicRefSchema(location: SourceLocation, dynamicRef: IJsonString): DynamicRefSchema {
+        val ref = DynamicRefSchema(null, dynamicRef.value, location)
+        loadingState.addDynamicRef(ref)
+        return ref;
     }
 
     private fun loadPropertySchemas(schemasMap: IJsonObject<*, *>): Map<String, Schema> {

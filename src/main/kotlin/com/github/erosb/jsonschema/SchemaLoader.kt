@@ -50,8 +50,7 @@ internal data class Anchor(
 internal data class LoadingState(
     val documentRoot: IJsonValue,
     var baseURI: URI = URI(DEFAULT_BASE_URI),
-    private val anchors: MutableMap<String, Anchor> = mutableMapOf(),
-    private val dynamicAnchors: MutableMap<String, IJsonObject<*, *>> = mutableMapOf()  
+    private val anchors: MutableMap<String, Anchor> = mutableMapOf()
 ) {
 
     fun registerRawSchema(id: String, json: IJsonValue): Anchor {
@@ -74,11 +73,6 @@ internal data class LoadingState(
     private fun removeEmptyFragment(uri: String): String {
         return if (uri.endsWith("#")) uri.substring(0, uri.length - 1) else uri
     }
-
-    fun registerDynamicAnchor(anchorName: String, json: IJsonObject<*, *>) {
-        dynamicAnchors[anchorName] = json
-    }
-
 }
 
 class SchemaLoader(

@@ -1,5 +1,6 @@
 package com.github.erosb.jsonschema
 
+import java.lang.IllegalArgumentException
 import java.net.URI
 import java.util.stream.Collectors.joining
 
@@ -69,6 +70,15 @@ open class SourceLocation(lineNumber: Int,
 
     override fun toString(): String {
         return "line ${lineNumber}, character ${position}, pointer: ${pointer}"
+    }
+
+    internal fun trimPointerSegments(leadingSegmentsToBeRemoved: Int): SourceLocation {
+        if (leadingSegmentsToBeRemoved > pointer.segments.size) {
+            throw IllegalArgumentException("can not remove $leadingSegmentsToBeRemoved segment from pointer $pointer")
+        }
+        return SourceLocation(
+            lineNumber, position, JsonPointer(pointer.segments.subList(leadingSegmentsToBeRemoved, pointer.segments.size)), documentSource
+        )
     }
 }
 

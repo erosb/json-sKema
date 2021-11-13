@@ -103,7 +103,28 @@ class SchemaLoader(
 
     operator fun invoke(): Schema = loadRootSchema();
 
+    private fun hasMapLikeSemantics(keyword: Keyword): Boolean {
+        return keyword == Keyword.PROPERTIES || keyword == Keyword.DEFS
+    }
+
     private fun lookupAnchors(json: IJsonValue, baseURI: URI) {
+        // working around unknown keyword problems
+        val locationSegments = json.location.pointer.segments
+        if (locationSegments.isNotEmpty()) {
+            val lastSegment = locationSegments.last()
+            if (!Keyword.values().any { lastSegment == it.value }) { // last segment is unknown keyword
+                if (locationSegments.size == 1) {
+                    println("return 1 - $lastSegment")
+                    return
+                }
+                val beforeLastSegment = locationSegments[locationSegments.size - 2]
+                val beforeLastKeyword = Keyword.values().find { it.value == beforeLastSegment }
+                if (beforeLastKeyword == null || !hasMapLikeSemantics(beforeLastKeyword)) {
+                    println("return 2 - $beforeLastSegment/$lastSegment")
+                    return
+                }
+            }
+        }
         when (json) {
             is IJsonObject<*, *> -> {
                 withBaseUriAdjustment(json) {
@@ -119,7 +140,10 @@ class SchemaLoader(
                         }
                     }
                     json.properties
-                        .filter { (key, _) -> key.value != Keyword.ENUM.value && key.value != Keyword.CONST.value }
+                        .filter { (key, _) ->
+                            key.value != Keyword.ENUM.value && key.value != Keyword.CONST.value
+                            //        && Keyword.values().any { it.value == key.value }
+                        }
                         .forEach { (_, value) -> lookupAnchors(value, baseURI) }
                 }
             }
@@ -297,7 +321,8 @@ class SchemaLoader(
                     Keyword.PROPERTIES.value -> propertySchemas = loadPropertySchemas(value.requireObject())
                     Keyword.REF.value -> subschema = createReferenceSchema(name.location, value.requireString())
                     Keyword.DYNAMIC_REF.value -> dynamicRef = loadingState.baseURI.resolve(value.requireString().value)
-                    Keyword.DYNAMIC_ANCHOR.value -> dynamicAnchor = loadingState.baseURI.resolve("#" + value.requireString().value)
+                    Keyword.DYNAMIC_ANCHOR.value -> dynamicAnchor =
+                        loadingState.baseURI.resolve("#" + value.requireString().value)
                     Keyword.TITLE.value -> title = value.requireString()
                     Keyword.DESCRIPTION.value -> description = value.requireString()
                     Keyword.READ_ONLY.value -> readOnly = value.requireBoolean()

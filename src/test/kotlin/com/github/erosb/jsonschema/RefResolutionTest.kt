@@ -436,4 +436,22 @@ class RefResolutionTest {
         val actual = root.accept(TraversingVisitor<String>("$ref", "$ref", "title"))!!
         assertThat(actual).isEqualTo("my title")
     }
+
+    @Test
+    fun `$dynamicAnchor can be referred by $ref`() {
+        val root = createSchemaLoaderForString(
+            """
+            {
+                "$ref": "#dyn-ref"
+                "$defs": {
+                    "DynRefSchema": {
+                        "$dynamicAnchor": "dyn-ref",
+                        "title": "my title"
+                    }
+                }
+            }
+            """)()
+        val actual = root.accept(TraversingVisitor<String>("$ref", "title"))!!
+        assertThat(actual).isEqualTo("my title")
+    }
 }

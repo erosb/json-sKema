@@ -104,21 +104,7 @@ class SchemaLoader(
     operator fun invoke(): Schema = loadRootSchema();
 
     private fun lookupAnchors(json: IJsonValue, baseURI: URI) {
-        // working around unknown keyword problems
-        val locationSegments = json.location.pointer.segments
-        if (locationSegments.isNotEmpty()) {
-            val lastSegment = locationSegments.last()
-            if (!Keyword.values().any { lastSegment == it.value }) { // last segment is unknown keyword
-                if (locationSegments.size == 1) {
-                    return
-                }
-                val beforeLastSegment = locationSegments[locationSegments.size - 2]
-                val beforeLastKeyword = Keyword.values().find { it.value == beforeLastSegment }
-                if (beforeLastKeyword == null || !beforeLastKeyword.hasMapLikeSemantics) {
-                    return
-                }
-            }
-        }
+        if (shouldProceedWithAnchorLookup(json)) return
         when (json) {
             is IJsonObject<*, *> -> {
                 withBaseUriAdjustment(json) {
@@ -133,6 +119,12 @@ class SchemaLoader(
                             loadingState.registerRawSchema(resolvedAnchor.toString(), json)
                         }
                     }
+                    when (val anchor = json[Keyword.DYNAMIC_ANCHOR.value]) {
+                        is IJsonString -> {
+                            val resolvedAnchor = loadingState.baseURI.resolve("#" + anchor.value)
+                            loadingState.registerRawSchema(resolvedAnchor.toString(), json)
+                        }
+                    }
                     json.properties
                         .filter { (key, _) ->
                             key.value != Keyword.ENUM.value && key.value != Keyword.CONST.value
@@ -142,6 +134,27 @@ class SchemaLoader(
                 }
             }
         }
+    }
+
+    /**
+     * lookupAnchors() should not proceed with the recursion into values of unknown keywords
+     */
+    private fun shouldProceedWithAnchorLookup(json: IJsonValue): Boolean {
+        val locationSegments = json.location.pointer.segments
+        if (locationSegments.isNotEmpty()) {
+            val lastSegment = locationSegments.last()
+            if (!Keyword.values().any { lastSegment == it.value }) { // last segment is unknown keyword
+                if (locationSegments.size == 1) {
+                    return true
+                }
+                val beforeLastSegment = locationSegments[locationSegments.size - 2]
+                val beforeLastKeyword = Keyword.values().find { it.value == beforeLastSegment }
+                if (beforeLastKeyword == null || !beforeLastKeyword.hasMapLikeSemantics) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 
     private fun adjustBaseURI(json: IJsonValue) {

@@ -81,11 +81,6 @@ class DynamicRefResolutionTest {
                         "type": "object",
                         "$dynamicAnchor": "anchorName",
                         "$ref": "#/$defs/Referred"
-                    },
-                    "b": {
-                        "title": "properties/b"
-                        "$dynamicAnchor": "anchorName",
-                        "$ref": "#/$defs/Referred"
                     }
                 }
                 "$defs": {

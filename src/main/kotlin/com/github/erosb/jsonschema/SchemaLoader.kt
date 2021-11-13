@@ -96,6 +96,7 @@ class SchemaLoader(
         } finally {
             loadingState.baseURI = origBaseUri
         }
+        val k: Keyword? = null;
     }
 
     private var loadingState: LoadingState = LoadingState(schemaJson)
@@ -106,19 +107,19 @@ class SchemaLoader(
         when (json) {
             is IJsonObject<*, *> -> {
                 withBaseUriAdjustment(json) {
-                    when (val id = json["\$id"]) {
+                    when (val id = json[Keyword.ID.value]) {
                         is IJsonString -> {
                             loadingState.registerRawSchema(loadingState.baseURI.toString(), json);
                         }
                     }
-                    when (val anchor = json["\$anchor"]) {
+                    when (val anchor = json[Keyword.ANCHOR.value]) {
                         is IJsonString -> {
                             val resolvedAnchor = loadingState.baseURI.resolve("#" + anchor.value)
                             loadingState.registerRawSchema(resolvedAnchor.toString(), json)
                         }
                     }
                     json.properties
-                        .filter { (key, _) -> key.value != "enum" && key.value != "const" }
+                        .filter { (key, _) -> key.value != Keyword.ENUM.value && key.value != Keyword.CONST.value }
                         .forEach { (_, value) -> lookupAnchors(value, baseURI) }
                 }
             }
@@ -128,7 +129,7 @@ class SchemaLoader(
     private fun adjustBaseURI(json: IJsonValue) {
         when (json) {
             is IJsonObject<*, *> -> {
-                when (val id = json["\$id"]) {
+                when (val id = json[Keyword.ID.value]) {
                     is IJsonString -> {
                         loadingState.baseURI = loadingState.baseURI.resolve(id.value)
                     }
@@ -238,7 +239,7 @@ class SchemaLoader(
         }
 
         val idKeywordValue: String? = when (root) {
-            is IJsonObject<*, *> -> root["\$id"]?.requireString()?.value
+            is IJsonObject<*, *> -> root[Keyword.ID.value]?.requireString()?.value
             else -> null
         }
         val baseURIofRoot: String = idKeywordValue
@@ -289,20 +290,20 @@ class SchemaLoader(
             schemaJson.properties.forEach { (name, value) ->
                 var subschema: Schema? = null
                 when (name.value) {
-                    "minLength" -> subschema = MinLengthSchema(value.requireInt(), name.location)
-                    "maxLength" -> subschema = MaxLengthSchema(value.requireInt(), name.location)
-                    "allOf" -> subschema = createAllOfSubschema(name.location, value.requireArray())
-                    "additionalProperties" -> subschema = AdditionalPropertiesSchema(loadChild(value), name.location)
-                    "properties" -> propertySchemas = loadPropertySchemas(value.requireObject())
-                    "\$ref" -> subschema = createReferenceSchema(name.location, value.requireString())
-                    "\$dynamicRef" -> dynamicRef = loadingState.baseURI.resolve(value.requireString().value)
-                    "\$dynamicAnchor" -> dynamicAnchor = loadingState.baseURI.resolve("#" + value.requireString().value)
-                    "title" -> title = value.requireString()
-                    "description" -> description = value.requireString()
-                    "readOnly" -> readOnly = value.requireBoolean()
-                    "writeOnly" -> writeOnly = value.requireBoolean()
-                    "deprecated" -> deprecated = value.requireBoolean()
-                    "default" -> default = value
+                    Keyword.MIN_LENGTH.value -> subschema = MinLengthSchema(value.requireInt(), name.location)
+                    Keyword.MAX_LENGTH.value -> subschema = MaxLengthSchema(value.requireInt(), name.location)
+                    Keyword.ALL_OF.value -> subschema = createAllOfSubschema(name.location, value.requireArray())
+                    Keyword.ADDITIONAL_PROPERTIES.value -> subschema = AdditionalPropertiesSchema(loadChild(value), name.location)
+                    Keyword.PROPERTIES.value -> propertySchemas = loadPropertySchemas(value.requireObject())
+                    Keyword.REF.value -> subschema = createReferenceSchema(name.location, value.requireString())
+                    Keyword.DYNAMIC_REF.value -> dynamicRef = loadingState.baseURI.resolve(value.requireString().value)
+                    Keyword.DYNAMIC_ANCHOR.value -> dynamicAnchor = loadingState.baseURI.resolve("#" + value.requireString().value)
+                    Keyword.TITLE.value -> title = value.requireString()
+                    Keyword.DESCRIPTION.value -> description = value.requireString()
+                    Keyword.READ_ONLY.value -> readOnly = value.requireBoolean()
+                    Keyword.WRITE_ONLY.value -> writeOnly = value.requireBoolean()
+                    Keyword.DEPRECATED.value -> deprecated = value.requireBoolean()
+                    Keyword.DEFAULT.value -> default = value
 //                else -> TODO("unhandled property ${name.value}")
                 }
                 if (subschema != null) subschemas.add(subschema)

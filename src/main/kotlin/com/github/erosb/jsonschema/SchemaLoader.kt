@@ -103,10 +103,6 @@ class SchemaLoader(
 
     operator fun invoke(): Schema = loadRootSchema();
 
-    private fun hasMapLikeSemantics(keyword: Keyword): Boolean {
-        return keyword == Keyword.PROPERTIES || keyword == Keyword.DEFS
-    }
-
     private fun lookupAnchors(json: IJsonValue, baseURI: URI) {
         // working around unknown keyword problems
         val locationSegments = json.location.pointer.segments
@@ -118,7 +114,7 @@ class SchemaLoader(
                 }
                 val beforeLastSegment = locationSegments[locationSegments.size - 2]
                 val beforeLastKeyword = Keyword.values().find { it.value == beforeLastSegment }
-                if (beforeLastKeyword == null || !hasMapLikeSemantics(beforeLastKeyword)) {
+                if (beforeLastKeyword == null || !beforeLastKeyword.hasMapLikeSemantics) {
                     return
                 }
             }

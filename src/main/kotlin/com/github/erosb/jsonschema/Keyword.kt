@@ -5,18 +5,19 @@ internal enum class SpecificationVersion {
 }
 
 internal enum class Keyword(val value: String,
+                            internal val hasMapLikeSemantics: Boolean = false,
                             val specificationVersion: SpecificationVersion = SpecificationVersion.DRAFT_2020_12) {
     ID("\$id"),
     ANCHOR("\$anchor"),
     DYNAMIC_REF("\$dynamicRef"),
     DYNAMIC_ANCHOR("\$dynamicAnchor"),
     REF("\$ref"),
-    DEFS("\$defs"),
+    DEFS("\$defs", true),
     MIN_LENGTH("minLength"),
     MAX_LENGTH("maxLength"),
     ALL_OF("allOf"),
     ADDITIONAL_PROPERTIES("additionalProperties"),
-    PROPERTIES("properties"),
+    PROPERTIES("properties", true),
     TITLE("title"),
     DESCRIPTION("description"),
     READ_ONLY("readOnly"),

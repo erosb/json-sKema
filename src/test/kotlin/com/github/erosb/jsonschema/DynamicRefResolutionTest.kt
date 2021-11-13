@@ -1,5 +1,6 @@
 package com.github.erosb.jsonschema
 
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class DynamicRefResolutionTest {
@@ -27,6 +28,11 @@ class DynamicRefResolutionTest {
                 }
             }
         """)() as CompositeSchema
-        val actualTitle: String = root.accept(TraversingVisitor("properties", "a", "$ref", "properties", "anchored", "$dynamicRef", "title"))!!
+        println(root)
+        val actualTitle: String = root.accept(TraversingVisitor("properties", "a", "$ref", "properties", "anchored",
+            // "$dynamicRef"
+            "title"
+        ))!!
+        assertEquals("properties/a", actualTitle)
     }
 }

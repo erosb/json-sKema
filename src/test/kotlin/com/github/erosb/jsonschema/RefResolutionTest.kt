@@ -1,6 +1,7 @@
 package com.github.erosb.jsonschema
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.net.URI
 
@@ -404,26 +405,30 @@ class RefResolutionTest {
     fun `json pointer base URI change in a child of containingRoot`() {
         val root = createSchemaLoaderForString(
             """
-            {"$ref": "https://remote#/parent/child/MySchema"}
+            {"$ref": "https://remote#/$defs/parent/properties/child/MySchema"}
         """, mapOf(
                 Pair(
                     "https://remote", """
             {
-                "parent": {
-                    "$id": "/my-domain.json"
-                    "child": {
-                        "MySchema": {
-                            "$ref": "#other"
-                        },
-                        "other": {
-                            "$anchor": "other",
-                            "title": "my title"
+                "$defs" : {
+                    "parent": {
+                        "$id": "/my-domain.json"
+                        "properties": {
+                            "child": {
+                                "MySchema": {
+                                    "$ref": "#other"
+                                }
+                            },
+                            "other": {
+                                "$anchor": "other",
+                                "title": "my title"
+                            }
                         }
+                    },
+                    "other": {
+                        "$anchor": "other",
+                        "title": "wrong result"
                     }
-                },
-                "other": {
-                    "$anchor": "other",
-                    "title": "wrong result"
                 }
             }
         """

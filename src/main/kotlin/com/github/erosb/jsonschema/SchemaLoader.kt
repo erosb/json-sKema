@@ -114,13 +114,11 @@ class SchemaLoader(
             val lastSegment = locationSegments.last()
             if (!Keyword.values().any { lastSegment == it.value }) { // last segment is unknown keyword
                 if (locationSegments.size == 1) {
-                    println("return 1 - $lastSegment")
                     return
                 }
                 val beforeLastSegment = locationSegments[locationSegments.size - 2]
                 val beforeLastKeyword = Keyword.values().find { it.value == beforeLastSegment }
                 if (beforeLastKeyword == null || !hasMapLikeSemantics(beforeLastKeyword)) {
-                    println("return 2 - $beforeLastSegment/$lastSegment")
                     return
                 }
             }

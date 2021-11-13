@@ -9,6 +9,7 @@ class DynamicRefResolutionTest {
     fun `$dynamicRef looks up $dynamicAnchor`() {
         val root: CompositeSchema = createSchemaLoaderForString("""
             {
+                "$id": "https://example.com/root",
                 "properties": {
                     "a": {
                         "title": "properties/a"
@@ -21,7 +22,7 @@ class DynamicRefResolutionTest {
                     "Referred": {
                         "properties": {
                             "anchored": {
-                                "$dynamicRef": "anchorName"
+                                "$dynamicRef": "#anchorName"
                             }
                         }
                     }
@@ -32,4 +33,40 @@ class DynamicRefResolutionTest {
         val actualTitle: String = root.accept(TraversingVisitor("properties", "a", "$ref", "properties", "anchored", "title"))!!
         assertEquals("properties/a", actualTitle)
     }
+
+    @Test
+    fun `multiple dynamic paths`() {
+        val root: CompositeSchema = createSchemaLoaderForString("""
+            {
+                "$id": "https://example.com/root",
+                "properties": {
+                    "a": {
+                        "title": "properties/a"
+                        "type": "object",
+                        "$dynamicAnchor": "anchorName",
+                        "$ref": "#/$defs/Referred"
+                    },
+                    "b": {
+                        "title": "properties/b"
+                        "$dynamicAnchor": "anchorName",
+                        "$ref": "#/$defs/Referred"
+                    }
+                }
+                "$defs": {
+                    "Referred": {
+                        "properties": {
+                            "anchored": {
+                                "$dynamicRef": "#anchorName"
+                            }
+                        }
+                    }
+                }
+            }
+        """)() as CompositeSchema
+        val aTitle: String = root.accept(TraversingVisitor("properties", "a", "$ref", "properties", "anchored", "title"))!!
+        assertEquals("properties/a", aTitle)
+        val bTitle: String = root.accept(TraversingVisitor("properties", "b", "$ref", "properties", "anchored", "title"))!!
+        assertEquals("properties/b", bTitle)
+    }
+
 }

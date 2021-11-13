@@ -10,7 +10,7 @@ import java.util.stream.Collectors.toList
 
 class SchemaLoaderConfig(val schemaClient: SchemaClient)
 
-class SchemaLoadingException(msg: String, cause: Throwable): RuntimeException(msg, cause)
+class SchemaLoadingException(msg: String, cause: Throwable) : RuntimeException(msg, cause)
 
 internal fun createDefaultConfig() = SchemaLoaderConfig(
     schemaClient = MemoizingSchemaClient(DefaultSchemaClient())
@@ -281,8 +281,8 @@ class SchemaLoader(
         var writeOnly: IJsonBoolean? = null
         var deprecated: IJsonBoolean? = null
         var default: IJsonValue? = null
-        var dynamicRef: IJsonString? = null
-        var dynamicAnchor: IJsonString? = null
+        var dynamicRef: URI? = null
+        var dynamicAnchor: URI? = null
         adjustBaseURI(schemaJson)
         var propertySchemas: Map<String, Schema> = emptyMap()
         return withBaseUriAdjustment(schemaJson) {
@@ -295,8 +295,8 @@ class SchemaLoader(
                     "additionalProperties" -> subschema = AdditionalPropertiesSchema(loadChild(value), name.location)
                     "properties" -> propertySchemas = loadPropertySchemas(value.requireObject())
                     "\$ref" -> subschema = createReferenceSchema(name.location, value.requireString())
-                    "\$dynamicRef" -> dynamicRef = value.requireString()
-                    "\$dynamicAnchor" -> dynamicAnchor = value.requireString()
+                    "\$dynamicRef" -> dynamicRef = loadingState.baseURI.resolve(value.requireString().value)
+                    "\$dynamicAnchor" -> dynamicAnchor = loadingState.baseURI.resolve("#" + value.requireString().value)
                     "title" -> title = value.requireString()
                     "description" -> description = value.requireString()
                     "readOnly" -> readOnly = value.requireBoolean()
@@ -318,8 +318,8 @@ class SchemaLoader(
                 deprecated = deprecated,
                 default = default,
                 propertySchemas = propertySchemas,
-                dynamicRef = dynamicRef,
-                dynamicAnchor = dynamicAnchor
+                dynamicRef = dynamicRef?.toString(),
+                dynamicAnchor = dynamicAnchor?.toString()
             )
         }
     }

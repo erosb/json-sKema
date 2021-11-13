@@ -4,7 +4,7 @@ import java.lang.RuntimeException
 
 abstract class Visitor<P> {
 
-    private val anchors: MutableMap<IJsonString, CompositeSchema> = mutableMapOf()
+    private val anchors: MutableMap<String, CompositeSchema> = mutableMapOf()
 
     internal fun internallyVisitCompositeSchema(schema: CompositeSchema): P? {
         schema.dynamicAnchor ?.let {
@@ -12,7 +12,6 @@ abstract class Visitor<P> {
         }
         var product: P?
         if (schema.dynamicRef != null) {
-            println("has dynamicRef ${schema.dynamicRef}")
             val referred = anchors[schema.dynamicRef]
             if (referred === null) {
                 TODO("not implemented (no matching dynamicAnchor for dynamicRef ${schema.dynamicRef}")
@@ -77,7 +76,6 @@ internal class TraversingVisitor<P>(vararg keys: String) : Visitor<P>() {
         if (remainingKeys[0] == "title") {
             remainingKeys.removeAt(0)
             if (remainingKeys.isEmpty()) {
-                println(schema)
                 return schema.title!!.value as P
             }
             throw SchemaNotFoundException("cannot traverse keys of string 'title'", "")

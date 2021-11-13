@@ -287,6 +287,8 @@ class SchemaLoader(
         var writeOnly: IJsonBoolean? = null
         var deprecated: IJsonBoolean? = null
         var default: IJsonValue? = null
+        var dynamicRef: IJsonString? = null
+        var dynamicAnchor: IJsonString? = null
         adjustBaseURI(schemaJson)
         var propertySchemas: Map<String, Schema> = emptyMap()
         return withBaseUriAdjustment(schemaJson) {
@@ -299,7 +301,8 @@ class SchemaLoader(
                     "additionalProperties" -> subschema = AdditionalPropertiesSchema(loadChild(value), name.location)
                     "properties" -> propertySchemas = loadPropertySchemas(value.requireObject())
                     "\$ref" -> subschema = createReferenceSchema(name.location, value.requireString())
-//                    "\$dynamicRef" -> subschema = createDynamicRefSchema(name.location, value.requireString())
+                    "\$dynamicRef" -> dynamicRef = value.requireString()
+                    "\$dynamicAnchor" -> dynamicAnchor = value.requireString()
                     "title" -> title = value.requireString()
                     "description" -> description = value.requireString()
                     "readOnly" -> readOnly = value.requireBoolean()
@@ -320,13 +323,11 @@ class SchemaLoader(
                 writeOnly = writeOnly,
                 deprecated = deprecated,
                 default = default,
-                propertySchemas = propertySchemas
+                propertySchemas = propertySchemas,
+                dynamicRef = dynamicRef,
+                dynamicAnchor = dynamicAnchor
             )
         }
-    }
-
-    private fun createDynamicRefSchema(location: SourceLocation, dynamicRef: IJsonString): Schema? {
-        return DynamicRefSchema(null, dynamicRef.value, location);
     }
 
     private fun loadPropertySchemas(schemasMap: IJsonObject<*, *>): Map<String, Schema> {

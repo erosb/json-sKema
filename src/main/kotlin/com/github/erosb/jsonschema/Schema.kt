@@ -15,8 +15,10 @@ data class CompositeSchema(
         val readOnly: IJsonBoolean? = null,
         val writeOnly: IJsonBoolean? = null,
         val default: IJsonValue? = null,
+        val dynamicRef: IJsonString? = null,
+        val dynamicAnchor: IJsonString? = null,
         val propertySchemas: Map<String, Schema> = emptyMap()): Schema(location) {
-    override fun <P> accept(visitor: Visitor<P>) = visitor.visitCompositeSchema(this)
+    override fun <P> accept(visitor: Visitor<P>) = visitor.internallyVisitCompositeSchema(this)
     override fun subschemas() = subschemas
 }
 

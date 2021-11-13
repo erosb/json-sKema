@@ -29,7 +29,6 @@ class DynamicRefResolutionTest {
                 }
             }
         """)() as CompositeSchema
-        println(root)
         val actualTitle: String = root.accept(TraversingVisitor("properties", "a", "$ref", "properties", "anchored", "title"))!!
         assertEquals("properties/a", actualTitle)
     }
@@ -67,6 +66,41 @@ class DynamicRefResolutionTest {
         assertEquals("properties/a", aTitle)
         val bTitle: String = root.accept(TraversingVisitor("properties", "b", "$ref", "properties", "anchored", "title"))!!
         assertEquals("properties/b", bTitle)
+    }
+
+    @Test
+    fun `first anchor in the dynamic scope wins`() {
+        val root: CompositeSchema = createSchemaLoaderForString("""
+            {
+                "$id": "https://example.com/root",
+                "title": "outer title",
+                "$dynamicAnchor": "anchorName",
+                "properties": {
+                    "a": {
+                        "title": "properties/a"
+                        "type": "object",
+                        "$dynamicAnchor": "anchorName",
+                        "$ref": "#/$defs/Referred"
+                    },
+                    "b": {
+                        "title": "properties/b"
+                        "$dynamicAnchor": "anchorName",
+                        "$ref": "#/$defs/Referred"
+                    }
+                }
+                "$defs": {
+                    "Referred": {
+                        "properties": {
+                            "anchored": {
+                                "$dynamicRef": "#anchorName"
+                            }
+                        }
+                    }
+                }
+            }
+        """)() as CompositeSchema
+        val aTitle: String = root.accept(TraversingVisitor("properties", "a", "$ref", "properties", "anchored", "title"))!!
+        assertEquals("outer title", aTitle)
     }
 
 }

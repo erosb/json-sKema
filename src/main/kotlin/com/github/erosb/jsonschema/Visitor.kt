@@ -7,9 +7,13 @@ abstract class Visitor<P> {
     private val anchors: MutableMap<String, CompositeSchema> = mutableMapOf()
 
     internal fun internallyVisitCompositeSchema(schema: CompositeSchema): P? {
-        schema.dynamicAnchor ?.let {
-            anchors[it] = schema
-        }
+        val wasDynamicAnchorChange: Boolean = schema.dynamicAnchor ?.let {
+            if (!anchors.containsKey(it)) {
+                anchors[it] = schema
+                true
+            }
+            false
+        } ?: false
         var product: P?
         if (schema.dynamicRef != null) {
             val referred = anchors[schema.dynamicRef]
@@ -26,8 +30,8 @@ abstract class Visitor<P> {
         } else {
             product = visitCompositeSchema(schema)
         }
-        schema.dynamicAnchor ?.let {
-            anchors.remove(it)
+        if (wasDynamicAnchorChange) {
+            anchors.remove(schema.dynamicAnchor)
         }
         return product;
     }

@@ -153,7 +153,18 @@ data class JsonBoolean(
 data class JsonNumber(
         override val value: Number,
         override val location: SourceLocation = UnknownSource
-) : JsonValue(location), IJsonNumber
+) : JsonValue(location), IJsonNumber {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is JsonNumber) return false
+        if (value != other.value) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return value.hashCode()
+    }
+}
 
 data class JsonString(override val value: String, override val location: SourceLocation = UnknownSource) : JsonValue(location), IJsonString {
 

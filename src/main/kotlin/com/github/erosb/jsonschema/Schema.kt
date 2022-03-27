@@ -77,3 +77,8 @@ data class AdditionalPropertiesSchema(val subschema: Schema, override val locati
     override fun <P> accept(visitor: Visitor<P>) = visitor.visitAdditionalPropertiesSchema(this)
     override fun subschemas() = listOf(subschema)
 }
+
+data class ConstSchema(val constant: IJsonValue, override val location: SourceLocation): Schema(location) {
+    override fun <P> accept(visitor: Visitor<P>) = visitor.visitConstSchema(this)
+
+}

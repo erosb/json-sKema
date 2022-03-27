@@ -336,6 +336,7 @@ class SchemaLoader(
                     Keyword.WRITE_ONLY.value -> writeOnly = value.requireBoolean()
                     Keyword.DEPRECATED.value -> deprecated = value.requireBoolean()
                     Keyword.DEFAULT.value -> default = value
+                    Keyword.CONST.value -> subschema = ConstSchema(value, name.location)
 //                else -> TODO("unhandled property ${name.value}")
                 }
                 if (subschema != null) subschemas.add(subschema)

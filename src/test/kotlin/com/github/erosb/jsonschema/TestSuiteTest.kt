@@ -2,6 +2,7 @@ package com.github.erosb.jsonschema
 
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.fail
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
@@ -51,6 +52,7 @@ internal fun loadParamsFromPackage(packageName: String): List<Arguments> {
             continue
         }
         val fileName = path.substring(path.lastIndexOf('/') + 1)
+        if (fileName != "const.json") continue;
         val arr: JsonArray = loadTests(TestSuiteTest::class.java.getResourceAsStream("/$path"))
         for (i in 0 until arr.length()) {
             val schemaTest: JsonObject = arr[i].requireObject() as JsonObject
@@ -78,6 +80,14 @@ class TestCase(input: JsonObject, schemaTest: JsonObject, fileName: String) {
         schema = SchemaLoader(schemaJson)()
     }
 
+    fun run() {
+        val validator = Validator.forSchema(schema)
+        val isValid = validator.validate(inputData).isSuccess
+        if (isValid != expectedToBeValid) {
+            fail("isValid: $isValid, expectedToBeValid: $expectedToBeValid")
+        }
+    }
+
     override fun toString(): String = inputDescription
 }
 
@@ -101,5 +111,7 @@ class TestSuiteTest {
     @MethodSource("params")
     fun run(tc: TestCase) {
         tc.loadSchema()
+        if (tc.schemaDescription.startsWith("[const"))
+        tc.run()
     }
 }

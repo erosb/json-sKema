@@ -100,6 +100,12 @@ interface IJsonValue {
     fun requireNull(): IJsonNull = throw unexpectedType("null")
     fun requireObject(): IJsonObject<*, *> = throw unexpectedType("object")
     fun requireArray(): IJsonArray<*> = throw unexpectedType("array")
+
+    fun <P> maybeString(fn: (IJsonString) -> P?): P? = null
+    fun <P> maybeNumber(fn: (IJsonNumber) -> P?): P? = null
+    fun <P> maybeArray(fn: (IJsonArray<*>) -> P?): P? = null
+    fun <P> maybeObject(fn: (IJsonObject<*, *>) -> P?): P? = null
+
     fun jsonTypeAsString(): String
 }
 
@@ -107,6 +113,7 @@ interface IJsonString : IJsonValue {
     val value: String
     override fun jsonTypeAsString() = "string"
     override fun requireString(): IJsonString = this
+    override fun <P> maybeString(fn: (IJsonString) -> P?): P? = fn(this)
 }
 
 interface IJsonBoolean : IJsonValue {
@@ -119,6 +126,7 @@ interface IJsonNumber : IJsonValue {
     val value: Number
     override fun jsonTypeAsString() = "number"
     override fun requireNumber(): IJsonNumber = this
+    override fun <P> maybeNumber(fn: (IJsonNumber) -> P?): P? = fn(this)
 }
 
 interface IJsonNull : IJsonValue {
@@ -130,6 +138,7 @@ interface IJsonArray<T : IJsonValue> : IJsonValue {
     val elements: List<T>
     override fun jsonTypeAsString() = "array"
     override fun requireArray(): IJsonArray<T> = this
+    override fun <P> maybeArray(fn: (IJsonArray<*>) -> P?): P? = fn(this)
     operator fun get(index: Int) = elements[index]
     fun length() = elements.size
 }
@@ -138,6 +147,8 @@ interface IJsonObject<P : IJsonString, V : IJsonValue> : IJsonValue {
     val properties: Map<P, V>
     override fun jsonTypeAsString() = "object"
     override fun requireObject(): IJsonObject<P, V> = this
+    override fun <P> maybeObject(fn: (IJsonObject<*, *>) -> P?): P? = fn(this)
+
     operator fun get(key: String) = properties[JsonString(key) as P]
 }
 

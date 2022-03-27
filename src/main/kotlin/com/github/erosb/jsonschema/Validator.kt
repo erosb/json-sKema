@@ -32,11 +32,10 @@ private class DefaultValidator(private val schema: Schema) : Validator, Visitor<
     }
 
     override fun visitMinLengthSchema(schema: MinLengthSchema): ValidationOutcome? {
-        if (!(instance is IJsonString)) {
-            return null
+        return instance.maybeString {
+            val rawString = instance.requireString().value
+            val length = rawString.codePointCount(0, rawString.length)
+            ValidationOutcome(length >= schema.minLength, schema.location, instance.location)
         }
-        val rawString = instance.requireString().value
-        val length = rawString.codePointCount(0, rawString.length)
-        return ValidationOutcome(length >= schema.minLength, schema.location, instance.location)
     }
 }

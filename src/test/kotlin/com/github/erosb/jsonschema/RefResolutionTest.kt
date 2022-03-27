@@ -437,7 +437,7 @@ class RefResolutionTest {
         assertThat(actual).isEqualTo("my title")
     }
 
-    @Test
+    @Test @Disabled
     fun `$dynamicAnchor can be referred by $ref`() {
         val root = createSchemaLoaderForString(
             """

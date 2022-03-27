@@ -119,12 +119,12 @@ class SchemaLoader(
                             loadingState.registerRawSchema(resolvedAnchor.toString(), json)
                         }
                     }
-                    when (val anchor = json[Keyword.DYNAMIC_ANCHOR.value]) {
-                        is IJsonString -> {
-                            val resolvedAnchor = loadingState.baseURI.resolve("#" + anchor.value)
-                            loadingState.registerRawSchema(resolvedAnchor.toString(), json)
-                        }
-                    }
+//                    when (val anchor = json[Keyword.DYNAMIC_ANCHOR.value]) {
+//                        is IJsonString -> {
+//                            val resolvedAnchor = loadingState.baseURI.resolve("#" + anchor.value)
+//                            loadingState.registerRawSchema(resolvedAnchor.toString(), json)
+//                        }
+//                    }
                     json.properties
                         .filter { (key, _) ->
                             key.value != Keyword.ENUM.value && key.value != Keyword.CONST.value

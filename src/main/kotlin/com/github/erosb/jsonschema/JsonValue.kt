@@ -141,25 +141,35 @@ interface IJsonObject<P : IJsonString, V : IJsonValue> : IJsonValue {
     operator fun get(key: String) = properties[JsonString(key) as P]
 }
 
-abstract class JsonValue(override val location: SourceLocation = UnknownSource) : IJsonValue
+abstract class JsonValue(override val location: SourceLocation = UnknownSource) : IJsonValue {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other === null) return false
+        if (!other.javaClass.isAssignableFrom(javaClass)) return false
+        return unwrap() == (other as JsonValue).unwrap()
+    }
+    internal abstract fun unwrap(): Any?
+}
 
-data class JsonNull(override val location: SourceLocation = UnknownSource) : JsonValue(location), IJsonNull
+data class JsonNull(override val location: SourceLocation = UnknownSource) : IJsonNull, JsonValue(location) {
+    override fun unwrap(): Any? = null
+    override fun equals(other: Any?) = super.equals(other)
+}
 
 data class JsonBoolean(
         override val value: Boolean,
         override val location: SourceLocation = UnknownSource
-) : JsonValue(location), IJsonBoolean
+) : JsonValue(location), IJsonBoolean {
+    override fun unwrap(): Any = value
+    override fun equals(other: Any?) = super.equals(other)
+}
 
 data class JsonNumber(
         override val value: Number,
         override val location: SourceLocation = UnknownSource
 ) : JsonValue(location), IJsonNumber {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is JsonNumber) return false
-        if (value != other.value) return false
-        return true
-    }
+    override fun equals(other: Any?) = super.equals(other)
+    override fun unwrap() = value
 
     override fun hashCode(): Int {
         return value.hashCode()
@@ -168,12 +178,9 @@ data class JsonNumber(
 
 data class JsonString(override val value: String, override val location: SourceLocation = UnknownSource) : JsonValue(location), IJsonString {
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is JsonString) return false
-        if (value != other.value) return false
-        return true
-    }
+    override fun equals(other: Any?) = super.equals(other)
+
+    override fun unwrap() = value
 
     override fun hashCode(): Int {
         return value.hashCode()
@@ -183,9 +190,15 @@ data class JsonString(override val value: String, override val location: SourceL
 data class JsonArray(
         override val elements: List<JsonValue>,
         override val location: SourceLocation = UnknownSource
-) : JsonValue(location), IJsonArray<JsonValue>
+) : JsonValue(location), IJsonArray<JsonValue> {
+    override fun unwrap() = elements
+    override fun equals(other: Any?) = super.equals(other)
+}
 
 data class JsonObject(
         override val properties: Map<JsonString, JsonValue>,
         override val location: SourceLocation = UnknownSource
-) : JsonValue(location), IJsonObject<JsonString, JsonValue>
+) : JsonValue(location), IJsonObject<JsonString, JsonValue> {
+    override fun unwrap() = properties
+    override fun equals(other: Any?) = super.equals(other)
+}

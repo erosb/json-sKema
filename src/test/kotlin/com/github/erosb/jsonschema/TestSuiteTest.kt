@@ -40,7 +40,7 @@ private fun <T : JsonValue> trimLeadingPointer(obj: T, pointerPrefixLength: Int)
     } as T
 }
 
-internal fun loadParamsFromPackage(packageName: String): List<Arguments> {
+internal fun loadParamsFromPackage(packageName: String, vararg includedFiles: String): List<Arguments> {
     val rval = mutableListOf<Arguments>()
     val refs = Reflections(
         packageName,
@@ -52,7 +52,9 @@ internal fun loadParamsFromPackage(packageName: String): List<Arguments> {
             continue
         }
         val fileName = path.substring(path.lastIndexOf('/') + 1)
-        if (fileName != "const.json") continue;
+        if (includedFiles.isNotEmpty() && !includedFiles.contains(fileName)) {
+            continue;
+        }
         val arr: JsonArray = loadTests(TestSuiteTest::class.java.getResourceAsStream("/$path"))
         for (i in 0 until arr.length()) {
             val schemaTest: JsonObject = arr[i].requireObject() as JsonObject
@@ -111,7 +113,6 @@ class TestSuiteTest {
     @MethodSource("params")
     fun run(tc: TestCase) {
         tc.loadSchema()
-        if (tc.schemaDescription.startsWith("[const"))
         tc.run()
     }
 }

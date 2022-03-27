@@ -24,7 +24,6 @@ private class DefaultValidator(private val schema: Schema): Validator, Visitor<V
     }
 
     override fun visitConstSchema(schema: ConstSchema): ValidationOutcome? {
-        println("visitConstSchema isSuccess? " + (schema.constant == instance))
         return ValidationOutcome(schema.constant == instance)
     }
 }

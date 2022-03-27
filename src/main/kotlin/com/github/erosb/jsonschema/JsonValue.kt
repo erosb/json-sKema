@@ -1,6 +1,7 @@
 package com.github.erosb.jsonschema
 
 import java.lang.IllegalArgumentException
+import java.math.BigDecimal
 import java.net.URI
 import java.util.stream.Collectors.joining
 
@@ -179,11 +180,17 @@ data class JsonNumber(
         override val value: Number,
         override val location: SourceLocation = UnknownSource
 ) : JsonValue(location), IJsonNumber {
-    override fun equals(other: Any?) = super.equals(other)
+//    override fun equals(other: Any?) = super.equals(other)
     override fun unwrap() = value
 
     override fun hashCode(): Int {
         return value.hashCode()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (other === this) return true;
+        if (!(other is IJsonNumber)) return false;
+        return BigDecimal(value.toString()).compareTo(BigDecimal(other.value.toString())) == 0
     }
 }
 

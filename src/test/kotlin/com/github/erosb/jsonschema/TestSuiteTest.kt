@@ -84,7 +84,8 @@ class TestCase(input: JsonObject, schemaTest: JsonObject, fileName: String) {
 
     fun run() {
         val validator = Validator.forSchema(schema)
-        val isValid = validator.validate(inputData).valid
+        val failure = validator.validate(inputData)
+        val isValid = failure === null
         if (isValid != expectedToBeValid) {
             fail("isValid: $isValid, expectedToBeValid: $expectedToBeValid")
         }

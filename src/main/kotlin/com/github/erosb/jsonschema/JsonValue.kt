@@ -160,6 +160,11 @@ abstract class JsonValue(override val location: SourceLocation = UnknownSource) 
         if (!other.javaClass.isAssignableFrom(javaClass)) return false
         return unwrap() == (other as JsonValue).unwrap()
     }
+
+    override fun hashCode(): Int {
+        return unwrap()?.hashCode() ?: 0
+    }
+
     internal abstract fun unwrap(): Any?
 }
 
@@ -180,7 +185,6 @@ data class JsonNumber(
         override val value: Number,
         override val location: SourceLocation = UnknownSource
 ) : JsonValue(location), IJsonNumber {
-//    override fun equals(other: Any?) = super.equals(other)
     override fun unwrap() = value
 
     override fun hashCode(): Int {

@@ -1,10 +1,10 @@
 package com.github.erosb.jsonschema
 
-internal enum class SpecificationVersion {
+enum class SpecificationVersion {
     DRAFT_2020_12
 }
 
-internal enum class Keyword(val value: String,
+enum class Keyword(val value: String,
                             internal val hasMapLikeSemantics: Boolean = false,
                             val specificationVersion: SpecificationVersion = SpecificationVersion.DRAFT_2020_12) {
     ID("\$id"),

@@ -1,10 +1,16 @@
 package com.github.erosb.jsonschema
 
-data class ValidationOutcome(
-    val valid: Boolean,
-    val keywordLocation: SourceLocation,
-    val instanceLocation: SourceLocation
-)
+data class ValidationFailure(
+    val message: String,
+    val schema: Schema,
+    val instance: IJsonValue,
+    val keyword: Keyword? = null,
+    val causes: Set<ValidationFailure> = setOf()
+    ) {
+    override fun toString(): String {
+        return "Line ${instance.location.lineNumber}, character ${instance.location.position}: ${message}"
+    }
+}
 
 interface Validator {
 
@@ -14,28 +20,64 @@ interface Validator {
         }
     }
 
-    fun validate(instance: IJsonValue): ValidationOutcome
+    fun validate(instance: IJsonValue): ValidationFailure?
 }
 
 
-private class DefaultValidator(private val schema: Schema) : Validator, Visitor<ValidationOutcome>() {
+private class DefaultValidator(private val schema: Schema) : Validator, Visitor<ValidationFailure>() {
 
     lateinit var instance: IJsonValue
 
-    override fun validate(instance: IJsonValue): ValidationOutcome {
+    override fun validate(instance: IJsonValue): ValidationFailure? {
         this.instance = instance
-        return schema.accept(this) ?: ValidationOutcome(true, schema.location, instance.location)
+        return schema.accept(this)
     }
 
-    override fun visitConstSchema(schema: ConstSchema): ValidationOutcome? {
-        return ValidationOutcome(schema.constant == instance, schema.location, instance.location)
+    override fun visitConstSchema(schema: ConstSchema): ValidationFailure? {
+        val isValid = schema.constant == instance
+        if (isValid)
+            return ValidationFailure("expected constant value: ${schema.constant}", schema, instance, Keyword.CONST)
+        else
+            return null
     }
 
-    override fun visitMinLengthSchema(schema: MinLengthSchema): ValidationOutcome? {
+    override fun visitMinLengthSchema(schema: MinLengthSchema): ValidationFailure? {
         return instance.maybeString {
-            val rawString = instance.requireString().value
-            val length = rawString.codePointCount(0, rawString.length)
-            ValidationOutcome(length >= schema.minLength, schema.location, instance.location)
+            val length = it.value.codePointCount(0, it.value.length)
+            if (length < schema.minLength)
+                ValidationFailure(
+                    "expected minLength: ${schema.minLength}, actual: ${length}",
+                    schema,
+                    instance,
+                    Keyword.MIN_LENGTH
+                )
+            else
+                null
         }
+    }
+
+    override fun visitMaxLengthSchema(schema: MaxLengthSchema): ValidationFailure? {
+        return instance.maybeString {
+            val length = it.value.codePointCount(0, it.value.length)
+            if (length > schema.maxLength)
+                ValidationFailure(
+                    "expected maxLength: ${schema.maxLength}, actual: ${length}",
+                    schema,
+                    instance,
+                    Keyword.MAX_LENGTH
+                )
+            else
+                null
+        }
+    }
+
+    override fun accumulate(previous: ValidationFailure?, current: ValidationFailure?): ValidationFailure? {
+        if (previous === null) {
+            return current
+        }
+        if (current === null) {
+            return previous
+        }
+        return ValidationFailure("multiple validation failures", schema, instance, null, setOf(current, previous))
     }
 }

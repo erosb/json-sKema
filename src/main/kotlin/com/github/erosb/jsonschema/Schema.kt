@@ -7,7 +7,7 @@ abstract class Schema(open val location: SourceLocation) {
 
 data class CompositeSchema(
         val subschemas: Set<Schema>,
-        override val location: SourceLocation,
+        override val location: SourceLocation = UnknownSource,
         val id: IJsonString? = null,
         val title: IJsonString? = null,
         val description: IJsonString? = null,

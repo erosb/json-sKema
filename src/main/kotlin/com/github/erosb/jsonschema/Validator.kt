@@ -62,21 +62,21 @@ interface Validator {
 }
 
 
-private class DefaultValidator(private val schema: Schema) : Validator, SchemaVisitor<ValidationFailure>() {
+private class DefaultValidator(private val rootSchema: Schema) : Validator, SchemaVisitor<ValidationFailure>() {
 
     lateinit var instance: IJsonValue
 
     override fun validate(instance: IJsonValue): ValidationFailure? {
         this.instance = instance
-        return schema.accept(this)
+        return rootSchema.accept(this)
     }
 
     override fun visitConstSchema(schema: ConstSchema): ValidationFailure? {
         val isValid = schema.constant == instance
         if (isValid)
-            return ValidationFailure("expected constant value: ${schema.constant}", schema, instance, Keyword.CONST)
-        else
             return null
+        else
+            return ValidationFailure("expected constant value: ${schema.constant}", schema, instance, Keyword.CONST)
     }
 
     override fun visitMinLengthSchema(schema: MinLengthSchema): ValidationFailure? {

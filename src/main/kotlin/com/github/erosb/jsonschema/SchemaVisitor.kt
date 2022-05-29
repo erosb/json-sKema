@@ -2,7 +2,7 @@ package com.github.erosb.jsonschema
 
 import java.lang.RuntimeException
 
-abstract class Visitor<P> {
+abstract class SchemaVisitor<P> {
 
     private val anchors: MutableMap<String, CompositeSchema> = mutableMapOf()
 
@@ -60,7 +60,7 @@ abstract class Visitor<P> {
 
 internal class SchemaNotFoundException(expectedKey: String, actualKey: String) : RuntimeException("expected key: $expectedKey, but found: $actualKey")
 
-internal class TraversingVisitor<P>(vararg keys: String) : Visitor<P>() {
+internal class TraversingSchemaVisitor<P>(vararg keys: String) : SchemaVisitor<P>() {
 
     private val remainingKeys = keys.asList().toMutableList()
 

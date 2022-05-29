@@ -31,7 +31,7 @@ class RefResolutionTest {
             }
         """.trimIndent()
         )() as CompositeSchema
-        val actual = root.accept(TraversingVisitor<String>("$ref", "title"))!!
+        val actual = root.accept(TraversingSchemaVisitor<String>("$ref", "title"))!!
         assertThat(actual).isEqualTo("my title")
     }
 
@@ -86,7 +86,7 @@ class RefResolutionTest {
             """.trimIndent()
         )() as CompositeSchema
 
-        val referred = actual.accept(TraversingVisitor<CompositeSchema>("$ref"))!!
+        val referred = actual.accept(TraversingSchemaVisitor<CompositeSchema>("$ref"))!!
         assertThat(referred).isSameAs(actual)
     }
 
@@ -132,7 +132,7 @@ class RefResolutionTest {
             )
         )()
 
-        val ref: String = root.accept(TraversingVisitor("additionalProperties", "$ref", "title"))!!
+        val ref: String = root.accept(TraversingSchemaVisitor("additionalProperties", "$ref", "title"))!!
         assertThat(ref).isEqualTo("referred schema");
     }
 
@@ -158,10 +158,10 @@ class RefResolutionTest {
                 )
             )
         )()
-        val referred = root.accept(TraversingVisitor<CompositeSchema>("additionalProperties", "$ref"))!!
+        val referred = root.accept(TraversingSchemaVisitor<CompositeSchema>("additionalProperties", "$ref"))!!
         assertThat(referred.title!!.value).isEqualTo("referred schema")
 
-        val secondRef = referred.accept(TraversingVisitor<CompositeSchema>("$ref"))!!
+        val secondRef = referred.accept(TraversingSchemaVisitor<CompositeSchema>("$ref"))!!
         assertThat(secondRef).isSameAs(root)
     }
 
@@ -209,7 +209,7 @@ class RefResolutionTest {
             )
         )()
         val actualMySubschemaTitle =
-            root.accept(TraversingVisitor<String>("$ref", "title"))!!
+            root.accept(TraversingSchemaVisitor<String>("$ref", "title"))!!
         assertThat(actualMySubschemaTitle).isEqualTo("MySubschema title")
     }
 
@@ -237,7 +237,7 @@ class RefResolutionTest {
                 )
             )
         )()
-        val actualMySubschemaTitle = root.accept(TraversingVisitor<String>("$ref", "title"))!!
+        val actualMySubschemaTitle = root.accept(TraversingSchemaVisitor<String>("$ref", "title"))!!
         assertThat(actualMySubschemaTitle).isEqualTo("MySubschema title")
     }
 
@@ -255,7 +255,7 @@ class RefResolutionTest {
             }
         """
         )() as CompositeSchema
-        val actual = root.accept(TraversingVisitor<CompositeSchema>("$ref"))!!
+        val actual = root.accept(TraversingSchemaVisitor<CompositeSchema>("$ref"))!!
 
         assertThat(actual.title!!.value).isEqualTo("my schema")
     }
@@ -276,7 +276,7 @@ class RefResolutionTest {
             }
         """
         )()
-        val actual = root.accept(TraversingVisitor<String>("$ref", "title"))!!
+        val actual = root.accept(TraversingSchemaVisitor<String>("$ref", "title"))!!
         assertThat(actual).isEqualTo("my title")
     }
 
@@ -305,7 +305,7 @@ class RefResolutionTest {
             )
         )()
 
-        val actual = root.accept(TraversingVisitor<String>("$ref", "$ref", "title"))
+        val actual = root.accept(TraversingSchemaVisitor<String>("$ref", "$ref", "title"))
         assertThat(actual).isEqualTo("my title")
     }
 
@@ -331,7 +331,7 @@ class RefResolutionTest {
                 )
             )
         )()
-        val actual = root.accept(TraversingVisitor<String>("$ref", "$ref", "title"))
+        val actual = root.accept(TraversingSchemaVisitor<String>("$ref", "$ref", "title"))
         assertThat(actual).isEqualTo("my title")
     }
 
@@ -369,7 +369,7 @@ class RefResolutionTest {
                 )
             )
         )()
-        val actual = root.accept(TraversingVisitor<String>("$ref", "$ref", "title"))
+        val actual = root.accept(TraversingSchemaVisitor<String>("$ref", "$ref", "title"))
         assertThat(actual).isEqualTo("my title")
     }
 
@@ -397,7 +397,7 @@ class RefResolutionTest {
                 )
             )
         )()
-        val actual = root.accept(TraversingVisitor<String>("$ref", "$ref", "title"))!!
+        val actual = root.accept(TraversingSchemaVisitor<String>("$ref", "$ref", "title"))!!
         assertThat(actual).isEqualTo("my title")
     }
 
@@ -433,7 +433,7 @@ class RefResolutionTest {
             }
         """
                 )))()
-        val actual = root.accept(TraversingVisitor<String>("$ref", "$ref", "title"))!!
+        val actual = root.accept(TraversingSchemaVisitor<String>("$ref", "$ref", "title"))!!
         assertThat(actual).isEqualTo("my title")
     }
 
@@ -451,7 +451,7 @@ class RefResolutionTest {
                 }
             }
             """)()
-        val actual = root.accept(TraversingVisitor<String>("$ref", "title"))!!
+        val actual = root.accept(TraversingSchemaVisitor<String>("$ref", "title"))!!
         assertThat(actual).isEqualTo("my title")
     }
 }

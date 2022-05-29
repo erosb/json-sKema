@@ -29,7 +29,7 @@ class DynamicRefResolutionTest {
                 }
             }
         """)() as CompositeSchema
-        val actualTitle: String = root.accept(TraversingVisitor("properties", "a", "$ref", "properties", "anchored", "title"))!!
+        val actualTitle: String = root.accept(TraversingSchemaVisitor("properties", "a", "$ref", "properties", "anchored", "title"))!!
         assertEquals("properties/a", actualTitle)
     }
 
@@ -62,9 +62,9 @@ class DynamicRefResolutionTest {
                 }
             }
         """)() as CompositeSchema
-        val aTitle: String = root.accept(TraversingVisitor("properties", "a", "$ref", "properties", "anchored", "title"))!!
+        val aTitle: String = root.accept(TraversingSchemaVisitor("properties", "a", "$ref", "properties", "anchored", "title"))!!
         assertEquals("properties/a", aTitle)
-        val bTitle: String = root.accept(TraversingVisitor("properties", "b", "$ref", "properties", "anchored", "title"))!!
+        val bTitle: String = root.accept(TraversingSchemaVisitor("properties", "b", "$ref", "properties", "anchored", "title"))!!
         assertEquals("properties/b", bTitle)
     }
 
@@ -94,7 +94,7 @@ class DynamicRefResolutionTest {
                 }
             }
         """)() as CompositeSchema
-        val aTitle: String = root.accept(TraversingVisitor("properties", "a", "$ref", "properties", "anchored", "title"))!!
+        val aTitle: String = root.accept(TraversingSchemaVisitor("properties", "a", "$ref", "properties", "anchored", "title"))!!
         assertEquals("outer title", aTitle)
     }
 

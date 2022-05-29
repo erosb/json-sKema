@@ -1,14 +1,52 @@
 package com.github.erosb.jsonschema
 
-data class ValidationFailure(
+open class ValidationFailure(
     val message: String,
     val schema: Schema,
     val instance: IJsonValue,
     val keyword: Keyword? = null,
-    val causes: Set<ValidationFailure> = setOf()
-    ) {
+    open val causes: Set<ValidationFailure> = setOf()
+) {
     override fun toString(): String {
         return "Line ${instance.location.lineNumber}, character ${instance.location.position}: ${message}"
+    }
+
+    fun toJSON(): JsonObject {
+        val instanceRef = JsonString(instance.location.pointer.toString())
+        val json = mutableMapOf<JsonString, JsonValue>(
+            JsonString("instanceRef") to instanceRef,
+            JsonString("schemaRef") to JsonString(schema.location.pointer.toString()),
+            JsonString("message") to JsonString(message)
+        )
+        keyword?.let { json[JsonString("keyword")] = JsonString(it.value) }
+        if (causes.isNotEmpty()) {
+            json[JsonString("causes")] = JsonArray(causes.map { failure -> failure.toJSON() })
+        }
+        return JsonObject(
+            properties = json.toMap()
+        )
+    }
+
+    internal open fun join(other: ValidationFailure): ValidationFailure {
+        return AggregatingValidationFailure(schema, instance, setOf(this, other))
+    }
+}
+
+internal class AggregatingValidationFailure(
+    schema: Schema,
+    instance: IJsonValue,
+    causes: Set<ValidationFailure>
+) : ValidationFailure("multiple validation failures", schema, instance, null, causes) {
+
+    private var _causes = causes.toMutableSet()
+    override val causes: Set<ValidationFailure>
+        get() {
+            return _causes
+        }
+
+    override fun join(other: ValidationFailure): ValidationFailure {
+        _causes.add(other)
+        return this
     }
 }
 
@@ -24,7 +62,7 @@ interface Validator {
 }
 
 
-private class DefaultValidator(private val schema: Schema) : Validator, Visitor<ValidationFailure>() {
+private class DefaultValidator(private val schema: Schema) : Validator, SchemaVisitor<ValidationFailure>() {
 
     lateinit var instance: IJsonValue
 
@@ -71,6 +109,9 @@ private class DefaultValidator(private val schema: Schema) : Validator, Visitor<
         }
     }
 
+    override fun visitFalseSchema(schema: FalseSchema): ValidationFailure =
+        ValidationFailure("false schema always fails", schema, instance, Keyword.FALSE)
+
     override fun accumulate(previous: ValidationFailure?, current: ValidationFailure?): ValidationFailure? {
         if (previous === null) {
             return current
@@ -78,6 +119,6 @@ private class DefaultValidator(private val schema: Schema) : Validator, Visitor<
         if (current === null) {
             return previous
         }
-        return ValidationFailure("multiple validation failures", schema, instance, null, setOf(current, previous))
+        return previous.join(current);
     }
 }

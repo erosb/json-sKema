@@ -107,6 +107,8 @@ interface IJsonValue {
     fun <P> maybeArray(fn: (IJsonArray<*>) -> P?): P? = null
     fun <P> maybeObject(fn: (IJsonObject<*, *>) -> P?): P? = null
 
+    fun <P> accept(visitor: JsonVisitor<P>): P?
+
     fun jsonTypeAsString(): String
 }
 
@@ -115,12 +117,14 @@ interface IJsonString : IJsonValue {
     override fun jsonTypeAsString() = "string"
     override fun requireString(): IJsonString = this
     override fun <P> maybeString(fn: (IJsonString) -> P?): P? = fn(this)
+    override fun <P> accept(visitor: JsonVisitor<P>): P? = visitor.visitString(this)
 }
 
 interface IJsonBoolean : IJsonValue {
     val value: Boolean
     override fun jsonTypeAsString() = "boolean"
     override fun requireBoolean(): IJsonBoolean = this
+    override fun <P> accept(visitor: JsonVisitor<P>): P? = visitor.visitBoolean(this)
 }
 
 interface IJsonNumber : IJsonValue {
@@ -128,11 +132,13 @@ interface IJsonNumber : IJsonValue {
     override fun jsonTypeAsString() = "number"
     override fun requireNumber(): IJsonNumber = this
     override fun <P> maybeNumber(fn: (IJsonNumber) -> P?): P? = fn(this)
+    override fun <P> accept(visitor: JsonVisitor<P>): P? = visitor.visitNumber(this)
 }
 
 interface IJsonNull : IJsonValue {
     override fun jsonTypeAsString() = "null"
     override fun requireNull(): IJsonNull = this
+    override fun <P> accept(visitor: JsonVisitor<P>): P? = visitor.visitNull(this)
 }
 
 interface IJsonArray<T : IJsonValue> : IJsonValue {
@@ -140,6 +146,7 @@ interface IJsonArray<T : IJsonValue> : IJsonValue {
     override fun jsonTypeAsString() = "array"
     override fun requireArray(): IJsonArray<T> = this
     override fun <P> maybeArray(fn: (IJsonArray<*>) -> P?): P? = fn(this)
+    override fun <P> accept(visitor: JsonVisitor<P>): P? = visitor.visitArray(this)
     operator fun get(index: Int) = elements[index]
     fun length() = elements.size
 }
@@ -149,8 +156,22 @@ interface IJsonObject<P : IJsonString, V : IJsonValue> : IJsonValue {
     override fun jsonTypeAsString() = "object"
     override fun requireObject(): IJsonObject<P, V> = this
     override fun <P> maybeObject(fn: (IJsonObject<*, *>) -> P?): P? = fn(this)
+    override fun <P> accept(visitor: JsonVisitor<P>): P? = visitor.visitObject(this)
 
     operator fun get(key: String) = properties[JsonString(key) as P]
+}
+
+typealias IJsonObj = IJsonObject<*, *>
+
+interface JsonVisitor<P> {
+    fun identity(): P? = null
+    fun accumulate(previous: P?, current: P?): P? = current ?: previous
+    fun visitString(str: IJsonString): P?
+    fun visitBoolean(bool: IJsonBoolean): P?
+    fun visitNumber(num: IJsonNumber): P?
+    fun visitNull(nil: IJsonNull): P?
+    fun visitArray(arr: IJsonArray<*>): P?
+    fun visitObject(obj: IJsonObject<*, *>): P?
 }
 
 abstract class JsonValue(override val location: SourceLocation = UnknownSource) : IJsonValue {
@@ -166,6 +187,8 @@ abstract class JsonValue(override val location: SourceLocation = UnknownSource) 
     }
 
     internal abstract fun unwrap(): Any?
+
+    final override fun toString(): String = accept(JsonPrintingVisitor())!!
 }
 
 data class JsonNull(override val location: SourceLocation = UnknownSource) : IJsonNull, JsonValue(location) {

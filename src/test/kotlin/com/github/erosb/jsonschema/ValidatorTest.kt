@@ -25,22 +25,48 @@ class ValidatorTest {
 
     @Test
     fun `multiple ValidationFailures`() {
-        val minLengthSchema = MinLengthSchema(5, SourceLocation(5, 5, JsonPointer(listOf("parent", "minLength"))))
+        val minLengthSchema = MinLengthSchema(5, SourceLocation(5, 5, JsonPointer(listOf())))
         val maxLengthSchema = MaxLengthSchema(3, UnknownSource)
+        val falseSchema = FalseSchema(UnknownSource)
         val schema = CompositeSchema(
             subschemas = setOf(
                 minLengthSchema,
-                maxLengthSchema
+                maxLengthSchema,
+                falseSchema
             ), location = UnknownSource
         )
         val instance = JsonParser("  \"heyy\"")()
         val actual = Validator.forSchema(schema).validate(instance)!!
         assertEquals("Line 1, character 3: multiple validation failures", actual.toString())
-        assertEquals(
-            setOf(
-                ValidationFailure("expected minLength: 5, actual: 4", minLengthSchema, instance, Keyword.MIN_LENGTH),
-                ValidationFailure("expected maxLength: 3, actual: 4", maxLengthSchema, instance, Keyword.MAX_LENGTH)
-            ), actual.causes
-        )
+
+        println(actual.toJSON())
+
+        assertEquals(JsonParser("""
+            {
+                "instanceRef": "#",
+                "schemaRef": "#",
+                "message": "multiple validation failures",
+                "causes": [
+                    {
+                        "instanceRef": "#",
+                        "schemaRef": "#",
+                        "message": "expected minLength: 5, actual: 4",
+                        "keyword": "minLength"
+                    },
+                    {
+                        "instanceRef": "#",
+                        "schemaRef": "#",
+                        "message": "expected maxLength: 3, actual: 4",
+                        "keyword": "maxLength"
+                    },
+                    {
+                        "instanceRef": "#",
+                        "schemaRef": "#",
+                        "message": "false schema always fails",
+                        "keyword": "false"
+                    }
+                ]
+            }
+        """)(), actual.toJSON())
     }
 }

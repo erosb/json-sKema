@@ -4,7 +4,7 @@ enum class SpecificationVersion {
     DRAFT_2020_12
 }
 
-enum class Keyword(val value: String,
+enum class  Keyword(val value: String,
                             internal val hasMapLikeSemantics: Boolean = false,
                             val specificationVersion: SpecificationVersion = SpecificationVersion.DRAFT_2020_12) {
     ID("\$id"),
@@ -26,4 +26,6 @@ enum class Keyword(val value: String,
     DEFAULT("default"),
     ENUM("enum"),
     CONST("const"),
+    FALSE("false"),
+    TRUE("true")
 }

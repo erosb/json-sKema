@@ -45,6 +45,7 @@ abstract class SchemaVisitor<P> {
     open fun visitDynamicRefSchema(schema: DynamicRefSchema): P? = visitChildren(schema)
     open fun visitAdditionalPropertiesSchema(schema: AdditionalPropertiesSchema): P? = visitChildren(schema)
     open fun visitConstSchema(schema: ConstSchema): P? = visitChildren(schema)
+    open fun visitTypeSchema(schema: TypeSchema): P? = visitChildren(schema)
 
     open fun identity(): P? = null
     open fun accumulate(previous: P?, current: P?): P? = current ?: previous

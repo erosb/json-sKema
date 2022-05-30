@@ -61,8 +61,28 @@ interface Validator {
     fun validate(instance: IJsonValue): ValidationFailure?
 }
 
-
 private class DefaultValidator(private val rootSchema: Schema) : Validator, SchemaVisitor<ValidationFailure>() {
+
+    inner class TypeValidatingVisitor(private val schema: TypeSchema) : JsonVisitor<ValidationFailure> {
+
+        override fun visitString(str: IJsonString): ValidationFailure? = checkType("string")
+        override fun visitBoolean(bool: IJsonBoolean): ValidationFailure? = checkType("boolean")
+        override fun visitNumber(num: IJsonNumber): ValidationFailure? = checkType("number")
+        override fun visitNull(nil: IJsonNull): ValidationFailure? = checkType("null")
+        override fun visitArray(arr: IJsonArray<*>): ValidationFailure? = checkType("array")
+        override fun visitObject(obj: IJsonObject<*, *>): ValidationFailure? = checkType("object")
+
+        fun checkType(actualType: String): ValidationFailure? {
+            return if (schema.type.value == actualType)
+                null
+            else ValidationFailure(
+                "expected type: ${schema.type.value}, actual: ${actualType}",
+                this.schema,
+                instance,
+                Keyword.TYPE
+            )
+        }
+    }
 
     lateinit var instance: IJsonValue
 
@@ -73,10 +93,14 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
 
     override fun visitConstSchema(schema: ConstSchema): ValidationFailure? {
         val isValid = schema.constant == instance
-        if (isValid)
-            return null
+        return if (isValid)
+            null
         else
-            return ValidationFailure("expected constant value: ${schema.constant}", schema, instance, Keyword.CONST)
+            ValidationFailure("expected constant value: ${schema.constant}", schema, instance, Keyword.CONST)
+    }
+
+    override fun visitTypeSchema(schema: TypeSchema): ValidationFailure? {
+        return instance.accept(TypeValidatingVisitor(schema))
     }
 
     override fun visitMinLengthSchema(schema: MinLengthSchema): ValidationFailure? {

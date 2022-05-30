@@ -27,5 +27,6 @@ enum class  Keyword(val value: String,
     ENUM("enum"),
     CONST("const"),
     FALSE("false"),
-    TRUE("true")
+    TRUE("true"),
+    TYPE("type")
 }

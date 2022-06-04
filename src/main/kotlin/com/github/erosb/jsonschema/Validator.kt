@@ -63,7 +63,18 @@ interface Validator {
 
 private class DefaultValidator(private val rootSchema: Schema) : Validator, SchemaVisitor<ValidationFailure>() {
 
-    inner class TypeValidatingVisitor(private val schema: TypeSchema) : JsonVisitor<ValidationFailure> {
+    abstract inner class AbstractTypeValidatingVisitor: JsonVisitor<ValidationFailure>  {
+        override fun visitString(str: IJsonString): ValidationFailure? = checkType("string")
+        override fun visitBoolean(bool: IJsonBoolean): ValidationFailure? = checkType("boolean")
+        override fun visitNumber(num: IJsonNumber): ValidationFailure? = checkType("number")
+        override fun visitNull(nil: IJsonNull): ValidationFailure? = checkType("null")
+        override fun visitArray(arr: IJsonArray<*>): ValidationFailure? = checkType("array")
+        override fun visitObject(obj: IJsonObject<*, *>): ValidationFailure? = checkType("object")
+
+        abstract fun checkType(actualType: String): ValidationFailure?
+    }
+
+    inner class TypeValidatingVisitor(private val schema: TypeSchema) : AbstractTypeValidatingVisitor() {
 
         override fun visitString(str: IJsonString): ValidationFailure? = checkType("string")
         override fun visitBoolean(bool: IJsonBoolean): ValidationFailure? = checkType("boolean")
@@ -72,11 +83,26 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         override fun visitArray(arr: IJsonArray<*>): ValidationFailure? = checkType("array")
         override fun visitObject(obj: IJsonObject<*, *>): ValidationFailure? = checkType("object")
 
-        fun checkType(actualType: String): ValidationFailure? {
+        override fun checkType(actualType: String): ValidationFailure? {
             return if (schema.type.value == actualType)
                 null
             else ValidationFailure(
                 "expected type: ${schema.type.value}, actual: ${actualType}",
+                this.schema,
+                instance,
+                Keyword.TYPE
+            )
+        }
+    }
+
+    inner class MultiTypeValidatingVisitor(private val schema: MultiTypeSchema): AbstractTypeValidatingVisitor() {
+
+        override fun checkType(actualType: String): ValidationFailure? {
+            val permittedTypes = schema.types.elements.map { it.requireString().value }
+            return if (permittedTypes.contains(actualType))
+                null
+            else ValidationFailure(
+                "expected type: one of ${permittedTypes.joinToString { ", " }}, actual: ${actualType}",
                 this.schema,
                 instance,
                 Keyword.TYPE
@@ -101,6 +127,10 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
 
     override fun visitTypeSchema(schema: TypeSchema): ValidationFailure? {
         return instance.accept(TypeValidatingVisitor(schema))
+    }
+
+    override fun visitMultiTypeSchema(schema: MultiTypeSchema): ValidationFailure? {
+        return instance.accept(MultiTypeValidatingVisitor(schema))
     }
 
     override fun visitMinLengthSchema(schema: MinLengthSchema): ValidationFailure? {

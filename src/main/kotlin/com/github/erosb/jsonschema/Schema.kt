@@ -88,3 +88,7 @@ data class ConstSchema(val constant: IJsonValue, override val location: SourceLo
 data class TypeSchema(val type: IJsonString, override val location: SourceLocation) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>) = visitor.visitTypeSchema(this)
 }
+
+data class MultiTypeSchema(val types: IJsonArray<*>, override val location: SourceLocation) : Schema(location){
+    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitMultiTypeSchema(this)
+}

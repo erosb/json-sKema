@@ -7,7 +7,7 @@ abstract class SchemaVisitor<P> {
     private val anchors: MutableMap<String, CompositeSchema> = mutableMapOf()
 
     internal fun internallyVisitCompositeSchema(schema: CompositeSchema): P? {
-        val wasDynamicAnchorChange: Boolean = schema.dynamicAnchor ?.let {
+        val wasDynamicAnchorChange: Boolean = schema.dynamicAnchor?.let {
             if (!anchors.containsKey(it)) {
                 anchors[it] = schema
                 true
@@ -35,6 +35,7 @@ abstract class SchemaVisitor<P> {
         }
         return product;
     }
+
     open fun visitCompositeSchema(schema: CompositeSchema): P? = visitChildren(schema)
     open fun visitTrueSchema(schema: TrueSchema): P? = visitChildren(schema)
     open fun visitFalseSchema(schema: FalseSchema): P? = visitChildren(schema)
@@ -46,6 +47,7 @@ abstract class SchemaVisitor<P> {
     open fun visitAdditionalPropertiesSchema(schema: AdditionalPropertiesSchema): P? = visitChildren(schema)
     open fun visitConstSchema(schema: ConstSchema): P? = visitChildren(schema)
     open fun visitTypeSchema(schema: TypeSchema): P? = visitChildren(schema)
+    open fun visitMultiTypeSchema(schema: MultiTypeSchema): P? = visitChildren(schema)
 
     open fun identity(): P? = null
     open fun accumulate(previous: P?, current: P?): P? = current ?: previous
@@ -59,7 +61,8 @@ abstract class SchemaVisitor<P> {
     }
 }
 
-internal class SchemaNotFoundException(expectedKey: String, actualKey: String) : RuntimeException("expected key: $expectedKey, but found: $actualKey")
+internal class SchemaNotFoundException(expectedKey: String, actualKey: String) :
+    RuntimeException("expected key: $expectedKey, but found: $actualKey")
 
 internal class TraversingSchemaVisitor<P>(vararg keys: String) : SchemaVisitor<P>() {
 

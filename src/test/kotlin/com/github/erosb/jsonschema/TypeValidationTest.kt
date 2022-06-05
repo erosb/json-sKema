@@ -11,11 +11,11 @@ class TypeValidationTest {
         @JvmStatic
         fun params(): List<Arguments> {
             return listOf(
-                Arguments.of("string", "number", JsonNumber(30)),
-                Arguments.of("boolean", "number", JsonNumber(30)),
-                Arguments.of("array", "number", JsonNumber(30)),
-                Arguments.of("object", "number", JsonNumber(30)),
-                Arguments.of("null", "number", JsonNumber(30)),
+                Arguments.of("string", "number", JsonNumber(30.2)),
+                Arguments.of("boolean", "number", JsonNumber(30.2)),
+                Arguments.of("array", "number", JsonNumber(30.2)),
+                Arguments.of("object", "number", JsonNumber(30.2)),
+                Arguments.of("null", "number", JsonNumber(30.2)),
 
                 Arguments.of("number", "boolean", JsonBoolean(true)),
                 Arguments.of("string", "boolean", JsonBoolean(true)),

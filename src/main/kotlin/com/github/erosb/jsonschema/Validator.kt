@@ -66,24 +66,32 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
     abstract inner class AbstractTypeValidatingVisitor: JsonVisitor<ValidationFailure>  {
         override fun visitString(str: IJsonString): ValidationFailure? = checkType("string")
         override fun visitBoolean(bool: IJsonBoolean): ValidationFailure? = checkType("boolean")
-        override fun visitNumber(num: IJsonNumber): ValidationFailure? = checkType("number")
+        override fun visitNumber(num: IJsonNumber): ValidationFailure? = checkType(findActualNumberType(num))
         override fun visitNull(nil: IJsonNull): ValidationFailure? = checkType("null")
         override fun visitArray(arr: IJsonArray<*>): ValidationFailure? = checkType("array")
         override fun visitObject(obj: IJsonObject<*, *>): ValidationFailure? = checkType("object")
 
+        private fun findActualNumberType(num: IJsonNumber): String {
+            val numAsString = num.value.toString()
+            val dotIndex = numAsString.indexOf('.')
+            fun isZeroFractional(): Boolean = numAsString.substring(dotIndex + 1)
+                .chars().allMatch { it == '0'.code }
+            return if (dotIndex == -1)
+                "integer"
+            else if (isZeroFractional())
+                "integer"
+            else
+                "number"
+        }
         abstract fun checkType(actualType: String): ValidationFailure?
     }
 
     inner class TypeValidatingVisitor(private val schema: TypeSchema) : AbstractTypeValidatingVisitor() {
 
-        override fun visitString(str: IJsonString): ValidationFailure? = checkType("string")
-        override fun visitBoolean(bool: IJsonBoolean): ValidationFailure? = checkType("boolean")
-        override fun visitNumber(num: IJsonNumber): ValidationFailure? = checkType("number")
-        override fun visitNull(nil: IJsonNull): ValidationFailure? = checkType("null")
-        override fun visitArray(arr: IJsonArray<*>): ValidationFailure? = checkType("array")
-        override fun visitObject(obj: IJsonObject<*, *>): ValidationFailure? = checkType("object")
-
         override fun checkType(actualType: String): ValidationFailure? {
+            if (actualType == "integer" && schema.type.value == "number") {
+                return null
+            }
             return if (schema.type.value == actualType)
                 null
             else ValidationFailure(
@@ -99,6 +107,9 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
 
         override fun checkType(actualType: String): ValidationFailure? {
             val permittedTypes = schema.types.elements.map { it.requireString().value }
+            if (actualType == "integer" && permittedTypes.contains("number")) {
+                return null
+            }
             return if (permittedTypes.contains(actualType))
                 null
             else ValidationFailure(

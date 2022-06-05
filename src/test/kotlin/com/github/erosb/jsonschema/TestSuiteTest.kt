@@ -97,7 +97,9 @@ class TestCase(input: JsonObject, schemaTest: JsonObject, fileName: String) {
 class TestSuiteTest {
     companion object {
         @JvmStatic
-        fun params(): Stream<Arguments> = loadParamsFromPackage("com.github.erosb.jsonschema.tests.draft202012").stream()
+        fun params(): Stream<Arguments> = loadParamsFromPackage("com.github.erosb.jsonschema.tests.draft202012"
+//            , "type.json"
+        ).stream()
 
         private val server = JettyWrapper("/com/github/erosb/jsonschema/tests/remotes")
 

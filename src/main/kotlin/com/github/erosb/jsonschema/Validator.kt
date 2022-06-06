@@ -76,9 +76,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
             val dotIndex = numAsString.indexOf('.')
             fun isZeroFractional(): Boolean = numAsString.substring(dotIndex + 1)
                 .chars().allMatch { it == '0'.code }
-            return if (dotIndex == -1)
-                "integer"
-            else if (isZeroFractional())
+            return if (dotIndex == -1 || isZeroFractional())
                 "integer"
             else
                 "number"

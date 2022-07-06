@@ -36,7 +36,14 @@ abstract class SchemaVisitor<P> {
         return product;
     }
 
-    open fun visitCompositeSchema(schema: CompositeSchema): P? = visitChildren(schema)
+    open fun visitCompositeSchema(schema: CompositeSchema): P? {
+        val subschemaProduct = visitChildren(schema)
+        val propSchemaProduct: P? = schema.propertySchemas
+            .map { visitPropertySchema(it.key, it.value) }
+            .reduce(this::accumulate);
+        return accumulate(subschemaProduct, propSchemaProduct)
+    }
+
     open fun visitTrueSchema(schema: TrueSchema): P? = visitChildren(schema)
     open fun visitFalseSchema(schema: FalseSchema): P? = visitChildren(schema)
     open fun visitMinLengthSchema(schema: MinLengthSchema): P? = visitChildren(schema)
@@ -48,6 +55,7 @@ abstract class SchemaVisitor<P> {
     open fun visitConstSchema(schema: ConstSchema): P? = visitChildren(schema)
     open fun visitTypeSchema(schema: TypeSchema): P? = visitChildren(schema)
     open fun visitMultiTypeSchema(schema: MultiTypeSchema): P? = visitChildren(schema)
+    open fun visitPropertySchema(property: String, schema: Schema): P? = visitChildren(schema)
 
     open fun identity(): P? = null
     open fun accumulate(previous: P?, current: P?): P? = current ?: previous
@@ -60,6 +68,7 @@ abstract class SchemaVisitor<P> {
         return product
     }
 }
+
 
 internal class SchemaNotFoundException(expectedKey: String, actualKey: String) :
     RuntimeException("expected key: $expectedKey, but found: $actualKey")

@@ -161,6 +161,44 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
     }
 
+    override fun visitPropertySchema(property: String, schema: Schema): ValidationFailure? {
+        println("prop=$property instance=$instance")
+        if (instance !is IJsonObject<*, *>) {
+            println("RET non-object")
+            return null
+        }
+        if (instance.requireObject()[property] === null) {
+            return null
+        }
+        val origInstance = instance
+        instance = instance.requireObject().get(property)!!
+        val rval = super.visitPropertySchema(property, schema)
+        println("RET $rval")
+        instance = origInstance
+        return rval
+    }
+
+    override fun visitAdditionalPropertiesSchema(schema: AdditionalPropertiesSchema): ValidationFailure? {
+        if (instance !is IJsonObject<*, *>) {
+            println("RET additProps non-object")
+            return null
+        }
+        var endResult: ValidationFailure? = null
+        instance.requireObject().properties
+            .forEach { (key, value) ->
+                val keyStr = key.value
+                if (schema.keysInProperties.contains(keyStr)) {
+                    return null
+                }
+                val origInstance = instance
+                instance = value
+                val rval = super.visitAdditionalPropertiesSchema(schema)
+                endResult = accumulate(endResult, rval)
+                instance = origInstance
+            }
+        return super.visitAdditionalPropertiesSchema(schema)
+    }
+
     override fun visitMaxLengthSchema(schema: MaxLengthSchema): ValidationFailure? {
         return instance.maybeString {
             val length = it.value.codePointCount(0, it.value.length)

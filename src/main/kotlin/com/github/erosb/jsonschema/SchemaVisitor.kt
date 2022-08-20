@@ -78,6 +78,7 @@ abstract class SchemaVisitor<P> {
     open fun visitChildren(parent: Schema): P? {
         var product: P? = identity()
         for (subschema in parent.subschemas()) {
+            println("subschema=$subschema")
             val current = subschema.accept(this)
             product = accumulate(product, current)
         }

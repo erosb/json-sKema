@@ -262,6 +262,13 @@ class SchemaLoader(
                         }
                         return@withBaseUriAdjustment lookupNext(child, segments)
                     }
+                    is IJsonArray<*> -> {
+                        val child = root[Integer.parseInt(segment)]
+                        if (child === null) {
+                            throw Error("json pointer evaluation error: could not resolve property $segment in $root")
+                        }
+                        return@withBaseUriAdjustment lookupNext(child, segments)
+                    }
                     else -> {
                         throw Error("json pointer evaluation error: could not resolve property $segment")
                     }
@@ -325,7 +332,7 @@ class SchemaLoader(
                     Keyword.MIN_LENGTH.value -> subschema = MinLengthSchema(value.requireInt(), name.location)
                     Keyword.MAX_LENGTH.value -> subschema = MaxLengthSchema(value.requireInt(), name.location)
                     Keyword.ALL_OF.value -> subschema = createAllOfSubschema(name.location, value.requireArray())
-                    Keyword.ADDITIONAL_PROPERTIES.value -> subschema = AdditionalPropertiesSchema(loadChild(value), name.location)
+                    Keyword.ADDITIONAL_PROPERTIES.value -> subschema = buildAdditionalPropertiesSchema(schemaJson, value, name)
                     Keyword.PROPERTIES.value -> propertySchemas = loadPropertySchemas(value.requireObject())
                     Keyword.REF.value -> subschema = createReferenceSchema(name.location, value.requireString())
                     Keyword.DYNAMIC_REF.value -> dynamicRef = loadingState.baseURI.resolve(value.requireString().value)
@@ -362,6 +369,16 @@ class SchemaLoader(
                 dynamicAnchor = dynamicAnchor?.toString()
             )
         }
+    }
+
+    private fun buildAdditionalPropertiesSchema(
+        containingObject: IJsonObject<*, *>,
+        value: IJsonValue,
+        name: IJsonString
+    ): AdditionalPropertiesSchema {
+        val keysInProperties = containingObject["properties"]?.requireObject()
+            ?.properties?.keys?.map { it.value } ?: listOf()
+        return AdditionalPropertiesSchema(loadChild(value), keysInProperties, name.location)
     }
 
     private fun loadPropertySchemas(schemasMap: IJsonObject<*, *>): Map<String, Schema> {

@@ -72,7 +72,7 @@ internal fun loadParamsFromPackage(packageName: String, vararg includedFiles: St
 class TestCase(input: JsonObject, schemaTest: JsonObject, fileName: String) {
     val schemaDescription = "[" + fileName + "]/" + schemaTest["description"]!!.requireString().value
     val schemaJson: IJsonValue = trimLeadingPointer(schemaTest["schema"]!!, 2)
-    val inputDescription = "[" + fileName + "]/" + input["description"]!!.requireString().value
+    val inputDescription = schemaDescription + "/" + input["description"]!!.requireString().value
     val expectedToBeValid = input["valid"]!!.requireBoolean().value
     val inputData: IJsonValue = input["data"]!!
 
@@ -87,6 +87,9 @@ class TestCase(input: JsonObject, schemaTest: JsonObject, fileName: String) {
         val failure = validator.validate(inputData)
         val isValid = failure === null
         if (isValid != expectedToBeValid) {
+            if (!isValid) {
+                println(failure!!.toJSON())
+            }
             fail("isValid: $isValid, expectedToBeValid: $expectedToBeValid")
         }
     }
@@ -99,7 +102,7 @@ class TestSuiteTest {
         @JvmStatic
         fun params(): Stream<Arguments> = loadParamsFromPackage(
             "com.github.erosb.jsonschema.tests.draft202012"
-//            , "type.json"
+//            , "ref.json"
         ).stream()
 
         private val server = JettyWrapper("/com/github/erosb/jsonschema/tests/remotes")

@@ -33,14 +33,16 @@ abstract class SchemaVisitor<P> {
         if (wasDynamicAnchorChange) {
             anchors.remove(schema.dynamicAnchor)
         }
-        return product;
+        return product
     }
 
     open fun visitCompositeSchema(schema: CompositeSchema): P? {
         val subschemaProduct = visitChildren(schema)
-        val propSchemaProduct: P? = schema.propertySchemas
+        val propSchemaProduct: P? = if (schema.propertySchemas.isEmpty()) {
+            null
+        } else schema.propertySchemas
             .map { visitPropertySchema(it.key, it.value) }
-            .reduce(this::accumulate);
+            .reduce(this::accumulate)
         return accumulate(subschemaProduct, propSchemaProduct)
     }
 
@@ -63,12 +65,11 @@ abstract class SchemaVisitor<P> {
         var product: P? = identity()
         for (subschema in parent.subschemas()) {
             val current = subschema.accept(this)
-            product = accumulate(product, current);
+            product = accumulate(product, current)
         }
         return product
     }
 }
-
 
 internal class SchemaNotFoundException(expectedKey: String, actualKey: String) :
     RuntimeException("expected key: $expectedKey, but found: $actualKey")
@@ -79,13 +80,13 @@ internal class TraversingSchemaVisitor<P>(vararg keys: String) : SchemaVisitor<P
 
     private fun consume(schema: Schema, key: String, cb: () -> P?): P? {
         if (remainingKeys[0] == key) {
-            remainingKeys.removeAt(0);
+            remainingKeys.removeAt(0)
             if (remainingKeys.isEmpty()) {
                 return schema as P
             }
             return cb()
         }
-        throw SchemaNotFoundException(key, remainingKeys[0]);
+        throw SchemaNotFoundException(key, remainingKeys[0])
     }
 
     override fun visitCompositeSchema(schema: CompositeSchema): P? {
@@ -110,17 +111,16 @@ internal class TraversingSchemaVisitor<P>(vararg keys: String) : SchemaVisitor<P
         schema.referredSchema?.accept(this)
     }
 
-    override fun visitAdditionalPropertiesSchema(schema: AdditionalPropertiesSchema): P? = consume(schema, "additionalProperties")
-    { super.visitAdditionalPropertiesSchema(schema) }
+    override fun visitAdditionalPropertiesSchema(schema: AdditionalPropertiesSchema): P? = consume(schema, "additionalProperties") { super.visitAdditionalPropertiesSchema(schema) }
 
     override fun visitReferenceSchema(schema: ReferenceSchema): P? {
         if (remainingKeys[0] == "\$ref") {
-            remainingKeys.removeAt(0);
+            remainingKeys.removeAt(0)
             if (remainingKeys.isEmpty()) {
                 return schema.referredSchema as P
             }
             return schema.referredSchema!!.accept(this)
         }
-        throw SchemaNotFoundException("\$ref", remainingKeys[0]);
+        throw SchemaNotFoundException("\$ref", remainingKeys[0])
     }
 }

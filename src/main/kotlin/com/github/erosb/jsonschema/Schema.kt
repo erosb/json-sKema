@@ -33,7 +33,7 @@ data class AllOfSchema(
 
 data class ReferenceSchema(var referredSchema: Schema?, val ref: String, override val location: SourceLocation) :
     Schema(location) {
-    override fun <P> accept(visitor: SchemaVisitor<P>) = visitor.visitReferenceSchema(this)
+    override fun <P> accept(visitor: SchemaVisitor<P>) = visitor.visitReferenceSchemaUnlessAlreadyVisited(this)
     override fun subschemas() = referredSchema?.let { listOf(it) } ?: emptyList()
 
     override fun equals(other: Any?): Boolean {

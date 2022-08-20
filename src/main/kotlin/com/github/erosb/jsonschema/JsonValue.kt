@@ -8,7 +8,7 @@ import java.util.stream.Collectors.joining
 data class JsonParseException(override val message: String, val location: TextLocation) : RuntimeException()
 
 data class JsonTypingException(val expectedType: String, val actualType: String, val location: SourceLocation) : RuntimeException() {
-    override fun toString() = "${location.pointer}: expected ${expectedType}, found ${actualType} (line ${location.lineNumber}, position ${location.position})"
+    override fun toString() = "${location.pointer}: expected $expectedType, found $actualType (line ${location.lineNumber}, position ${location.position})"
 }
 
 data class JsonPointer(val segments: List<String>) {
@@ -37,14 +37,16 @@ open class TextLocation(val lineNumber: Int, val position: Int, val documentSour
     }
 
     override fun toString(): String {
-        return "line ${lineNumber}, character ${position}"
+        return "line $lineNumber, character $position"
     }
 }
 
-open class SourceLocation(lineNumber: Int,
-                          position: Int,
-                          val pointer: JsonPointer,
-                          documentSource: URI? = null) : TextLocation(lineNumber, position, documentSource) {
+open class SourceLocation(
+    lineNumber: Int,
+    position: Int,
+    val pointer: JsonPointer,
+    documentSource: URI? = null
+) : TextLocation(lineNumber, position, documentSource) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -70,7 +72,7 @@ open class SourceLocation(lineNumber: Int,
     }
 
     override fun toString(): String {
-        return "line ${lineNumber}, character ${position}, pointer: ${pointer}"
+        return "line $lineNumber, character $position, pointer: $pointer"
     }
 
     internal fun trimPointerSegments(leadingSegmentsToBeRemoved: Int): SourceLocation {
@@ -78,7 +80,10 @@ open class SourceLocation(lineNumber: Int,
             throw IllegalArgumentException("can not remove $leadingSegmentsToBeRemoved segment from pointer $pointer")
         }
         return SourceLocation(
-            lineNumber, position, JsonPointer(pointer.segments.subList(leadingSegmentsToBeRemoved, pointer.segments.size)), documentSource
+            lineNumber,
+            position,
+            JsonPointer(pointer.segments.subList(leadingSegmentsToBeRemoved, pointer.segments.size)),
+            documentSource
         )
     }
 }
@@ -94,7 +99,7 @@ interface IJsonValue {
     fun requireString(): IJsonString = throw unexpectedType("string")
     fun requireNumber(): IJsonNumber = throw unexpectedType("number")
     fun requireInt(): Int {
-        val num = requireNumber();
+        val num = requireNumber()
         if (num.value is Int) return num.value.toInt() else throw unexpectedType("integer")
     }
 
@@ -197,16 +202,16 @@ data class JsonNull(override val location: SourceLocation = UnknownSource) : IJs
 }
 
 data class JsonBoolean(
-        override val value: Boolean,
-        override val location: SourceLocation = UnknownSource
+    override val value: Boolean,
+    override val location: SourceLocation = UnknownSource
 ) : JsonValue(location), IJsonBoolean {
     override fun unwrap(): Any = value
     override fun equals(other: Any?) = super.equals(other)
 }
 
 data class JsonNumber(
-        override val value: Number,
-        override val location: SourceLocation = UnknownSource
+    override val value: Number,
+    override val location: SourceLocation = UnknownSource
 ) : JsonValue(location), IJsonNumber {
     override fun unwrap() = value
 
@@ -215,8 +220,8 @@ data class JsonNumber(
     }
 
     override fun equals(other: Any?): Boolean {
-        if (other === this) return true;
-        if (!(other is IJsonNumber)) return false;
+        if (other === this) return true
+        if (!(other is IJsonNumber)) return false
         return BigDecimal(value.toString()).compareTo(BigDecimal(other.value.toString())) == 0
     }
 }
@@ -233,16 +238,16 @@ data class JsonString(override val value: String, override val location: SourceL
 }
 
 data class JsonArray(
-        override val elements: List<JsonValue>,
-        override val location: SourceLocation = UnknownSource
+    override val elements: List<JsonValue>,
+    override val location: SourceLocation = UnknownSource
 ) : JsonValue(location), IJsonArray<JsonValue> {
     override fun unwrap() = elements
     override fun equals(other: Any?) = super.equals(other)
 }
 
 data class JsonObject(
-        override val properties: Map<JsonString, JsonValue>,
-        override val location: SourceLocation = UnknownSource
+    override val properties: Map<JsonString, JsonValue>,
+    override val location: SourceLocation = UnknownSource
 ) : JsonValue(location), IJsonObject<JsonString, JsonValue> {
     override fun unwrap() = properties
     override fun equals(other: Any?) = super.equals(other)

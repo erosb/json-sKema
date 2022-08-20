@@ -4,9 +4,11 @@ enum class SpecificationVersion {
     DRAFT_2020_12
 }
 
-enum class  Keyword(val value: String,
-                            internal val hasMapLikeSemantics: Boolean = false,
-                            val specificationVersion: SpecificationVersion = SpecificationVersion.DRAFT_2020_12) {
+enum class Keyword(
+    val value: String,
+    internal val hasMapLikeSemantics: Boolean = false,
+    val specificationVersion: SpecificationVersion = SpecificationVersion.DRAFT_2020_12
+) {
     ID("\$id"),
     ANCHOR("\$anchor"),
     DYNAMIC_REF("\$dynamicRef"),

@@ -3,13 +3,12 @@ package com.github.erosb.jsonschema
 import java.io.*
 import java.net.URI
 
-
 fun interface SchemaClient {
     fun get(uri: URI): InputStream
 }
 
-internal class DefaultSchemaClient : SchemaClient{
-    
+internal class DefaultSchemaClient : SchemaClient {
+
     override fun get(uri: URI): InputStream {
         println("GET $uri")
         try {
@@ -21,17 +20,17 @@ internal class DefaultSchemaClient : SchemaClient{
             throw UncheckedIOException(e)
         }
     }
-
 }
-        
-internal class MemoizingSchemaClient(private val delegate: SchemaClient): SchemaClient {
-    
-    val cache: MutableMap<URI, ByteArray> = mutableMapOf();
-    
-    override fun get(uri: URI): InputStream = ByteArrayInputStream(cache.computeIfAbsent(uri) {
-        val out = ByteArrayOutputStream()
-        delegate.get(it).transferTo(out)
-        return@computeIfAbsent out.toByteArray()
-    })
 
+internal class MemoizingSchemaClient(private val delegate: SchemaClient) : SchemaClient {
+
+    val cache: MutableMap<URI, ByteArray> = mutableMapOf()
+
+    override fun get(uri: URI): InputStream = ByteArrayInputStream(
+        cache.computeIfAbsent(uri) {
+            val out = ByteArrayOutputStream()
+            delegate.get(it).transferTo(out)
+            return@computeIfAbsent out.toByteArray()
+        }
+    )
 }

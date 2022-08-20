@@ -8,8 +8,9 @@ import java.math.BigInteger
 import java.net.URI
 
 private class SourceWalker(
-        input: InputStream,
-        private val reader: Reader = BufferedReader(InputStreamReader(input))) {
+    input: InputStream,
+    private val reader: Reader = BufferedReader(InputStreamReader(input))
+) {
 
     private var lineNumber = 1
     private var position = 1
@@ -93,22 +94,22 @@ private class SourceWalker(
 }
 
 class JsonParser {
-    
+
     private val walker: SourceWalker
     private val documentSource: URI?
-    
+
     constructor(schemaJson: String, documentSource: URI? = null) {
         this.walker = SourceWalker(ByteArrayInputStream(schemaJson.toByteArray()))
         this.documentSource = documentSource
     }
-    
+
     constructor(schemaInputStream: InputStream, documentSource: URI? = null) {
-        this.walker = SourceWalker(schemaInputStream);
+        this.walker = SourceWalker(schemaInputStream)
         this.documentSource = documentSource
     }
 
     private val nestingPath: MutableList<String> = mutableListOf()
-    
+
     fun parse(): JsonValue {
         val jsonValue = parseValue()
         if (!walker.reachedEOF()) {
@@ -170,7 +171,6 @@ class JsonParser {
             jsonValue = parseNumber()
         }
 
-
         if (jsonValue == null) {
             TODO()
         }
@@ -178,7 +178,7 @@ class JsonParser {
         return jsonValue
     }
 
-    private fun sourceLocation(): SourceLocation{
+    private fun sourceLocation(): SourceLocation {
         val sourceLocation = SourceLocation(
             walker.location.lineNumber,
             walker.location.position,
@@ -187,7 +187,7 @@ class JsonParser {
         )
         return sourceLocation
     }
-    
+
     private fun toNumber(str: String, location: SourceLocation): JsonNumber {
         try {
             return JsonNumber(str.toInt(), location)
@@ -195,7 +195,7 @@ class JsonParser {
             return JsonNumber(BigInteger(str), location)
         }
     }
-    
+
     private fun toDouble(str: String, location: SourceLocation): JsonNumber {
         try {
             val value = str.toDouble()
@@ -204,7 +204,7 @@ class JsonParser {
             }
             return JsonNumber(value, location)
         } catch (ex: NumberFormatException) {
-            return JsonNumber(BigDecimal(str), location);
+            return JsonNumber(BigDecimal(str), location)
         }
     }
 
@@ -212,12 +212,11 @@ class JsonParser {
         val location = sourceLocation()
         val buffer = StringBuilder()
         optParseSign(buffer)
-        while(walker.curr() in '0'..'9' && !walker.reachedEOF()) {
+        while (walker.curr() in '0'..'9' && !walker.reachedEOF()) {
             buffer.append(walker.curr())
             walker.forward()
             if (walker.reachedEOF()) {
-                return toNumber(buffer.toString(), location)    
-            }
+                return toNumber(buffer.toString(), location) }
         }
         if (walker.curr() != '.' && walker.curr().toLowerCase() != 'e') {
             return toNumber(buffer.toString(), location)
@@ -226,8 +225,7 @@ class JsonParser {
         walker.forward()
         if (appendDigits(buffer)) return toDouble(buffer.toString(), location)
         if (!(walker.curr() == 'e' || walker.curr() == 'E')) {
-            return toDouble(buffer.toString(), location)    
-        }
+            return toDouble(buffer.toString(), location) }
         buffer.append(walker.curr())
         walker.forward()
         optParseSign(buffer)
@@ -257,10 +255,10 @@ class JsonParser {
     private fun parseString(putReadLiteralToNestingPath: Boolean = false): JsonString {
         var loc = sourceLocation()
         walker.consume("\"")
-        var nextCharIsEscaped = false;
+        var nextCharIsEscaped = false
         val sb = StringBuilder()
         var reachedClosingQuote = false
-        while(!walker.reachedEOF()) {
+        while (!walker.reachedEOF()) {
             val ch = walker.curr()
             if (ch == '\\') {
                 if (nextCharIsEscaped) {
@@ -268,7 +266,7 @@ class JsonParser {
                 } else {
                     nextCharIsEscaped = true
                     walker.forward()
-                    continue;
+                    continue
                 }
             }
             if (ch == '"') {
@@ -285,7 +283,7 @@ class JsonParser {
         if (!reachedClosingQuote) {
             throw JsonParseException("Unexpected EOF", sourceLocation())
         }
-        val literal = sb.toString() //walker.readUntil('"').intern()
+        val literal = sb.toString() // walker.readUntil('"').intern()
         if (putReadLiteralToNestingPath) {
             nestingPath.add(literal)
             loc = SourceLocation(loc.lineNumber, loc.position, JsonPointer(nestingPath.toList()))
@@ -295,5 +293,4 @@ class JsonParser {
     }
 
     operator fun invoke(): JsonValue = parse()
-
 }

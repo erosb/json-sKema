@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.net.URI
 
-
 fun createSchemaLoaderForString(schemaJson: String, remoteDocuments: Map<String, String> = mapOf()): SchemaLoader {
     val client = TestingSchemaClient()
     remoteDocuments.forEach { (uri, json) ->
@@ -29,7 +28,7 @@ class RefResolutionTest {
                    }
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
         )() as CompositeSchema
         val actual = root.accept(TraversingSchemaVisitor<String>("$ref", "title"))!!
         assertThat(actual).isEqualTo("my title")
@@ -48,7 +47,7 @@ class RefResolutionTest {
                 }
               ]
             }
-        """.trimIndent()
+            """.trimIndent()
         )() as CompositeSchema
         assertThat(actual.title!!.value).isEqualTo("root schema")
         val allOf = actual.subschemas.iterator().next() as AllOfSchema
@@ -97,9 +96,11 @@ class RefResolutionTest {
                 {
                     "$ref": "http://example.com/schema"
                 }
-            """, mapOf(
+            """,
+            mapOf(
                 Pair(
-                    "http://example.com/schema", """
+                    "http://example.com/schema",
+                    """
                                 {"title": "remote schema"}
                             """
                 )
@@ -107,7 +108,7 @@ class RefResolutionTest {
         )() as CompositeSchema
 
         val referred = (actual.subschemas.iterator().next() as ReferenceSchema).referredSchema as CompositeSchema
-        assertThat(referred.title!!.value).isEqualTo("remote schema");
+        assertThat(referred.title!!.value).isEqualTo("remote schema")
     }
 
     @Test
@@ -121,9 +122,11 @@ class RefResolutionTest {
                         "$ref": "other.json"
                     }
                 }
-            """, mapOf(
+            """,
+            mapOf(
                 Pair(
-                    "http://example.org/path/other.json", """
+                    "http://example.org/path/other.json",
+                    """
                         {
                             "title": "referred schema"
                         }
@@ -133,7 +136,7 @@ class RefResolutionTest {
         )()
 
         val ref: String = root.accept(TraversingSchemaVisitor("additionalProperties", "$ref", "title"))!!
-        assertThat(ref).isEqualTo("referred schema");
+        assertThat(ref).isEqualTo("referred schema")
     }
 
     @Test
@@ -147,9 +150,11 @@ class RefResolutionTest {
                         "$ref": "other.json"
                     }
                 }
-        """, mapOf(
+        """,
+            mapOf(
                 Pair(
-                    "http://example.org/path/other.json", """
+                    "http://example.org/path/other.json",
+                    """
                         {
                             "title": "referred schema",
                             "$ref": "http://example.org/root.json#"
@@ -179,7 +184,7 @@ class RefResolutionTest {
                     }
                 }
             }
-                """.trimIndent()
+            """.trimIndent()
         )()
     }
 
@@ -191,9 +196,11 @@ class RefResolutionTest {
                 "$id": "http://original"
                 "$ref": "http://remote#myAnchor"
             }
-        """, mapOf(
+        """,
+            mapOf(
                 Pair(
-                    "http://remote", """
+                    "http://remote",
+                    """
                 {
                     "$id": "http://remote",
                     "title": "remote root title",
@@ -221,9 +228,11 @@ class RefResolutionTest {
                 "$id": "http://original"
                 "$ref": "http://remote#myAnchor"
             }
-        """, mapOf(
+        """,
+            mapOf(
                 Pair(
-                    "http://remote", """
+                    "http://remote",
+                    """
                 {
                     "title": "remote root title",
                     "$defs": {
@@ -287,9 +296,11 @@ class RefResolutionTest {
             {
                 "$ref": "http://remote#/$defs/entryPoint"
             }
-        """, mapOf(
+        """,
+            mapOf(
                 Pair(
-                    "http://remote", """
+                    "http://remote",
+                    """
             {
                 "$defs": {
                     "entryPoint": {
@@ -300,7 +311,7 @@ class RefResolutionTest {
                     }
                 }
             }
-        """.trimIndent()
+                    """.trimIndent()
                 )
             )
         )()
@@ -314,7 +325,8 @@ class RefResolutionTest {
         val root = createSchemaLoaderForString(
             """
             {"$ref": "http://remote"}
-        """, mapOf(
+        """,
+            mapOf(
                 Pair(
                     "http://remote",
                     """
@@ -340,7 +352,8 @@ class RefResolutionTest {
         val root = createSchemaLoaderForString(
             """
             {"$ref": "https://remote"}
-        """, mapOf(
+        """,
+            mapOf(
                 Pair(
                     "https://remote",
                     """
@@ -380,9 +393,11 @@ class RefResolutionTest {
             {
                 "$ref": "https://remote"
             }
-        """, mapOf(
+        """,
+            mapOf(
                 Pair(
-                    "https://remote", """
+                    "https://remote",
+                    """
             {
                 "$id": "https://mismatching-remote",
                 "$ref": "https://mismatching-remote#MySchema"
@@ -406,9 +421,11 @@ class RefResolutionTest {
         val root = createSchemaLoaderForString(
             """
             {"$ref": "https://remote#/$defs/parent/properties/child/MySchema"}
-        """, mapOf(
+        """,
+            mapOf(
                 Pair(
-                    "https://remote", """
+                    "https://remote",
+                    """
             {
                 "$defs" : {
                     "parent": {
@@ -432,7 +449,9 @@ class RefResolutionTest {
                 }
             }
         """
-                )))()
+                )
+            )
+        )()
         val actual = root.accept(TraversingSchemaVisitor<String>("$ref", "$ref", "title"))!!
         assertThat(actual).isEqualTo("my title")
     }
@@ -450,7 +469,8 @@ class RefResolutionTest {
                     }
                 }
             }
-            """)()
+            """
+        )()
         val actual = root.accept(TraversingSchemaVisitor<String>("$ref", "title"))!!
         assertThat(actual).isEqualTo("my title")
     }

@@ -11,14 +11,14 @@ class JsonValueTest {
     fun trimPointerSegments_success() {
         val location = SourceLocation(1, 2, JsonPointer(listOf("seg1", "seg2", "seg3")))
         val actual = location.trimPointerSegments(2)
-        assertEquals(SourceLocation(1, 2, JsonPointer(listOf("seg3"))), actual);
+        assertEquals(SourceLocation(1, 2, JsonPointer(listOf("seg3"))), actual)
     }
 
     @Test
     fun trimPointerSegments_emptySegmentRemains() {
         val location = SourceLocation(1, 2, JsonPointer(listOf("seg1", "seg2")))
         val actual = location.trimPointerSegments(2)
-        assertEquals(SourceLocation(1, 2, JsonPointer(emptyList())), actual);
+        assertEquals(SourceLocation(1, 2, JsonPointer(emptyList())), actual)
     }
 
     @Test
@@ -28,5 +28,4 @@ class JsonValueTest {
         }
         assertEquals("can not remove 3 segment from pointer #/seg1/seg2", thrown.message)
     }
-
 }

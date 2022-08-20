@@ -2,7 +2,6 @@ package com.github.erosb.jsonschema
 
 internal class JsonPrintingVisitor(private val indentation: String = "  ") : JsonVisitor<String> {
 
-
     private var indentLevel: Int = 0
 
     override fun visitString(str: IJsonString) = '"' + str.value + '"'

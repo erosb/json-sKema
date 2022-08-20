@@ -68,7 +68,7 @@ class JsonParserTest {
         val expected = JsonString("string literal", SourceLocation(1, 3, pointer()))
         assertEquals(expected, actual)
     }
-    
+
     @Test
     fun `escaped doublequotes in string`() {
         val actual = JsonParser("\"str\\\"ab\\\\c\\\"\"")()
@@ -88,8 +88,8 @@ class JsonParserTest {
     fun `array read`() {
         val actual = JsonParser(" [null, null\r\n]")()
         val expected = JsonArray(
-                listOf(JsonNull(SourceLocation(1, 3, pointer("0"))), JsonNull(SourceLocation(1, 9, pointer("1")))),
-                SourceLocation(1, 2, pointer())
+            listOf(JsonNull(SourceLocation(1, 3, pointer("0"))), JsonNull(SourceLocation(1, 9, pointer("1")))),
+            SourceLocation(1, 2, pointer())
         )
         assertEquals(expected, actual)
     }
@@ -98,8 +98,8 @@ class JsonParserTest {
     fun `empty array`() {
         val actual = JsonParser("[  \n ]")()
         val expected = JsonArray(
-                emptyList(),
-                SourceLocation(1, 1, pointer())
+            emptyList(),
+            SourceLocation(1, 1, pointer())
         )
         assertEquals(expected, actual)
     }
@@ -108,8 +108,8 @@ class JsonParserTest {
     fun `single-element array`() {
         val actual = JsonParser("[ null \n ]")()
         val expected = JsonArray(
-                listOf(JsonNull(SourceLocation(1, 3, pointer("0")))),
-                SourceLocation(1, 1, pointer())
+            listOf(JsonNull(SourceLocation(1, 3, pointer("0")))),
+            SourceLocation(1, 1, pointer())
         )
         assertEquals(expected, actual)
     }
@@ -118,8 +118,8 @@ class JsonParserTest {
     fun `empty object`() {
         val actual = JsonParser("{}")()
         val expected = JsonObject(
-                emptyMap(),
-                SourceLocation(1, 1, pointer())
+            emptyMap(),
+            SourceLocation(1, 1, pointer())
         )
         assertEquals(expected, actual)
     }
@@ -128,8 +128,8 @@ class JsonParserTest {
     fun `single-property object`() {
         val actual = JsonParser("{\"key\":\"value\"}")()
         val expected = JsonObject(
-                mapOf(Pair(JsonString("key", SourceLocation(1, 2, pointer("key"))), JsonString("value", SourceLocation(1, 8, pointer("key"))))),
-                SourceLocation(1, 1, pointer())
+            mapOf(Pair(JsonString("key", SourceLocation(1, 2, pointer("key"))), JsonString("value", SourceLocation(1, 8, pointer("key"))))),
+            SourceLocation(1, 1, pointer())
         )
         assertEquals(expected, actual)
     }
@@ -138,11 +138,11 @@ class JsonParserTest {
     fun `multi-property object`() {
         val actual = JsonParser(" {\"key\":\"value\", \"key2\" : null}\n")()
         val expected = JsonObject(
-                mapOf(
-                        Pair(JsonString("key", SourceLocation(1, 3, pointer("key"))), JsonString("value", SourceLocation(1, 9, pointer("key")))),
-                        Pair(JsonString("key2", SourceLocation(1, 18, pointer("key2"))), JsonNull(SourceLocation(1, 27, pointer("key2"))))
-                ),
-                SourceLocation(1, 2, pointer())
+            mapOf(
+                Pair(JsonString("key", SourceLocation(1, 3, pointer("key"))), JsonString("value", SourceLocation(1, 9, pointer("key")))),
+                Pair(JsonString("key2", SourceLocation(1, 18, pointer("key2"))), JsonNull(SourceLocation(1, 27, pointer("key2"))))
+            ),
+            SourceLocation(1, 2, pointer())
         )
         assertEquals(expected, actual)
     }
@@ -174,18 +174,18 @@ class JsonParserTest {
         val expected = JsonNumber(-123, SourceLocation(1, 1, pointer()))
         assertEquals(expected, actual)
     }
-    
+
     @Test
     fun `Big Integer`() {
         val actual = JsonParser("9007199254740992")()
-        assertEquals(BigInteger("9007199254740992"), actual.requireNumber().value);
+        assertEquals(BigInteger("9007199254740992"), actual.requireNumber().value)
     }
-    
+
     @Test
     fun `Big Decimal`() {
-        val str = "999" + Double.MAX_VALUE.toString();
+        val str = "999" + Double.MAX_VALUE.toString()
         val actual = JsonParser(str)()
-        assertEquals(BigDecimal(str), actual.requireNumber().value);
+        assertEquals(BigDecimal(str), actual.requireNumber().value)
     }
 
     @Test
@@ -208,7 +208,7 @@ class JsonParserTest {
         val expected = JsonNumber(12.34e-22, SourceLocation(1, 1, pointer()))
         assertEquals(expected, actual)
     }
-    
+
     @Test
     fun `exponential without fractal`() {
         val actual = JsonParser("1e3")()
@@ -232,26 +232,33 @@ class JsonParserTest {
 
     @Test
     fun `complex object`() {
-        val actual = JsonParser("""
+        val actual = JsonParser(
+            """
             {
                 "string": "árvíztűrő tükörfúrógép",
                 "array": [null, true, 12.34],
                 "object": { "": 0 }
             }
-        """.trimIndent())()
-   
+            """.trimIndent()
+        )()
+
         val expected = JsonObject(
-                mapOf(
-                        Pair(JsonString("array"), JsonArray(listOf(JsonNull(), JsonBoolean(true), JsonNumber(12.34)))),
-                        Pair(JsonString("string"), JsonString("árvíztűrő tükörfúrógép")),
-                        Pair(JsonString("object"), JsonObject(mapOf(
-                                Pair(JsonString(""), JsonNumber(0))
-                        )))
+            mapOf(
+                Pair(JsonString("array"), JsonArray(listOf(JsonNull(), JsonBoolean(true), JsonNumber(12.34)))),
+                Pair(JsonString("string"), JsonString("árvíztűrő tükörfúrógép")),
+                Pair(
+                    JsonString("object"),
+                    JsonObject(
+                        mapOf(
+                            Pair(JsonString(""), JsonNumber(0))
+                        )
+                    )
                 )
+            )
         )
         assertThat(actual)
-                .usingRecursiveComparison()
-                .ignoringFieldsOfTypes(SourceLocation::class.java)
-                .isEqualTo(expected)
+            .usingRecursiveComparison()
+            .ignoringFieldsOfTypes(SourceLocation::class.java)
+            .isEqualTo(expected)
     }
 }

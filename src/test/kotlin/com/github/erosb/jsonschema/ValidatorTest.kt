@@ -2,11 +2,7 @@ package com.github.erosb.jsonschema
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
-import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.Arguments
-import org.junit.jupiter.params.provider.MethodSource
 
 class ValidatorTest {
 
@@ -15,7 +11,8 @@ class ValidatorTest {
         val schema = CompositeSchema(
             subschemas = setOf(
                 MinLengthSchema(5, SourceLocation(5, 5, JsonPointer(listOf("parent", "minLength"))))
-            ), UnknownSource
+            ),
+            UnknownSource
         )
         val instance = JsonParser("  \"hey\"")()
         val actual = Validator.forSchema(schema).validate(instance)!!
@@ -37,7 +34,8 @@ class ValidatorTest {
                 minLengthSchema,
                 maxLengthSchema,
                 falseSchema
-            ), location = UnknownSource
+            ),
+            location = UnknownSource
         )
         val instance = JsonParser("  \"heyy\"")()
         val actual = Validator.forSchema(schema).validate(instance)!!
@@ -45,7 +43,9 @@ class ValidatorTest {
 
         println(actual.toJSON())
 
-        assertEquals(JsonParser("""
+        assertEquals(
+            JsonParser(
+                """
             {
                 "instanceRef": "#",
                 "schemaRef": "#",
@@ -71,6 +71,9 @@ class ValidatorTest {
                     }
                 ]
             }
-        """)(), actual.toJSON())
+        """
+            )(),
+            actual.toJSON()
+        )
     }
 }

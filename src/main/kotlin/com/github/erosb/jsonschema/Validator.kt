@@ -8,7 +8,7 @@ open class ValidationFailure(
     open val causes: Set<ValidationFailure> = setOf()
 ) {
     override fun toString(): String {
-        return "Line ${instance.location.lineNumber}, character ${instance.location.position}: ${message}"
+        return "Line ${instance.location.lineNumber}, character ${instance.location.position}: $message"
     }
 
     fun toJSON(): JsonObject {
@@ -63,7 +63,7 @@ interface Validator {
 
 private class DefaultValidator(private val rootSchema: Schema) : Validator, SchemaVisitor<ValidationFailure>() {
 
-    abstract inner class AbstractTypeValidatingVisitor: JsonVisitor<ValidationFailure>  {
+    abstract inner class AbstractTypeValidatingVisitor : JsonVisitor<ValidationFailure> {
         override fun visitString(str: IJsonString): ValidationFailure? = checkType("string")
         override fun visitBoolean(bool: IJsonBoolean): ValidationFailure? = checkType("boolean")
         override fun visitNumber(num: IJsonNumber): ValidationFailure? = checkType(findActualNumberType(num))
@@ -76,11 +76,13 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
             val dotIndex = numAsString.indexOf('.')
             fun isZeroFractional(): Boolean = numAsString.substring(dotIndex + 1)
                 .chars().allMatch { it == '0'.code }
-            return if (dotIndex == -1 || isZeroFractional())
+            return if (dotIndex == -1 || isZeroFractional()) {
                 "integer"
-            else
+            } else {
                 "number"
+            }
         }
+
         abstract fun checkType(actualType: String): ValidationFailure?
     }
 
@@ -90,10 +92,10 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
             if (actualType == "integer" && schema.type.value == "number") {
                 return null
             }
-            return if (schema.type.value == actualType)
+            return if (schema.type.value == actualType) {
                 null
-            else ValidationFailure(
-                "expected type: ${schema.type.value}, actual: ${actualType}",
+            } else ValidationFailure(
+                "expected type: ${schema.type.value}, actual: $actualType",
                 this.schema,
                 instance,
                 Keyword.TYPE
@@ -101,17 +103,17 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
     }
 
-    inner class MultiTypeValidatingVisitor(private val schema: MultiTypeSchema): AbstractTypeValidatingVisitor() {
+    inner class MultiTypeValidatingVisitor(private val schema: MultiTypeSchema) : AbstractTypeValidatingVisitor() {
 
         override fun checkType(actualType: String): ValidationFailure? {
             val permittedTypes = schema.types.elements.map { it.requireString().value }
             if (actualType == "integer" && permittedTypes.contains("number")) {
                 return null
             }
-            return if (permittedTypes.contains(actualType))
+            return if (permittedTypes.contains(actualType)) {
                 null
-            else ValidationFailure(
-                "expected type: one of ${permittedTypes.joinToString { ", " }}, actual: ${actualType}",
+            } else ValidationFailure(
+                "expected type: one of ${permittedTypes.joinToString { ", " }}, actual: $actualType",
                 this.schema,
                 instance,
                 Keyword.TYPE
@@ -128,10 +130,11 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
 
     override fun visitConstSchema(schema: ConstSchema): ValidationFailure? {
         val isValid = schema.constant == instance
-        return if (isValid)
+        return if (isValid) {
             null
-        else
+        } else {
             ValidationFailure("expected constant value: ${schema.constant}", schema, instance, Keyword.CONST)
+        }
     }
 
     override fun visitTypeSchema(schema: TypeSchema): ValidationFailure? {
@@ -145,30 +148,32 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
     override fun visitMinLengthSchema(schema: MinLengthSchema): ValidationFailure? {
         return instance.maybeString {
             val length = it.value.codePointCount(0, it.value.length)
-            if (length < schema.minLength)
+            if (length < schema.minLength) {
                 ValidationFailure(
-                    "expected minLength: ${schema.minLength}, actual: ${length}",
+                    "expected minLength: ${schema.minLength}, actual: $length",
                     schema,
                     instance,
                     Keyword.MIN_LENGTH
                 )
-            else
+            } else {
                 null
+            }
         }
     }
 
     override fun visitMaxLengthSchema(schema: MaxLengthSchema): ValidationFailure? {
         return instance.maybeString {
             val length = it.value.codePointCount(0, it.value.length)
-            if (length > schema.maxLength)
+            if (length > schema.maxLength) {
                 ValidationFailure(
-                    "expected maxLength: ${schema.maxLength}, actual: ${length}",
+                    "expected maxLength: ${schema.maxLength}, actual: $length",
                     schema,
                     instance,
                     Keyword.MAX_LENGTH
                 )
-            else
+            } else {
                 null
+            }
         }
     }
 
@@ -182,6 +187,6 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         if (current === null) {
             return previous
         }
-        return previous.join(current);
+        return previous.join(current)
     }
 }

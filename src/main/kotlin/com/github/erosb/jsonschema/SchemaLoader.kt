@@ -19,7 +19,7 @@ internal fun createDefaultConfig() = SchemaLoaderConfig(
 /**
  * http://json-schema.org/draft/2020-12/json-schema-core.html#initial-base
  */
-val DEFAULT_BASE_URI: String = "mem://input";
+val DEFAULT_BASE_URI: String = "mem://input"
 
 internal data class Anchor(
     var json: IJsonValue? = null,
@@ -58,7 +58,7 @@ internal data class LoadingState(
         if (anchor.json !== null && anchor.json !== json) {
             throw IllegalStateException("raw schema already registered by URI $id")
         }
-        anchor.json = json;
+        anchor.json = json
         return anchor
     }
 
@@ -89,19 +89,19 @@ class SchemaLoader(
     }
 
     private fun <R> withBaseUriAdjustment(json: IJsonValue, runnable: () -> R): R {
-        val origBaseUri = loadingState.baseURI;
+        val origBaseUri = loadingState.baseURI
         adjustBaseURI(json)
         try {
             return runnable()
         } finally {
             loadingState.baseURI = origBaseUri
         }
-        val k: Keyword? = null;
+        val k: Keyword? = null
     }
 
     private var loadingState: LoadingState = LoadingState(schemaJson)
 
-    operator fun invoke(): Schema = loadRootSchema();
+    operator fun invoke(): Schema = loadRootSchema()
 
     private fun lookupAnchors(json: IJsonValue, baseURI: URI) {
         if (shouldProceedWithAnchorLookup(json)) return
@@ -110,7 +110,7 @@ class SchemaLoader(
                 withBaseUriAdjustment(json) {
                     when (val id = json[Keyword.ID.value]) {
                         is IJsonString -> {
-                            loadingState.registerRawSchema(loadingState.baseURI.toString(), json);
+                            loadingState.registerRawSchema(loadingState.baseURI.toString(), json)
                         }
                     }
                     when (val anchor = json[Keyword.ANCHOR.value]) {
@@ -190,7 +190,7 @@ class SchemaLoader(
                 unresolved.json = pair.first
                 unresolved.lexicalContextBaseURI = pair.second
             } else {
-                anchor.underLoading = true;
+                anchor.underLoading = true
 
                 val origBaseURI = loadingState.baseURI
 
@@ -198,10 +198,10 @@ class SchemaLoader(
                     loadingState.baseURI = it
                 }
                 val schema = doLoadSchema(anchor.json!!)
-                loadingState.baseURI = origBaseURI;
+                loadingState.baseURI = origBaseURI
 
-                anchor.resolveWith(schema);
-                anchor.underLoading = false;
+                anchor.resolveWith(schema)
+                anchor.underLoading = false
             }
         } while (true)
         return finalRef.referredSchema!!
@@ -230,7 +230,7 @@ class SchemaLoader(
             }
         }
         if (uri.fragment.isEmpty() || uri.fragment == "#") {
-            return Pair(continingRoot, uri.toBeQueried);
+            return Pair(continingRoot, uri.toBeQueried)
         }
         val byURIWithAnchor = loadingState.anchorByURI(ref)
         if (byURIWithAnchor?.json !== null) {
@@ -283,8 +283,8 @@ class SchemaLoader(
     }
 
     private fun <T> runWithChangedBaseURI(changedBaseURI: URI, task: () -> T): T {
-        val origBaseURI = loadingState.baseURI;
-        loadingState.baseURI = changedBaseURI;
+        val origBaseURI = loadingState.baseURI
+        loadingState.baseURI = changedBaseURI
         try {
             return task()
         } finally {
@@ -295,10 +295,11 @@ class SchemaLoader(
     private fun doLoadSchema(schemaJson: IJsonValue): Schema {
         val retval: Schema =
             when (schemaJson) {
-                is IJsonBoolean -> if (schemaJson.value)
+                is IJsonBoolean -> if (schemaJson.value) {
                     TrueSchema(schemaJson.location)
-                else
+                } else {
                     FalseSchema(schemaJson.location)
+                }
                 is IJsonObject<*, *> -> createCompositeSchema(schemaJson)
                 else -> TODO()
             }
@@ -328,8 +329,9 @@ class SchemaLoader(
                     Keyword.PROPERTIES.value -> propertySchemas = loadPropertySchemas(value.requireObject())
                     Keyword.REF.value -> subschema = createReferenceSchema(name.location, value.requireString())
                     Keyword.DYNAMIC_REF.value -> dynamicRef = loadingState.baseURI.resolve(value.requireString().value)
-                    Keyword.DYNAMIC_ANCHOR.value -> dynamicAnchor =
-                        loadingState.baseURI.resolve("#" + value.requireString().value)
+                    Keyword.DYNAMIC_ANCHOR.value ->
+                        dynamicAnchor =
+                            loadingState.baseURI.resolve("#" + value.requireString().value)
                     Keyword.TITLE.value -> title = value.requireString()
                     Keyword.DESCRIPTION.value -> description = value.requireString()
                     Keyword.READ_ONLY.value -> readOnly = value.requireBoolean()
@@ -386,5 +388,4 @@ class SchemaLoader(
             .collect(toList()),
         location
     )
-
 }

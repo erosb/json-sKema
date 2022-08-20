@@ -53,7 +53,7 @@ internal fun loadParamsFromPackage(packageName: String, vararg includedFiles: St
         }
         val fileName = path.substring(path.lastIndexOf('/') + 1)
         if (includedFiles.isNotEmpty() && !includedFiles.contains(fileName)) {
-            continue;
+            continue
         }
         val arr: JsonArray = loadTests(TestSuiteTest::class.java.getResourceAsStream("/$path"))
         for (i in 0 until arr.length()) {
@@ -76,7 +76,7 @@ class TestCase(input: JsonObject, schemaTest: JsonObject, fileName: String) {
     val expectedToBeValid = input["valid"]!!.requireBoolean().value
     val inputData: IJsonValue = input["data"]!!
 
-    lateinit var schema: Schema;
+    lateinit var schema: Schema
 
     fun loadSchema() {
         schema = SchemaLoader(schemaJson)()
@@ -97,7 +97,8 @@ class TestCase(input: JsonObject, schemaTest: JsonObject, fileName: String) {
 class TestSuiteTest {
     companion object {
         @JvmStatic
-        fun params(): Stream<Arguments> = loadParamsFromPackage("com.github.erosb.jsonschema.tests.draft202012"
+        fun params(): Stream<Arguments> = loadParamsFromPackage(
+            "com.github.erosb.jsonschema.tests.draft202012"
 //            , "type.json"
         ).stream()
 
@@ -106,7 +107,6 @@ class TestSuiteTest {
         @JvmStatic
         @BeforeAll
         fun startJetty() = server.start()
-
 
         @AfterAll
         fun stopJetty() = server.stop()

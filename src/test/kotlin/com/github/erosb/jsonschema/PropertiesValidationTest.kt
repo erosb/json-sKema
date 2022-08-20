@@ -7,7 +7,10 @@ class PropertiesValidationTest {
 
     @Test
     fun `multiple type failures under properties`() {
-        val actual = Validator.forSchema(SchemaLoader(JsonParser("""
+        val actual = Validator.forSchema(
+            SchemaLoader(
+                JsonParser(
+                    """
             {
                 "type": "object",
                 "properties": {
@@ -22,16 +25,24 @@ class PropertiesValidationTest {
                     }
                 }
             }
-        """)())()).validate(JsonParser("""
+        """
+                )()
+            )()
+        ).validate(
+            JsonParser(
+                """
             {
                 "arrProp": true,
                 "objProp": null,
                 "strProp": 20,
                 "otherProp": "x"
             }
-        """)())!!.toJSON()
+        """
+            )()
+        )!!.toJSON()
 
-        val expected = JsonParser("""
+        val expected = JsonParser(
+            """
             {
                 "instanceRef": "#"
                 "schemaRef": "#",
@@ -51,7 +62,8 @@ class PropertiesValidationTest {
                     }
                 ]
             }
-        """)()
+        """
+        )()
 
         assertEquals(expected, actual)
     }

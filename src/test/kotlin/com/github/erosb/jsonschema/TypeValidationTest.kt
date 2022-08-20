@@ -45,7 +45,7 @@ class TypeValidationTest {
                 Arguments.of("string", "array", JsonArray(listOf())),
                 Arguments.of("number", "array", JsonArray(listOf())),
                 Arguments.of("boolean", "array", JsonArray(listOf())),
-                Arguments.of("object", "array", JsonArray(listOf())),
+                Arguments.of("object", "array", JsonArray(listOf()))
             )
         }
     }
@@ -70,7 +70,8 @@ class TypeValidationTest {
                     "keyword": "type"
                } 
             """
-            )(), actual!!.toJSON()
+            )(),
+            actual!!.toJSON()
         )
     }
 }

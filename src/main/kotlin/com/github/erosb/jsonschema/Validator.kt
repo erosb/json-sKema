@@ -175,25 +175,32 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         return rval
     }
 
-    override fun visitAdditionalPropertiesSchema(schema: AdditionalPropertiesSchema): ValidationFailure? {
-        if (instance !is IJsonObject<*, *>) {
-            return null
-        }
-        var endResult: ValidationFailure? = null
-        instance.requireObject().properties
-            .forEach { (key, value) ->
-                val keyStr = key.value
-                if (schema.keysInProperties.contains(keyStr)) {
-                    return null
-                }
-                val origInstance = instance
-                instance = value
-                val rval = super.visitAdditionalPropertiesSchema(schema)
-                endResult = accumulate(endResult, rval)
-                instance = origInstance
-            }
-        return super.visitAdditionalPropertiesSchema(schema)
+    private fun <T> withOtherInstance(otherInstance: IJsonValue, cb: () -> T): T {
+        val origInstance = instance
+        instance = otherInstance
+        val rval = cb()
+        instance = origInstance
+        return rval
     }
+
+    override fun visitAdditionalPropertiesSchema(schema: AdditionalPropertiesSchema): ValidationFailure? =
+        instance.maybeObject { obj ->
+            var endResult: ValidationFailure? = null
+            obj.properties
+                .forEach { (key, value) ->
+                    val keyStr = key.value
+                    if (schema.keysInProperties.contains(keyStr)) {
+                        return@forEach
+                    }
+                    endResult = accumulate(
+                        endResult,
+                        withOtherInstance(value) {
+                            super.visitAdditionalPropertiesSchema(schema)
+                        }
+                    )
+                }
+            endResult
+        }
 
     override fun visitMaxLengthSchema(schema: MaxLengthSchema): ValidationFailure? {
         return instance.maybeString {

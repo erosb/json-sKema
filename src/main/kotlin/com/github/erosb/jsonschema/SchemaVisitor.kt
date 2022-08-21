@@ -56,8 +56,8 @@ abstract class SchemaVisitor<P> {
             null
         } else schema.propertySchemas
             .map { visitPropertySchema(it.key, it.value) }
-            .reduce(this::accumulate)
-        return accumulate(subschemaProduct, propSchemaProduct)
+            .reduce { a, b -> accumulate(schema, a, b) }
+        return accumulate(schema, subschemaProduct, propSchemaProduct)
     }
 
     open fun visitTrueSchema(schema: TrueSchema): P? = visitChildren(schema)
@@ -74,12 +74,12 @@ abstract class SchemaVisitor<P> {
     open fun visitPropertySchema(property: String, schema: Schema): P? = visitChildren(schema)
 
     open fun identity(): P? = null
-    open fun accumulate(previous: P?, current: P?): P? = current ?: previous
+    open fun accumulate(parent: Schema, previous: P?, current: P?): P? = current ?: previous
     open fun visitChildren(parent: Schema): P? {
         var product: P? = identity()
         for (subschema in parent.subschemas()) {
             val current = subschema.accept(this)
-            product = accumulate(product, current)
+            product = accumulate(parent, product, current)
         }
         return product
     }

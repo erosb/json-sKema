@@ -27,8 +27,8 @@ open class ValidationFailure(
         )
     }
 
-    internal open fun join(other: ValidationFailure): ValidationFailure {
-        return AggregatingValidationFailure(schema, instance, setOf(this, other))
+    internal open fun join(parent: Schema, instance: IJsonValue, other: ValidationFailure): ValidationFailure {
+        return AggregatingValidationFailure(parent, instance, setOf(this, other))
     }
 }
 
@@ -44,7 +44,13 @@ internal class AggregatingValidationFailure(
             return _causes
         }
 
-    override fun join(other: ValidationFailure): ValidationFailure {
+    override fun join(parent: Schema, instance: IJsonValue, other: ValidationFailure): ValidationFailure {
+        if (parent != schema) {
+            TODO("something went wrong")
+        }
+        if (instance != this.instance) {
+            TODO("something went wrong")
+        }
         _causes.add(other)
         return this
     }
@@ -193,6 +199,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
                         return@forEach
                     }
                     endResult = accumulate(
+                        schema,
                         endResult,
                         withOtherInstance(value) {
                             super.visitAdditionalPropertiesSchema(schema)
@@ -221,13 +228,13 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
     override fun visitFalseSchema(schema: FalseSchema): ValidationFailure =
         ValidationFailure("false schema always fails", schema, instance, Keyword.FALSE)
 
-    override fun accumulate(previous: ValidationFailure?, current: ValidationFailure?): ValidationFailure? {
+    override fun accumulate(parent: Schema, previous: ValidationFailure?, current: ValidationFailure?): ValidationFailure? {
         if (previous === null) {
             return current
         }
         if (current === null) {
             return previous
         }
-        return previous.join(current)
+        return previous.join(parent, instance, current)
     }
 }

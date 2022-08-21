@@ -46,7 +46,7 @@ class PropertiesValidationTest {
             {
                 "instanceRef": "#"
                 "schemaRef": "#",
-                "message": "multiple schema violations found",
+                "message": "multiple validation failures",
                 "causes": [
                     {
                         "message": "expected type: array, actual: boolean",
@@ -58,6 +58,12 @@ class PropertiesValidationTest {
                         "message": "expected type: object, actual: null",
                         "schemaRef": "#/properties/objProp/type",
                         "instanceRef": "#/objProp",
+                        "keyword": "type"
+                    },
+                    {
+                        "instanceRef": "#/strProp",
+                        "schemaRef": "#/properties/strProp/type",
+                        "message": "expected type: string, actual: integer",
                         "keyword": "type"
                     }
                 ]

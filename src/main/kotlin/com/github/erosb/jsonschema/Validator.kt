@@ -144,6 +144,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
     }
 
     override fun visitTypeSchema(schema: TypeSchema): ValidationFailure? {
+        println("type check on $instance $schema")
         return instance.accept(TypeValidatingVisitor(schema))
     }
 
@@ -168,15 +169,20 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
     }
 
     override fun visitPropertySchema(property: String, schema: Schema): ValidationFailure? {
+        println(property)
         if (instance !is IJsonObject<*, *>) {
+            println("RET 1")
             return null
         }
         if (instance.requireObject()[property] === null) {
+            println("RET 2")
             return null
         }
         val origInstance = instance
         instance = instance.requireObject().get(property)!!
-        val rval = super.visitPropertySchema(property, schema)
+        println("switch: $instance")
+        val rval = schema.accept(this)
+//        val rval = super.visitPropertySchema(property, schema)
         instance = origInstance
         return rval
     }

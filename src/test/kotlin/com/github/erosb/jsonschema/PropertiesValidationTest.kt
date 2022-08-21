@@ -22,6 +22,14 @@ class PropertiesValidationTest {
                     },
                     "strProp": {
                         "type": "string"
+                    },
+                    "realObjProp": {
+                        "type": "object",
+                        "properties": {
+                            "nestedProp": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
@@ -35,7 +43,10 @@ class PropertiesValidationTest {
                 "arrProp": true,
                 "objProp": null,
                 "strProp": 20,
-                "otherProp": "x"
+                "otherProp": "x",
+                "realObjProp": {
+                    "nestedProp": 2
+                }
             }
         """
             )()
@@ -65,6 +76,12 @@ class PropertiesValidationTest {
                         "schemaRef": "#/properties/strProp/type",
                         "message": "expected type: string, actual: integer",
                         "keyword": "type"
+                    },
+                    {
+                      "instanceRef": "#/realObjProp/nestedProp",
+                      "schemaRef": "#/properties/realObjProp/properties/nestedProp/type",
+                      "message": "expected type: string, actual: integer",
+                      "keyword": "type"
                     }
                 ]
             }

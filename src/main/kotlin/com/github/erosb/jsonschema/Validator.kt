@@ -162,9 +162,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
     }
 
     override fun visitPropertySchema(property: String, schema: Schema): ValidationFailure? {
-        println("prop=$property instance=$instance")
         if (instance !is IJsonObject<*, *>) {
-            println("RET non-object")
             return null
         }
         if (instance.requireObject()[property] === null) {
@@ -173,14 +171,12 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         val origInstance = instance
         instance = instance.requireObject().get(property)!!
         val rval = super.visitPropertySchema(property, schema)
-        println("RET $rval")
         instance = origInstance
         return rval
     }
 
     override fun visitAdditionalPropertiesSchema(schema: AdditionalPropertiesSchema): ValidationFailure? {
         if (instance !is IJsonObject<*, *>) {
-            println("RET additProps non-object")
             return null
         }
         var endResult: ValidationFailure? = null

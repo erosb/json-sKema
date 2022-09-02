@@ -3,6 +3,7 @@ package com.github.erosb.jsonschema
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.math.BigInteger
@@ -74,6 +75,32 @@ class JsonParserTest {
         val actual = JsonParser("\"str\\\"ab\\\\c\\\"\"")()
         val expected = JsonString("str\"ab\\c\"", SourceLocation(1, 1, pointer()))
         assertEquals(expected, actual)
+    }
+
+    @Nested
+    class UnicodeEscapeSequenceTest {
+
+        @Test
+        fun `escaped unicode codepoint`() {
+            val actual = JsonParser("\"\\u00E1\"")().requireString().value
+            assertEquals("á", actual)
+        }
+
+        @Test
+        fun `invalid unicode escape - invalid hex chars`() {
+            val exception = assertThrows(JsonParseException::class.java) {
+                JsonParser("\"p\\u022suffix\"")()
+            }
+            assertEquals(JsonParseException("invalid unicode sequence: 022s", TextLocation(1, 4)), exception)
+        }
+
+        @Test
+        fun `invalid unicode escape - not enough hex chars`() {
+            val exception = assertThrows(JsonParseException::class.java) {
+                JsonParser("\"p\\u022")()
+            }
+            assertEquals(JsonParseException("Unexpected EOF", TextLocation(1, 8)), exception)
+        }
     }
 
     @Test

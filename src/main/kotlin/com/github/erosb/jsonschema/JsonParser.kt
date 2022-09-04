@@ -278,17 +278,15 @@ class JsonParser {
             }
             if (ch == 'u' && nextCharIsEscaped) {
                 val location = walker.location
-                var buf: Array<Char> = Array(4) { '0' }
+                val buf: Array<Char> = Array(4) { '0' }
                 for (i in 0..3) {
                     walker.forward()
                     buf[i] = walker.curr()
                 }
                 val hexLiteral = buf.joinToString("")
                 val trimmedHexLiteral = hexLiteral.trim { it == '0' }
-                println(trimmedHexLiteral)
                 try {
                     val codePoint = if (trimmedHexLiteral.isEmpty()) 0 else Integer.parseInt(trimmedHexLiteral, 16)
-                    println(codePoint)
                     sb.append(Character.valueOf(codePoint.toChar()))
                 } catch (e: NumberFormatException) {
                     throw JsonParseException("invalid unicode sequence: $hexLiteral", location)

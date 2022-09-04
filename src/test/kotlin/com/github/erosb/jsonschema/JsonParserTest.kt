@@ -101,6 +101,12 @@ class JsonParserTest {
             }
             assertEquals(JsonParseException("Unexpected EOF", TextLocation(1, 8)), exception)
         }
+
+        @Test
+        fun `supplementary codepoint`() {
+            val str = JsonParser("\"\\uD83D\\uDCA9\"")().requireString().value
+            assertEquals("💩", str)
+        }
     }
 
     @Test

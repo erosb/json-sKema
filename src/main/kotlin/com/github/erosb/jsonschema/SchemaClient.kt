@@ -10,7 +10,6 @@ fun interface SchemaClient {
 internal class DefaultSchemaClient : SchemaClient {
 
     override fun get(uri: URI): InputStream {
-        println("GET $uri")
         try {
             val u = uri.toURL()
             val conn = u.openConnection()

@@ -243,6 +243,22 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
             }
         }
 
+    override fun visitMaximumSchema(schema: MaximumSchema): ValidationFailure? = instance.maybeNumber {
+        if (it.value.toDouble() > schema.maximum.toDouble()) {
+            ValidationFailure("maximum exceeded", schema, instance, Keyword.MAXIMUM)
+        } else {
+            null
+        }
+    }
+
+    override fun visitMinimumSchema(schema: MinimumSchema): ValidationFailure? = instance.maybeNumber {
+        if (it.value.toDouble() < schema.minimum.toDouble()) {
+            ValidationFailure("maximum exceeded", schema, instance, Keyword.MAXIMUM)
+        } else {
+            null
+        }
+    }
+
     override fun visitFalseSchema(schema: FalseSchema): ValidationFailure =
         ValidationFailure("false schema always fails", schema, instance, Keyword.FALSE)
 

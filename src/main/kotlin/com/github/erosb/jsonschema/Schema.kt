@@ -103,5 +103,12 @@ data class NotSchema(val negatedSchema: Schema, override val location: SourceLoc
 
 data class RequiredSchema(val requiredProperties: List<String>, override val location: SourceLocation) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitRequiredSchema(this)
+}
 
+data class MaximumSchema(val maximum: Number, override val location: SourceLocation): Schema(location) {
+    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitMaximumSchema(this)
+}
+
+data class MinimumSchema(val minimum: Number, override val location: SourceLocation): Schema(location) {
+    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitMinimumSchema(this)
 }

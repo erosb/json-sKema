@@ -355,6 +355,8 @@ class SchemaLoader(
                         value.requireArray().elements.map { it.requireString().value },
                         name.location
                     )
+                    Keyword.MAXIMUM.value -> subschema = MaximumSchema(value.requireNumber().value, name.location)
+                    Keyword.MINIMUM.value -> subschema = MinimumSchema(value.requireNumber().value, name.location)
 //                else -> TODO("unhandled property ${name.value}")
                 }
                 if (subschema != null) subschemas.add(subschema)

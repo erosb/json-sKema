@@ -32,5 +32,7 @@ enum class Keyword(
     TRUE("true"),
     TYPE("type"),
     NOT("not"),
-    REQUIRED("required")
+    REQUIRED("required"),
+    MAXIMUM("maximum"),
+    MINIMUM("minimum")
 }

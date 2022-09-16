@@ -350,9 +350,11 @@ class SchemaLoader(
                         subschema = value.maybeString { TypeSchema(it, name.location) }
                             ?: value.maybeArray { MultiTypeSchema(it, name.location) }
                     }
-                    Keyword.NOT.value -> {
-                        subschema = NotSchema(loadChild(value), name.location)
-                    }
+                    Keyword.NOT.value -> subschema = NotSchema(loadChild(value), name.location)
+                    Keyword.REQUIRED.value -> subschema = RequiredSchema(
+                        value.requireArray().elements.map { it.requireString().value },
+                        name.location
+                    )
 //                else -> TODO("unhandled property ${name.value}")
                 }
                 if (subschema != null) subschemas.add(subschema)

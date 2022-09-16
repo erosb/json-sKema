@@ -226,11 +226,22 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
     }
 
-    override fun visitNotSchema(notSchema: NotSchema): ValidationFailure? = if (notSchema.negatedSchema.accept(this) != null) {
+    override fun visitNotSchema(schema: NotSchema): ValidationFailure? = if (schema.negatedSchema.accept(this) != null) {
         null
     } else {
-        ValidationFailure("negated subschema did not fail", notSchema, instance, Keyword.NOT)
+        ValidationFailure("negated subschema did not fail", schema, instance, Keyword.NOT)
     }
+
+    override fun visitRequiredSchema(schema: RequiredSchema): ValidationFailure? =
+        instance.maybeObject {
+            val instanceKeys = it.properties.keys.map { it.value }
+            val missingProps = schema.requiredProperties.filter { !instanceKeys.contains(it) }
+            if (missingProps.isEmpty()) {
+                null
+            } else {
+                ValidationFailure("", schema, instance, Keyword.REQUIRED)
+            }
+        }
 
     override fun visitFalseSchema(schema: FalseSchema): ValidationFailure =
         ValidationFailure("false schema always fails", schema, instance, Keyword.FALSE)

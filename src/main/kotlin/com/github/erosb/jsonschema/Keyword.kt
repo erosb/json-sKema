@@ -31,5 +31,6 @@ enum class Keyword(
     FALSE("false"),
     TRUE("true"),
     TYPE("type"),
-    NOT("not")
+    NOT("not"),
+    REQUIRED("required")
 }

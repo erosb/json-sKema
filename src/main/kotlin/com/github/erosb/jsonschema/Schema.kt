@@ -100,3 +100,8 @@ data class NotSchema(val negatedSchema: Schema, override val location: SourceLoc
         return listOf(negatedSchema)
     }
 }
+
+data class RequiredSchema(val requiredProperties: List<String>, override val location: SourceLocation) : Schema(location) {
+    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitRequiredSchema(this)
+
+}

@@ -92,3 +92,11 @@ data class TypeSchema(val type: IJsonString, override val location: SourceLocati
 data class MultiTypeSchema(val types: IJsonArray<*>, override val location: SourceLocation) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitMultiTypeSchema(this)
 }
+
+data class NotSchema(val negatedSchema: Schema, override val location: SourceLocation) : Schema(location) {
+    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitNotSchema(this)
+
+    override fun subschemas(): Collection<Schema> {
+        return listOf(negatedSchema)
+    }
+}

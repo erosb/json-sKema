@@ -30,5 +30,6 @@ enum class Keyword(
     CONST("const"),
     FALSE("false"),
     TRUE("true"),
-    TYPE("type")
+    TYPE("type"),
+    NOT("not")
 }

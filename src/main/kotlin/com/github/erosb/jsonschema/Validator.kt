@@ -1,61 +1,5 @@
 package com.github.erosb.jsonschema
 
-open class ValidationFailure(
-    val message: String,
-    val schema: Schema,
-    val instance: IJsonValue,
-    val keyword: Keyword? = null,
-    open val causes: Set<ValidationFailure> = setOf()
-) {
-    override fun toString(): String {
-        return "Line ${instance.location.lineNumber}, character ${instance.location.position}: $message"
-    }
-
-    fun toJSON(): JsonObject {
-        val instanceRef = JsonString(instance.location.pointer.toString())
-        val json = mutableMapOf<JsonString, JsonValue>(
-            JsonString("instanceRef") to instanceRef,
-            JsonString("schemaRef") to JsonString(schema.location.pointer.toString()),
-            JsonString("message") to JsonString(message)
-        )
-        keyword?.let { json[JsonString("keyword")] = JsonString(it.value) }
-        if (causes.isNotEmpty()) {
-            json[JsonString("causes")] = JsonArray(causes.map { failure -> failure.toJSON() })
-        }
-        return JsonObject(
-            properties = json.toMap()
-        )
-    }
-
-    internal open fun join(parent: Schema, instance: IJsonValue, other: ValidationFailure): ValidationFailure {
-        return AggregatingValidationFailure(parent, instance, setOf(this, other))
-    }
-}
-
-internal class AggregatingValidationFailure(
-    schema: Schema,
-    instance: IJsonValue,
-    causes: Set<ValidationFailure>
-) : ValidationFailure("multiple validation failures", schema, instance, null, causes) {
-
-    private var _causes = causes.toMutableSet()
-    override val causes: Set<ValidationFailure>
-        get() {
-            return _causes
-        }
-
-    override fun join(parent: Schema, instance: IJsonValue, other: ValidationFailure): ValidationFailure {
-        if (parent != schema) {
-            TODO("something went wrong")
-        }
-        if (instance != this.instance) {
-            TODO("something went wrong")
-        }
-        _causes.add(other)
-        return this
-    }
-}
-
 interface Validator {
 
     companion object {
@@ -100,11 +44,10 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
             }
             return if (schema.type.value == actualType) {
                 null
-            } else ValidationFailure(
-                "expected type: ${schema.type.value}, actual: $actualType",
+            } else TypeValidationFailure(
+                actualType,
                 this.schema,
-                instance,
-                Keyword.TYPE
+                instance
             )
         }
     }
@@ -118,11 +61,10 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
             }
             return if (permittedTypes.contains(actualType)) {
                 null
-            } else ValidationFailure(
-                "expected type: one of ${permittedTypes.joinToString { ", " }}, actual: $actualType",
+            } else MultiTypeValidationFailure(
+                actualType,
                 this.schema,
-                instance,
-                Keyword.TYPE
+                instance
             )
         }
     }
@@ -139,7 +81,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         return if (isValid) {
             null
         } else {
-            ValidationFailure("expected constant value: ${schema.constant}", schema, instance, Keyword.CONST)
+            ConstValidationFailure(schema, instance)
         }
     }
 
@@ -155,12 +97,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         return instance.maybeString {
             val length = it.value.codePointCount(0, it.value.length)
             if (length < schema.minLength) {
-                ValidationFailure(
-                    "expected minLength: ${schema.minLength}, actual: $length",
-                    schema,
-                    instance,
-                    Keyword.MIN_LENGTH
-                )
+                MinLengthValidationFailure(schema, it)
             } else {
                 null
             }
@@ -214,12 +151,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         return instance.maybeString {
             val length = it.value.codePointCount(0, it.value.length)
             if (length > schema.maxLength) {
-                ValidationFailure(
-                    "expected maxLength: ${schema.maxLength}, actual: $length",
-                    schema,
-                    instance,
-                    Keyword.MAX_LENGTH
-                )
+                MaxLengthValidationFailure(schema, it)
             } else {
                 null
             }
@@ -229,7 +161,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
     override fun visitNotSchema(schema: NotSchema): ValidationFailure? = if (schema.negatedSchema.accept(this) != null) {
         null
     } else {
-        ValidationFailure("negated subschema did not fail", schema, instance, Keyword.NOT)
+        NotValidationFailure(schema, instance)
     }
 
     override fun visitRequiredSchema(schema: RequiredSchema): ValidationFailure? =
@@ -239,13 +171,13 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
             if (missingProps.isEmpty()) {
                 null
             } else {
-                ValidationFailure("", schema, instance, Keyword.REQUIRED)
+                RequiredValidationFailure(missingProps, schema, it)
             }
         }
 
     override fun visitMaximumSchema(schema: MaximumSchema): ValidationFailure? = instance.maybeNumber {
         if (it.value.toDouble() > schema.maximum.toDouble()) {
-            ValidationFailure("maximum exceeded", schema, instance, Keyword.MAXIMUM)
+            MaximumValidationFailure(schema, it)
         } else {
             null
         }
@@ -253,14 +185,14 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
 
     override fun visitMinimumSchema(schema: MinimumSchema): ValidationFailure? = instance.maybeNumber {
         if (it.value.toDouble() < schema.minimum.toDouble()) {
-            ValidationFailure("maximum exceeded", schema, instance, Keyword.MAXIMUM)
+            MinimumValidationFailure(schema, it)
         } else {
             null
         }
     }
 
     override fun visitFalseSchema(schema: FalseSchema): ValidationFailure =
-        ValidationFailure("false schema always fails", schema, instance, Keyword.FALSE)
+        FalseValidationFailure(schema, instance)
 
     override fun accumulate(parent: Schema, previous: ValidationFailure?, current: ValidationFailure?): ValidationFailure? {
         if (previous === null) {

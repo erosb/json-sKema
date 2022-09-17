@@ -2,6 +2,7 @@ package com.github.erosb.jsonschema
 
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.fail
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -97,6 +98,7 @@ class TestCase(input: JsonObject, schemaTest: JsonObject, fileName: String) {
     override fun toString(): String = inputDescription
 }
 
+@Tag("acceptance")
 class TestSuiteTest {
     companion object {
         @JvmStatic

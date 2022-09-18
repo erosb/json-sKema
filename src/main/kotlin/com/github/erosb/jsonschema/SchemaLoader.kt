@@ -357,6 +357,7 @@ class SchemaLoader(
                     )
                     Keyword.MAXIMUM.value -> subschema = MaximumSchema(value.requireNumber().value, name.location)
                     Keyword.MINIMUM.value -> subschema = MinimumSchema(value.requireNumber().value, name.location)
+                    Keyword.UNIQUE_ITEMS.value -> subschema = UniqueItemsSchema(value.requireBoolean().value, name.location)
 //                else -> TODO("unhandled property ${name.value}")
                 }
                 if (subschema != null) subschemas.add(subschema)

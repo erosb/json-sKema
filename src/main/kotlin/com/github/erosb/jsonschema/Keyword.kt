@@ -34,5 +34,6 @@ enum class Keyword(
     NOT("not"),
     REQUIRED("required"),
     MAXIMUM("maximum"),
-    MINIMUM("minimum")
+    MINIMUM("minimum"),
+    UNIQUE_ITEMS("uniqueItems")
 }

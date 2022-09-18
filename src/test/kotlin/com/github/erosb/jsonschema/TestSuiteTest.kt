@@ -104,7 +104,7 @@ class TestSuiteTest {
         @JvmStatic
         fun params(): Stream<Arguments> = loadParamsFromPackage(
             "com.github.erosb.jsonschema.tests.draft202012"
-//            , "minimum.json", "maximum.json"
+//            , "uniqueItems.json"
         ).stream()
 
         private val server = JettyWrapper("/com/github/erosb/jsonschema/tests/remotes")

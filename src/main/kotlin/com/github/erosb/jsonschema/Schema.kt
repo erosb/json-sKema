@@ -112,3 +112,7 @@ data class MaximumSchema(val maximum: Number, override val location: SourceLocat
 data class MinimumSchema(val minimum: Number, override val location: SourceLocation): Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitMinimumSchema(this)
 }
+
+data class UniqueItemsSchema(val unique: Boolean, override val location: SourceLocation): Schema(location) {
+    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitUniqueItemsSchema(this)
+}

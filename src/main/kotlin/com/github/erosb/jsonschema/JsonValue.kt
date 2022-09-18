@@ -187,7 +187,7 @@ abstract class JsonValue(override val location: SourceLocation = UnknownSource) 
         return unwrap() == (other as JsonValue).unwrap()
     }
 
-    override fun hashCode(): Int {
+    final override fun hashCode(): Int {
         return unwrap()?.hashCode() ?: 0
     }
 
@@ -215,10 +215,6 @@ data class JsonNumber(
 ) : JsonValue(location), IJsonNumber {
     override fun unwrap() = value
 
-    override fun hashCode(): Int {
-        return value.hashCode()
-    }
-
     override fun equals(other: Any?): Boolean {
         if (other === this) return true
         if (!(other is IJsonNumber)) return false
@@ -231,10 +227,6 @@ data class JsonString(override val value: String, override val location: SourceL
     override fun equals(other: Any?) = super.equals(other)
 
     override fun unwrap() = value
-
-    override fun hashCode(): Int {
-        return value.hashCode()
-    }
 }
 
 data class JsonArray(

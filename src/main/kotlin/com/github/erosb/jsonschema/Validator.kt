@@ -194,6 +194,19 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
     override fun visitFalseSchema(schema: FalseSchema): ValidationFailure =
         FalseValidationFailure(schema, instance)
 
+    override fun visitUniqueItemsSchema(schema: UniqueItemsSchema): ValidationFailure? = if (schema.unique) {
+        instance.maybeArray { array ->
+            val occurrences = mutableMapOf<IJsonValue, Int>()
+            for ((index, elem) in array.elements.withIndex()) {
+                if (occurrences.containsKey(elem)) {
+                    return@maybeArray UniqueItemsValidationFailure(listOf(occurrences[elem]!!, index), schema, array)
+                }
+                occurrences[elem] = index
+            }
+            null
+        }
+    }ú else null
+
     override fun accumulate(parent: Schema, previous: ValidationFailure?, current: ValidationFailure?): ValidationFailure? {
         if (previous === null) {
             return current

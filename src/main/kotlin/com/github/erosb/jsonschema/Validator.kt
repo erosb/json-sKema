@@ -114,7 +114,6 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         val origInstance = instance
         instance = instance.requireObject().get(property)!!
         val rval = schema.accept(this)
-//        val rval = super.visitPropertySchema(property, schema)
         instance = origInstance
         return rval
     }
@@ -206,6 +205,24 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
             null
         }
     } else null
+
+    override fun visitItemsSchema(schema: ItemsSchema): ValidationFailure? = instance.maybeArray { array ->
+        val failures = mutableMapOf<Int, ValidationFailure>()
+        array.elements.forEachIndexed { index, it ->
+            val backup = instance
+            instance = it
+            try {
+                schema.itemsSchema.accept(this) ?. let { failures[index] = it }
+            } finally {
+                instance = backup
+            }
+        }
+        if (failures.isEmpty()) {
+            null
+        } else {
+            ItemsValidationFailure(failures.toMap(), schema, array)
+        }
+    }
 
     override fun accumulate(parent: Schema, previous: ValidationFailure?, current: ValidationFailure?): ValidationFailure? {
         if (previous === null) {

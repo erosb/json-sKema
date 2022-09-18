@@ -77,6 +77,7 @@ abstract class SchemaVisitor<P> {
     open fun visitMaximumSchema(schema: MaximumSchema): P? = visitChildren(schema)
     open fun visitMinimumSchema(schema: MinimumSchema): P? = visitChildren(schema)
     open fun visitUniqueItemsSchema(schema: UniqueItemsSchema): P? = visitChildren(schema)
+    open fun visitItemsSchema(schema: ItemsSchema): P? = visitChildren(schema)
 
     open fun identity(): P? = null
     open fun accumulate(parent: Schema, previous: P?, current: P?): P? = current ?: previous

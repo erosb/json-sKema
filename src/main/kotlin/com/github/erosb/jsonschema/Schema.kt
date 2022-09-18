@@ -96,23 +96,27 @@ data class MultiTypeSchema(val types: IJsonArray<*>, override val location: Sour
 data class NotSchema(val negatedSchema: Schema, override val location: SourceLocation) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitNotSchema(this)
 
-    override fun subschemas(): Collection<Schema> {
-        return listOf(negatedSchema)
-    }
+    override fun subschemas(): Collection<Schema> = listOf(negatedSchema)
 }
 
 data class RequiredSchema(val requiredProperties: List<String>, override val location: SourceLocation) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitRequiredSchema(this)
 }
 
-data class MaximumSchema(val maximum: Number, override val location: SourceLocation): Schema(location) {
+data class MaximumSchema(val maximum: Number, override val location: SourceLocation) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitMaximumSchema(this)
 }
 
-data class MinimumSchema(val minimum: Number, override val location: SourceLocation): Schema(location) {
+data class MinimumSchema(val minimum: Number, override val location: SourceLocation) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitMinimumSchema(this)
 }
 
-data class UniqueItemsSchema(val unique: Boolean, override val location: SourceLocation): Schema(location) {
+data class UniqueItemsSchema(val unique: Boolean, override val location: SourceLocation) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitUniqueItemsSchema(this)
+}
+
+data class ItemsSchema(val itemsSchema: Schema, override val location: SourceLocation) : Schema(location) {
+    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitItemsSchema(this)
+
+    override fun subschemas(): Collection<Schema> = listOf(itemsSchema)
 }

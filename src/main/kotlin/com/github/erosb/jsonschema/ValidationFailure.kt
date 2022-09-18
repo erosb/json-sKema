@@ -116,6 +116,17 @@ data class UniqueItemsValidationFailure(
     override val instance: IJsonArray<*>
 ) : ValidationFailure("the same array element occurs at positions " + arrayPositions.joinToString(", "), schema, instance, Keyword.UNIQUE_ITEMS)
 
+data class ItemsValidationFailure(
+    val itemFailures: Map<Int, ValidationFailure>,
+    override val schema: ItemsSchema,
+    override val instance: IJsonArray<*>
+) : ValidationFailure(
+    "array items ${itemFailures.keys.joinToString(", ")} failed to validate against \"items\" subschema",
+    schema,
+    instance,
+    Keyword.ITEMS
+)
+
 internal class AggregatingValidationFailure(
     schema: Schema,
     instance: IJsonValue,

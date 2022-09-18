@@ -205,7 +205,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
             }
             null
         }
-    }ú else null
+    } else null
 
     override fun accumulate(parent: Schema, previous: ValidationFailure?, current: ValidationFailure?): ValidationFailure? {
         if (previous === null) {

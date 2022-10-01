@@ -36,5 +36,8 @@ enum class Keyword(
     MAXIMUM("maximum"),
     MINIMUM("minimum"),
     UNIQUE_ITEMS("uniqueItems"),
-    ITEMS("items")
+    ITEMS("items"),
+    CONTAINS("contains"),
+    MIN_CONTAINS("minContains"),
+    MAX_CONTAINS("maxContains")
 }

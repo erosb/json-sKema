@@ -224,6 +224,41 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
     }
 
+    override fun visitContainsSchema(schema: ContainsSchema): ValidationFailure? = instance.maybeArray { array ->
+        if (array.length() == 0) {
+            val minContainsIsZero = schema.minContains == 0
+            return@maybeArray if (minContainsIsZero) null else ContainsValidationFailure("no array items are valid against \"contains\" subschema, expected minimum is ${schema.minContains}", schema, array)
+        }
+        var successCount = 0
+        array.elements.forEach {
+            val backup = instance
+            instance = it
+            try {
+                val maybeChildFailure = schema.containedSchema.accept(this)
+                if (maybeChildFailure === null) {
+                    ++successCount
+                    if (schema.minContains == 1 && schema.maxContains === null) {
+                        return@maybeArray null
+                    }
+                }
+            } finally {
+                instance = backup
+            }
+        }
+        if (schema.maxContains != null && schema.maxContains.toInt() < successCount) {
+            return@maybeArray ContainsValidationFailure("$successCount array items are valid against \"contains\" subschema, expected maximum is 1", schema, array)
+        }
+        if (successCount < schema.minContains.toInt()) {
+            val prefix = if (successCount == 0) "no array items are" else if (successCount == 1) "only 1 array item is" else "only $successCount array items are"
+            return@maybeArray ContainsValidationFailure("$prefix valid against \"contains\" subschema, expected minimum is ${schema.minContains.toInt()}", schema, array)
+        }
+        return@maybeArray if (schema.maxContains == null && schema.minContains == 1) {
+            ContainsValidationFailure("expected at least 1 array item to be valid against \"contains\" subschema, found 0", schema, array)
+        } else {
+            null
+        }
+    }
+
     override fun accumulate(parent: Schema, previous: ValidationFailure?, current: ValidationFailure?): ValidationFailure? {
         if (previous === null) {
             return current

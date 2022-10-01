@@ -95,7 +95,6 @@ data class MultiTypeSchema(val types: IJsonArray<*>, override val location: Sour
 
 data class NotSchema(val negatedSchema: Schema, override val location: SourceLocation) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitNotSchema(this)
-
     override fun subschemas(): Collection<Schema> = listOf(negatedSchema)
 }
 
@@ -117,6 +116,15 @@ data class UniqueItemsSchema(val unique: Boolean, override val location: SourceL
 
 data class ItemsSchema(val itemsSchema: Schema, override val location: SourceLocation) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitItemsSchema(this)
-
     override fun subschemas(): Collection<Schema> = listOf(itemsSchema)
+}
+
+data class ContainsSchema(
+    val containedSchema: Schema,
+    val minContains: Number = 1,
+    val maxContains: Number?,
+    override val location: SourceLocation
+) : Schema(location) {
+    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitContainsSchema(this)
+    override fun subschemas(): Collection<Schema> = listOf(containedSchema)
 }

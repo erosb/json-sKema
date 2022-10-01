@@ -1,7 +1,7 @@
 package com.github.erosb.jsonschema
 
 abstract class ValidationFailure(
-    val message: String,
+    open val message: String,
     open val schema: Schema,
     open val instance: IJsonValue,
     val keyword: Keyword? = null,
@@ -125,6 +125,17 @@ data class ItemsValidationFailure(
     schema,
     instance,
     Keyword.ITEMS
+)
+
+data class ContainsValidationFailure(
+    override val message: String,
+    override val schema: ContainsSchema,
+    override val instance: IJsonArray<*>
+) : ValidationFailure(
+    message,
+    schema,
+    instance,
+    Keyword.CONTAINS
 )
 
 internal class AggregatingValidationFailure(

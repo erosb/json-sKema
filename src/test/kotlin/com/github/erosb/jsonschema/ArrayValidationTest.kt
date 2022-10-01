@@ -2,6 +2,7 @@ package com.github.erosb.jsonschema
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 class ArrayValidationTest {
@@ -25,7 +26,7 @@ class ArrayValidationTest {
     }
 
     @Test
-    fun `"items" failure`() {
+    fun `items failure`() {
         val itemsSchema = TypeSchema(JsonString("boolean"), UnknownSource)
         val schema = ItemsSchema(itemsSchema, UnknownSource)
         val first = JsonString("asd")
@@ -42,5 +43,80 @@ class ArrayValidationTest {
         val actual = Validator.forSchema(schema).validate(instance)
         assertEquals(expected, actual)
         assertEquals("array items 1, 2 failed to validate against \"items\" subschema", actual?.message)
+    }
+
+    @Nested
+    class ContainsTest {
+        val containedSchema = ConstSchema(JsonNumber(5), UnknownSource)
+
+        @Test
+        fun `contains only failure`() {
+            val schema = ContainsSchema(containedSchema, 1, null, UnknownSource)
+            val instance = JsonParser("[1, 2]")().requireArray()
+
+            val actual = Validator.forSchema(schema).validate(instance)!!
+
+            val expected = ContainsValidationFailure(
+                "no array items are valid against \"contains\" subschema, expected minimum is 1",
+                schema = schema,
+                instance = instance
+            )
+            assertEquals(expected, actual)
+        }
+
+        @Test
+        fun `minContains violation`() {
+            val schema = ContainsSchema(containedSchema, 2, null, UnknownSource)
+            val instance = JsonArray(listOf(JsonNumber(5), JsonNumber(3)))
+
+            val actual = Validator.forSchema(schema).validate(instance)!!
+
+            val expected = ContainsValidationFailure("only 1 array item is valid against \"contains\" subschema, expected minimum is 2", schema, instance)
+            assertEquals(expected, actual)
+        }
+
+        @Test
+        fun `minContains is 0`() {
+            val schema = ContainsSchema(containedSchema, 0, null, UnknownSource)
+            val instance = JsonParser("[4]")()
+
+            val actual = Validator.forSchema(schema).validate(instance)
+
+            assertNull(actual)
+        }
+
+        @Test
+        fun `minContains is 0, instance is empty`() {
+            val schema = ContainsSchema(containedSchema, 0, null, UnknownSource)
+            val instance = JsonArray(emptyList())
+
+            val actual = Validator.forSchema(schema).validate(instance)
+
+            assertNull(actual)
+        }
+
+        @Test
+        fun `empty array, minContains 1`() {
+            val schema = ContainsSchema(containedSchema, 1, null, UnknownSource)
+
+            val instance = JsonArray(emptyList())
+
+            val actual = Validator.forSchema(schema).validate(instance)
+            val expected = ContainsValidationFailure("no array items are valid against \"contains\" subschema, expected minimum is 1", schema, instance)
+
+            assertEquals(expected, actual)
+        }
+
+        @Test
+        fun `maxContains violation`() {
+            val schema = ContainsSchema(containedSchema, 0, 1, UnknownSource)
+
+            val instance = JsonArray(listOf(JsonNumber(5), JsonNumber(5)))
+
+            val actual = Validator.forSchema(schema).validate(instance)
+            val expected = ContainsValidationFailure("2 array items are valid against \"contains\" subschema, expected maximum is 1", schema, instance)
+
+            assertEquals(expected, actual)
+        }
     }
 }

@@ -103,11 +103,11 @@ class TestSuiteTest {
     companion object {
         @JvmStatic
         fun params(): Stream<Arguments> = loadParamsFromPackage(
-            "com.github.erosb.jsonschema.tests.draft202012"
+            "test-suite.tests.draft2020-12"
 //            , "items.json"
         ).stream()
 
-        private val server = JettyWrapper("/com/github/erosb/jsonschema/tests/remotes")
+        private val server = JettyWrapper("/test-suite/remotes/draft2020-12")
 
         @JvmStatic
         @BeforeAll

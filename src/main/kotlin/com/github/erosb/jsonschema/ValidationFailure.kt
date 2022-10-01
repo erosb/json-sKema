@@ -127,6 +127,16 @@ data class ItemsValidationFailure(
     Keyword.ITEMS
 )
 
+data class ContainsValidationFailure(
+    override val schema: ContainsSchema,
+    override val instance: IJsonArray<*>
+) : ValidationFailure(
+    "all array item failed to validate against \"contains\" subschema",
+    schema,
+    instance,
+    Keyword.CONTAINS
+)
+
 internal class AggregatingValidationFailure(
     schema: Schema,
     instance: IJsonValue,

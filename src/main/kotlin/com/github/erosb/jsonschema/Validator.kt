@@ -224,6 +224,22 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
     }
 
+    override fun visitContainsSchema(schema: ContainsSchema): ValidationFailure? = instance.maybeArray { array ->
+        array.elements.forEach {
+            val backup = instance
+            instance = it
+            try {
+                val maybeChildFailure = schema.containedSchema.accept(this)
+                if (maybeChildFailure === null) {
+                    return@maybeArray null
+                }
+            } finally {
+                instance = backup
+            }
+        }
+        return@maybeArray ContainsValidationFailure(schema, array)
+    }
+
     override fun accumulate(parent: Schema, previous: ValidationFailure?, current: ValidationFailure?): ValidationFailure? {
         if (previous === null) {
             return current

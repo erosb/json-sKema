@@ -25,7 +25,7 @@ class ArrayValidationTest {
     }
 
     @Test
-    fun `"items" failure`() {
+    fun `items failure`() {
         val itemsSchema = TypeSchema(JsonString("boolean"), UnknownSource)
         val schema = ItemsSchema(itemsSchema, UnknownSource)
         val first = JsonString("asd")
@@ -42,5 +42,9 @@ class ArrayValidationTest {
         val actual = Validator.forSchema(schema).validate(instance)
         assertEquals(expected, actual)
         assertEquals("array items 1, 2 failed to validate against \"items\" subschema", actual?.message)
+    }
+
+    @Test
+    fun `contains failure`() {
     }
 }

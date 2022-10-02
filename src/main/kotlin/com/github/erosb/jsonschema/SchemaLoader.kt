@@ -359,7 +359,7 @@ class SchemaLoader(
                     Keyword.MINIMUM.value -> subschema = MinimumSchema(value.requireNumber().value, name.location)
                     Keyword.UNIQUE_ITEMS.value -> subschema = UniqueItemsSchema(value.requireBoolean().value, name.location)
                     Keyword.ITEMS.value -> subschema = ItemsSchema(loadChild(value), name.location)
-                    Keyword.CONTAINS.value -> subschema = buildContainsSchema(value, name.location)
+                    Keyword.CONTAINS.value -> subschema = buildContainsSchema(schemaJson, value, name.location)
 //                else -> TODO("unhandled property ${name.value}")
                 }
                 if (subschema != null) subschemas.add(subschema)
@@ -392,10 +392,13 @@ class SchemaLoader(
     }
 
     private fun buildContainsSchema(
+        containingObject: IJsonObject<*, *>,
         value: IJsonValue,
         location: SourceLocation
     ): ContainsSchema {
-        return ContainsSchema(loadChild(value), location)
+        val minContains = containingObject[Keyword.MIN_CONTAINS.value]?.maybeNumber { it.value }
+        val maxContains = containingObject[Keyword.MAX_CONTAINS.value]?.maybeNumber { it.value }
+        return ContainsSchema(loadChild(value), minContains, maxContains, location)
     }
 
     private fun loadPropertySchemas(schemasMap: IJsonObject<*, *>): Map<String, Schema> {

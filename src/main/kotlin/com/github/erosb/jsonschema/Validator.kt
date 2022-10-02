@@ -225,19 +225,33 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
     }
 
     override fun visitContainsSchema(schema: ContainsSchema): ValidationFailure? = instance.maybeArray { array ->
+        if (array.length() == 0) {
+            val minContainsIsZero = schema.minContains == 0
+            return@maybeArray if (minContainsIsZero) null else ContainsValidationFailure(schema, array)
+        }
+        var successCount = 0
         array.elements.forEach {
             val backup = instance
             instance = it
             try {
                 val maybeChildFailure = schema.containedSchema.accept(this)
                 if (maybeChildFailure === null) {
-                    return@maybeArray null
+                    ++successCount
+                    if (schema.minContains == null && schema.maxContains === null) {
+                        return@maybeArray null
+                    }
                 }
             } finally {
                 instance = backup
             }
         }
-        return@maybeArray ContainsValidationFailure(schema, array)
+        if (schema.maxContains != null && schema.maxContains.toInt() < successCount) {
+            return@maybeArray ContainsValidationFailure(schema, array)
+        }
+        if (schema.minContains != null && successCount < schema.minContains.toInt()) {
+            return@maybeArray ContainsValidationFailure(schema, array)
+        }
+        return@maybeArray if (schema.maxContains == null && schema.minContains == null) ContainsValidationFailure(schema, array) else null
     }
 
     override fun accumulate(parent: Schema, previous: ValidationFailure?, current: ValidationFailure?): ValidationFailure? {

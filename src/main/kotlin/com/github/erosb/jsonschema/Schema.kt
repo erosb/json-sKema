@@ -119,7 +119,12 @@ data class ItemsSchema(val itemsSchema: Schema, override val location: SourceLoc
     override fun subschemas(): Collection<Schema> = listOf(itemsSchema)
 }
 
-data class ContainsSchema(val containedSchema: Schema, override val location: SourceLocation) : Schema(location) {
+data class ContainsSchema(
+    val containedSchema: Schema,
+    val minContains: Number?,
+    val maxContains: Number?,
+    override val location: SourceLocation
+) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitContainsSchema(this)
     override fun subschemas(): Collection<Schema> = listOf(containedSchema)
 }

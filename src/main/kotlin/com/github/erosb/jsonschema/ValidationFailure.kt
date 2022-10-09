@@ -1,7 +1,7 @@
 package com.github.erosb.jsonschema
 
 abstract class ValidationFailure(
-    val message: String,
+    open val message: String,
     open val schema: Schema,
     open val instance: IJsonValue,
     val keyword: Keyword? = null,
@@ -128,10 +128,11 @@ data class ItemsValidationFailure(
 )
 
 data class ContainsValidationFailure(
+    override val message: String = "expected at least 1 array item to be valid against \"contains\" subschema, found 0",
     override val schema: ContainsSchema,
     override val instance: IJsonArray<*>
 ) : ValidationFailure(
-    "all array item failed to validate against \"contains\" subschema",
+    message,
     schema,
     instance,
     Keyword.CONTAINS

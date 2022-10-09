@@ -91,7 +91,7 @@ class TestCase(input: JsonObject, schemaTest: JsonObject, fileName: String) {
             if (!isValid) {
                 println(failure!!.toJSON())
             }
-            fail("${inputDescription} : isValid: $isValid, expectedToBeValid: $expectedToBeValid")
+            fail("$inputDescription : isValid: $isValid, expectedToBeValid: $expectedToBeValid")
         }
     }
 
@@ -104,7 +104,7 @@ class TestSuiteTest {
         @JvmStatic
         fun params(): Stream<Arguments> = loadParamsFromPackage(
             "test-suite.tests.draft2020-12"
-//            , "minContains.json", "maxContains.json"
+            , "minContains.json", "maxContains.json"
         ).stream()
 
         private val server = JettyWrapper("/test-suite/remotes/draft2020-12")

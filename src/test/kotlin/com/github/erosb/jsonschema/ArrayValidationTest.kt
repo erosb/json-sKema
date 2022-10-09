@@ -2,6 +2,7 @@ package com.github.erosb.jsonschema
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 class ArrayValidationTest {
@@ -44,7 +45,54 @@ class ArrayValidationTest {
         assertEquals("array items 1, 2 failed to validate against \"items\" subschema", actual?.message)
     }
 
-    @Test
-    fun `contains failure`() {
+    @Nested
+    class ContainsTest {
+        val containedSchema = ConstSchema(JsonNumber(5), UnknownSource)
+
+        @Test
+        fun `contains only failure`() {
+            val schema = ContainsSchema(containedSchema, null, null, UnknownSource)
+            val instance = JsonParser("[1, 2]")().requireArray()
+
+            val actual = Validator.forSchema(schema).validate(instance)!!
+
+            val expected = ContainsValidationFailure(
+                schema = schema,
+                instance = instance
+            )
+            assertEquals(expected, actual)
+            assertEquals("expected at least 1 array item to be valid against \"contains\" subschema, found 0", actual.message)
+        }
+
+        @Test
+        fun `minContains violation`() {
+            val schema = ContainsSchema(containedSchema, 2, null, UnknownSource)
+            val instance = JsonArray(listOf(JsonNumber(5), JsonNumber(3)))
+
+            val actual = Validator.forSchema(schema).validate(instance)!!
+
+            val expected = ContainsValidationFailure("only 1 array item(s) are valid against \"contains\" subschema, expected minimum is 2", schema, instance)
+            assertEquals(expected, actual)
+        }
+
+        @Test
+        fun `minContains is 0`() {
+            val schema = ContainsSchema(containedSchema, 0, null, UnknownSource)
+            val instance = JsonParser("[5]")()
+
+            val actual = Validator.forSchema(schema).validate(instance)
+
+            assertNull(actual)
+        }
+
+        @Test
+        fun `minContains is 0, instance is empty`() {
+            val schema = ContainsSchema(containedSchema, 0, null, UnknownSource)
+            val instance = JsonArray(emptyList())
+
+            val actual = Validator.forSchema(schema).validate(instance)
+
+            assertNull(actual)
+        }
     }
 }

@@ -108,7 +108,15 @@ class ArrayValidationTest {
         }
 
         @Test
-        fun `minContains 2, maxContains 5, actual is 1`() {
+        fun `maxContains violation`() {
+            val schema = ContainsSchema(containedSchema, 0, 1, UnknownSource)
+
+            val instance = JsonArray(listOf(JsonNumber(5), JsonNumber(5)))
+
+            val actual = Validator.forSchema(schema).validate(instance)
+            val expected = ContainsValidationFailure("2 array items are valid against \"contains\" subschema, expected maximum is 1", schema, instance)
+
+            assertEquals(expected, actual)
         }
     }
 }

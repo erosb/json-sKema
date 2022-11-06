@@ -127,11 +127,9 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         if (instance.requireObject()[property] === null) {
             return null
         }
-        val origInstance = instance
-        instance = instance.requireObject().get(property)!!
-        val rval = schema.accept(this)
-        instance = origInstance
-        return rval
+        return withOtherInstance(instance.requireObject().get(property)!!) {
+            schema.accept(this)
+        }
     }
 
     private fun <T> withOtherInstance(otherInstance: IJsonValue, cb: () -> T): T {
@@ -233,12 +231,8 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
     override fun visitItemsSchema(schema: ItemsSchema): ValidationFailure? = instance.maybeArray { array ->
         val failures = mutableMapOf<Int, ValidationFailure>()
         array.elements.forEachIndexed { index, it ->
-            val backup = instance
-            instance = it
-            try {
+            withOtherInstance(it) {
                 schema.itemsSchema.accept(this) ?. let { failures[index] = it }
-            } finally {
-                instance = backup
             }
         }
         if (failures.isEmpty()) {
@@ -255,18 +249,14 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
         var successCount = 0
         array.elements.forEach {
-            val backup = instance
-            instance = it
-            try {
-                val maybeChildFailure = schema.containedSchema.accept(this)
-                if (maybeChildFailure === null) {
-                    ++successCount
-                    if (schema.minContains == 1 && schema.maxContains === null) {
-                        return@maybeArray null
-                    }
+            val maybeChildFailure = withOtherInstance(it) {
+                schema.containedSchema.accept(this)
+            }
+            if (maybeChildFailure === null) {
+                ++successCount
+                if (schema.minContains == 1 && schema.maxContains === null) {
+                    return@maybeArray null
                 }
-            } finally {
-                instance = backup
             }
         }
         if (schema.maxContains != null && schema.maxContains.toInt() < successCount) {

@@ -396,7 +396,7 @@ class SchemaLoader(
         value: IJsonValue,
         location: SourceLocation
     ): ContainsSchema {
-        val minContains = containingObject[Keyword.MIN_CONTAINS.value]?.maybeNumber { it.value }
+        val minContains = containingObject[Keyword.MIN_CONTAINS.value]?.maybeNumber { it.value } ?: 1
         val maxContains = containingObject[Keyword.MAX_CONTAINS.value]?.maybeNumber { it.value }
         return ContainsSchema(loadChild(value), minContains, maxContains, location)
     }

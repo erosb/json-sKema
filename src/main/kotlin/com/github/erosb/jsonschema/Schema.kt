@@ -121,7 +121,7 @@ data class ItemsSchema(val itemsSchema: Schema, override val location: SourceLoc
 
 data class ContainsSchema(
     val containedSchema: Schema,
-    val minContains: Number?,
+    val minContains: Number = 1,
     val maxContains: Number?,
     override val location: SourceLocation
 ) : Schema(location) {

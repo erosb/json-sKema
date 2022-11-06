@@ -128,7 +128,7 @@ data class ItemsValidationFailure(
 )
 
 data class ContainsValidationFailure(
-    override val message: String = "expected at least 1 array item to be valid against \"contains\" subschema, found 0",
+    override val message: String,
     override val schema: ContainsSchema,
     override val instance: IJsonArray<*>
 ) : ValidationFailure(

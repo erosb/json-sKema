@@ -1,5 +1,21 @@
 package com.github.erosb.jsonschema
 
+import java.math.BigDecimal
+import java.math.BigInteger
+
+internal fun getAsBigDecimal(number: Any): BigDecimal {
+    return if (number is BigDecimal) {
+        number
+    } else if (number is BigInteger) {
+        BigDecimal(number)
+    } else if (number is Int || number is Long) {
+        BigDecimal((number as Number).toLong())
+    } else {
+        val d = (number as Number).toDouble()
+        BigDecimal.valueOf(d)
+    }
+}
+
 interface Validator {
 
     companion object {
@@ -187,6 +203,14 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
             MinimumValidationFailure(schema, it)
         } else {
             null
+        }
+    }
+
+    override fun visitMultipleOfSchema(schema: MultipleOfSchema): ValidationFailure? = instance.maybeNumber {
+        if (getAsBigDecimal(it.value).remainder(getAsBigDecimal(schema.denominator)).compareTo(BigDecimal.ZERO) == 0) {
+            null
+        } else {
+            MultipleOfValidationFailure(schema, it)
         }
     }
 

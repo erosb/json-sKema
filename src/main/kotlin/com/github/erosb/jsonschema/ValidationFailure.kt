@@ -42,6 +42,11 @@ data class MaximumValidationFailure(
     override val instance: IJsonNumber
 ) : ValidationFailure("${instance.value} is greater than maximum ${schema.maximum}", schema, instance, Keyword.MINIMUM)
 
+data class MultipleOfValidationFailure(
+    override val schema: MultipleOfSchema,
+    override val instance: IJsonNumber
+) : ValidationFailure("${instance.value} is not a multiple of ${schema.denominator}", schema, instance, Keyword.MULTIPLE_OF)
+
 data class TypeValidationFailure(
     val actualInstanceType: String,
     override val schema: TypeSchema,

@@ -357,6 +357,7 @@ class SchemaLoader(
                     )
                     Keyword.MAXIMUM.value -> subschema = MaximumSchema(value.requireNumber().value, name.location)
                     Keyword.MINIMUM.value -> subschema = MinimumSchema(value.requireNumber().value, name.location)
+                    Keyword.MULTIPLE_OF.value -> subschema = MultipleOfSchema(value.requireNumber().value, name.location)
                     Keyword.UNIQUE_ITEMS.value -> subschema = UniqueItemsSchema(value.requireBoolean().value, name.location)
                     Keyword.ITEMS.value -> subschema = ItemsSchema(loadChild(value), name.location)
                     Keyword.CONTAINS.value -> subschema = buildContainsSchema(schemaJson, value, name.location)

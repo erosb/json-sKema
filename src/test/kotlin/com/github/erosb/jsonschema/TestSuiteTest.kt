@@ -104,7 +104,7 @@ class TestSuiteTest {
         @JvmStatic
         fun params(): Stream<Arguments> = loadParamsFromPackage(
             "test-suite.tests.draft2020-12"
-//            ,"contains.json", "minContains.json", "maxContains.json", "multipleOf.json"
+//            ,"allOf.json", "oneOf.json", "anyOf.json"
         ).stream()
 
         private val server = JettyWrapper("/test-suite/remotes")

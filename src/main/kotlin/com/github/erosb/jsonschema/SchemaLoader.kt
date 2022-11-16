@@ -332,6 +332,7 @@ class SchemaLoader(
                     Keyword.MIN_LENGTH.value -> subschema = MinLengthSchema(value.requireInt(), name.location)
                     Keyword.MAX_LENGTH.value -> subschema = MaxLengthSchema(value.requireInt(), name.location)
                     Keyword.ALL_OF.value -> subschema = createAllOfSubschema(name.location, value.requireArray())
+                    Keyword.ANY_OF.value -> subschema = createAnyOfSubschema(name.location, value.requireArray())
                     Keyword.ADDITIONAL_PROPERTIES.value -> subschema = buildAdditionalPropertiesSchema(schemaJson, value, name)
                     Keyword.PROPERTIES.value -> propertySchemas = loadPropertySchemas(value.requireObject())
                     Keyword.REF.value -> subschema = createReferenceSchema(name.location, value.requireString())
@@ -421,9 +422,16 @@ class SchemaLoader(
     }
 
     private fun createAllOfSubschema(location: SourceLocation, subschemas: IJsonArray<*>) = AllOfSchema(
-        subschemas.elements.stream()
-            .map { loadChild(it) }
-            .collect(toList()),
+        arrayToSubschemaList(subschemas),
         location
     )
+    private fun createAnyOfSubschema(location: SourceLocation, subschemas: IJsonArray<*>) = AnyOfSchema(
+        arrayToSubschemaList(subschemas),
+        location
+    )
+
+    private fun arrayToSubschemaList(subschemas: IJsonArray<*>): List<Schema> =
+        subschemas.elements.stream()
+            .map { loadChild(it) }
+            .collect(toList())
 }

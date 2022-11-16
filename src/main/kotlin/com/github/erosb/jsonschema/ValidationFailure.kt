@@ -143,6 +143,28 @@ data class ContainsValidationFailure(
     Keyword.CONTAINS
 )
 
+data class AllOfValidationFailure(
+    override val schema: AllOfSchema,
+    override val instance: IJsonValue,
+    override val causes: Set<ValidationFailure>
+) : ValidationFailure(
+    message = "${causes.size} subschemas out of ${schema.subschemas.size} failed to validate",
+    schema = schema,
+    instance = instance,
+    causes = causes
+)
+
+data class AnyOfValidationFailure(
+    override val schema: AnyOfSchema,
+    override val instance: IJsonValue,
+    override val causes: Set<ValidationFailure>
+) : ValidationFailure(
+    message = "no subschema out of ${schema.subschemas.size} succeeded to validate",
+    schema = schema,
+    instance = instance,
+    causes = causes
+)
+
 internal class AggregatingValidationFailure(
     schema: Schema,
     instance: IJsonValue,

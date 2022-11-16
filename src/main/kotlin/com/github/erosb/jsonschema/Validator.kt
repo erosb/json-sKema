@@ -273,6 +273,24 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
     }
 
+    override fun visitAllOfSchema(schema: AllOfSchema): ValidationFailure? {
+        val subFailures = schema.subschemas.map { subschema -> subschema.accept(this) }.filterNotNull()
+        return if (subFailures.isNotEmpty()) {
+            AllOfValidationFailure(schema = schema, instance = instance, causes = subFailures.toSet())
+        } else {
+            null
+        }
+    }
+
+    override fun visitAnyOfSchema(schema: AnyOfSchema): ValidationFailure? {
+        val subFailures = schema.subschemas.map { subschema -> subschema.accept(this) }.filterNotNull()
+        return if (subFailures.size == schema.subschemas.size) {
+            AnyOfValidationFailure(schema = schema, instance = instance, causes = subFailures.toSet())
+        } else {
+            null
+        }
+    }
+
     override fun accumulate(parent: Schema, previous: ValidationFailure?, current: ValidationFailure?): ValidationFailure? {
         if (previous === null) {
             return current

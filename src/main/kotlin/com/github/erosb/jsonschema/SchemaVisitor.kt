@@ -65,6 +65,7 @@ abstract class SchemaVisitor<P> {
     open fun visitMinLengthSchema(schema: MinLengthSchema): P? = visitChildren(schema)
     open fun visitMaxLengthSchema(schema: MaxLengthSchema): P? = visitChildren(schema)
     open fun visitAllOfSchema(schema: AllOfSchema): P? = visitChildren(schema)
+    open fun visitAnyOfSchema(schema: AnyOfSchema): P? = visitChildren(schema)
     open fun visitReferenceSchema(schema: ReferenceSchema): P? = visitChildren(schema)
     open fun visitDynamicRefSchema(schema: DynamicRefSchema): P? = visitChildren(schema)
     open fun visitAdditionalPropertiesSchema(schema: AdditionalPropertiesSchema): P? = visitChildren(schema)

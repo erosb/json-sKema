@@ -39,6 +39,14 @@ data class AnyOfSchema(
     override fun subschemas(): Collection<Schema> = subschemas
 }
 
+data class OneOfSchema(
+    val subschemas: List<Schema>,
+    override val location: SourceLocation
+) : Schema(location) {
+    override fun <P> accept(visitor: SchemaVisitor<P>) = visitor.visitOneOfSchema(this)
+    override fun subschemas(): Collection<Schema> = subschemas
+}
+
 data class ReferenceSchema(var referredSchema: Schema?, val ref: String, override val location: SourceLocation) :
     Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>) = visitor.visitReferenceSchemaUnlessAlreadyVisited(this)

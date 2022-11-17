@@ -159,7 +159,18 @@ data class AnyOfValidationFailure(
     override val instance: IJsonValue,
     override val causes: Set<ValidationFailure>
 ) : ValidationFailure(
-    message = "no subschema out of ${schema.subschemas.size} succeeded to validate",
+    message = "no subschema out of ${schema.subschemas.size} matched",
+    schema = schema,
+    instance = instance,
+    causes = causes
+)
+
+data class OneOfValidationFailure(
+    override val schema: OneOfSchema,
+    override val instance: IJsonValue,
+    override val causes: Set<ValidationFailure>
+) : ValidationFailure(
+    message = "expected 1 subschema to match out of ${schema.subschemas.size}, ${schema.subschemas.size - causes.size} matched",
     schema = schema,
     instance = instance,
     causes = causes

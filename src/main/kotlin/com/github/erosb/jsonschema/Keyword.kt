@@ -19,6 +19,7 @@ enum class Keyword(
     MAX_LENGTH("maxLength"),
     ALL_OF("allOf"),
     ANY_OF("anyOf"),
+    ONE_OF("oneOf"),
     ADDITIONAL_PROPERTIES("additionalProperties"),
     PROPERTIES("properties", true),
     TITLE("title"),

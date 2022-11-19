@@ -334,7 +334,7 @@ class SchemaLoader(
                     Keyword.ALL_OF.value -> subschema = createAllOfSubschema(name.location, value.requireArray())
                     Keyword.ANY_OF.value -> subschema = createAnyOfSubschema(name.location, value.requireArray())
                     Keyword.ONE_OF.value -> subschema = OneOfSchema(arrayToSubschemaList(value.requireArray()), name.location)
-                        Keyword.ADDITIONAL_PROPERTIES.value -> subschema = buildAdditionalPropertiesSchema(schemaJson, value, name)
+                    Keyword.ADDITIONAL_PROPERTIES.value -> subschema = buildAdditionalPropertiesSchema(schemaJson, value, name)
                     Keyword.PROPERTIES.value -> propertySchemas = loadPropertySchemas(value.requireObject())
                     Keyword.REF.value -> subschema = createReferenceSchema(name.location, value.requireString())
                     Keyword.DYNAMIC_REF.value -> dynamicRef = loadingState.baseURI.resolve(value.requireString().value)

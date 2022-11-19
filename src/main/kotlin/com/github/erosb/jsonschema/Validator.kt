@@ -293,7 +293,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
 
     override fun visitOneOfSchema(schema: OneOfSchema): ValidationFailure? {
         val subFailures = schema.subschemas.map { subschema -> subschema.accept(this) }.filterNotNull()
-        return if (subFailures.size == 1) {
+        return if ((schema.subschemas.size - subFailures.size) == 1) {
             null
         } else {
             OneOfValidationFailure(schema = schema, instance = instance, causes = subFailures.toSet())

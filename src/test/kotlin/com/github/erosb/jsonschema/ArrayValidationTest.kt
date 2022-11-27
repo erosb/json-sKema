@@ -28,7 +28,7 @@ class ArrayValidationTest {
     @Test
     fun `items failure`() {
         val itemsSchema = TypeSchema(JsonString("boolean"), UnknownSource)
-        val schema = ItemsSchema(itemsSchema, UnknownSource)
+        val schema = ItemsSchema(itemsSchema, 0, UnknownSource)
         val first = JsonString("asd")
         val second = JsonString("bsd")
         val instance = JsonArray(listOf(JsonBoolean(true), first, second))

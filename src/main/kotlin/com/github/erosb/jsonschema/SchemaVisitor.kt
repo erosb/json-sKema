@@ -83,6 +83,7 @@ abstract class SchemaVisitor<P> {
     open fun visitMultipleOfSchema(schema: MultipleOfSchema): P? = visitChildren(schema)
     open fun visitUniqueItemsSchema(schema: UniqueItemsSchema): P? = visitChildren(schema)
     open fun visitItemsSchema(schema: ItemsSchema): P? = visitChildren(schema)
+    open fun visitPrefixItemsSchema(schema: PrefixItemsSchema): P? = visitChildren(schema)
     open fun visitContainsSchema(schema: ContainsSchema): P? = visitChildren(schema)
     open fun visitIfThenElseSchema(ifThenElseSchema: IfThenElseSchema): P? = visitChildren(ifThenElseSchema)
 

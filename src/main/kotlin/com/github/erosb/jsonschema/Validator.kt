@@ -246,15 +246,35 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
 
     override fun visitItemsSchema(schema: ItemsSchema): ValidationFailure? = instance.maybeArray { array ->
         val failures = mutableMapOf<Int, ValidationFailure>()
-        array.elements.forEachIndexed { index, it ->
-            withOtherInstance(it) {
+        for (index in schema.prefixItemCount until array.length()) {
+            withOtherInstance(array[index]) {
                 schema.itemsSchema.accept(this) ?. let { failures[index] = it }
+            }
+        }
+//        array.elements.forEachIndexed { index, it ->
+//            withOtherInstance(it) {
+//                schema.itemsSchema.accept(this) ?. let { failures[index] = it }
+//            }
+//        }
+        if (failures.isEmpty()) {
+            null
+        } else {
+            ItemsValidationFailure(failures.toMap(), schema, array)
+        }
+    }
+
+    override fun visitPrefixItemsSchema(schema: PrefixItemsSchema): ValidationFailure? = instance.maybeArray { array ->
+        val failures = mutableMapOf<Int, ValidationFailure>()
+        for (index in 0 until Math.min(array.length(), schema.prefixSchemas.size)) {
+            val subschema = schema.prefixSchemas[index]
+            withOtherInstance(array[index]) {
+                subschema.accept(this) ?.let { arrayFailure -> failures[index] = arrayFailure }
             }
         }
         if (failures.isEmpty()) {
             null
         } else {
-            ItemsValidationFailure(failures.toMap(), schema, array)
+            PrefixItemsValidationFailure(failures, schema, array)
         }
     }
 

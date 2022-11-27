@@ -104,7 +104,7 @@ class TestSuiteTest {
         @JvmStatic
         fun params(): Stream<Arguments> = loadParamsFromPackage(
             "test-suite.tests.draft2020-12"
-//            ,"exclusiveMinimum.json","exclusiveMaximum.json", "if-then-else.json"
+//            ,"items.json","prefixItems.json"
         ).stream()
 
         private val server = JettyWrapper("/test-suite/remotes")
@@ -113,6 +113,7 @@ class TestSuiteTest {
         @BeforeAll
         fun startJetty() = server.start()
 
+        @JvmStatic
         @AfterAll
         fun stopJetty() = server.stop()
     }

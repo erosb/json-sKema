@@ -42,6 +42,7 @@ enum class Keyword(
     MULTIPLE_OF("multipleOf"),
     UNIQUE_ITEMS("uniqueItems"),
     ITEMS("items"),
+    PREFIX_ITEMS("prefixItems"),
     CONTAINS("contains"),
     MIN_CONTAINS("minContains"),
     MAX_CONTAINS("maxContains"),

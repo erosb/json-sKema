@@ -363,7 +363,12 @@ class SchemaLoader(
                     Keyword.EXCLUSIVE_MINIMUM.value -> subschema = ExclusiveMinimumSchema(value.requireNumber().value, name.location)
                     Keyword.MULTIPLE_OF.value -> subschema = MultipleOfSchema(value.requireNumber().value, name.location)
                     Keyword.UNIQUE_ITEMS.value -> subschema = UniqueItemsSchema(value.requireBoolean().value, name.location)
-                    Keyword.ITEMS.value -> subschema = ItemsSchema(loadChild(value), name.location)
+                    Keyword.ITEMS.value -> subschema = ItemsSchema(
+                        loadChild(value),
+                        schemaJson[Keyword.PREFIX_ITEMS.value]?.maybeArray { it.length() } ?: 0,
+                        name.location
+                    )
+                    Keyword.PREFIX_ITEMS.value -> subschema = PrefixItemsSchema(value.requireArray().elements.map { loadChild(it) }, name.location)
                     Keyword.CONTAINS.value -> subschema = buildContainsSchema(schemaJson, value, name.location)
                     Keyword.IF.value -> subschema = buildIfThenElseSchema(schemaJson, name.location)
 //                else -> TODO("unhandled property ${name.value}")

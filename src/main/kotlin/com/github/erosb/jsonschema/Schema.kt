@@ -142,10 +142,16 @@ data class UniqueItemsSchema(val unique: Boolean, override val location: SourceL
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitUniqueItemsSchema(this)
 }
 
-data class ItemsSchema(val itemsSchema: Schema, override val location: SourceLocation) : Schema(location) {
+data class ItemsSchema(val itemsSchema: Schema, val prefixItemCount: Int, override val location: SourceLocation) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitItemsSchema(this)
     override fun subschemas(): Collection<Schema> = listOf(itemsSchema)
 }
+
+data class PrefixItemsSchema(val prefixSchemas: List<Schema>, override val location: SourceLocation) : Schema(location) {
+    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitPrefixItemsSchema(this)
+    override fun subschemas(): Collection<Schema> = prefixSchemas
+}
+
 
 data class ContainsSchema(
     val containedSchema: Schema,

@@ -40,17 +40,17 @@ data class MinimumValidationFailure(
 data class MaximumValidationFailure(
     override val schema: MaximumSchema,
     override val instance: IJsonNumber
-) : ValidationFailure("${instance.value} is greater than maximum ${schema.maximum}", schema, instance, Keyword.MINIMUM)
+) : ValidationFailure("${instance.value} is greater than maximum ${schema.maximum}", schema, instance, Keyword.MAXIMUM)
 
 data class ExclusiveMinimumValidationFailure(
     override val schema: ExclusiveMinimumSchema,
     override val instance: IJsonNumber
-) : ValidationFailure("${instance.value} is lower than or equal to minimum ${schema.minimum}", schema, instance, Keyword.MINIMUM)
+) : ValidationFailure("${instance.value} is lower than or equal to minimum ${schema.minimum}", schema, instance, Keyword.EXCLUSIVE_MINIMUM)
 
 data class ExclusiveMaximumValidationFailure(
     override val schema: ExclusiveMaximumSchema,
     override val instance: IJsonNumber
-) : ValidationFailure("${instance.value} is greater than or equal to maximum ${schema.maximum}", schema, instance, Keyword.MINIMUM)
+) : ValidationFailure("${instance.value} is greater than or equal to maximum ${schema.maximum}", schema, instance, Keyword.EXCLUSIVE_MAXIMUM)
 
 data class MultipleOfValidationFailure(
     override val schema: MultipleOfSchema,
@@ -139,7 +139,20 @@ data class ItemsValidationFailure(
     "array items ${itemFailures.keys.joinToString(", ")} failed to validate against \"items\" subschema",
     schema,
     instance,
-    Keyword.ITEMS
+    Keyword.ITEMS,
+    itemFailures.values.toSet()
+)
+
+data class PrefixItemsValidationFailure(
+    val itemFailures: Map<Int, ValidationFailure>,
+    override val schema: PrefixItemsSchema,
+    override val instance: IJsonArray<*>
+) : ValidationFailure(
+    "array items ${itemFailures.keys.joinToString(", ")} failed to validate against \"prefixItems\" subschema",
+    schema,
+    instance,
+    Keyword.PREFIX_ITEMS,
+    itemFailures.values.toSet()
 )
 
 data class ContainsValidationFailure(

@@ -1,8 +1,10 @@
 package com.github.erosb.jsonschema
 
-import java.io.*
-import java.lang.NumberFormatException
-import java.lang.StringBuilder
+import java.io.BufferedReader
+import java.io.ByteArrayInputStream
+import java.io.InputStream
+import java.io.InputStreamReader
+import java.io.Reader
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.net.URI

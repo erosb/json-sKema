@@ -148,3 +148,13 @@ data class ContainsSchema(
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitContainsSchema(this)
     override fun subschemas(): Collection<Schema> = listOf(containedSchema)
 }
+
+data class IfThenElseSchema(
+    val ifSchema: Schema,
+    val thenSchema: Schema?,
+    val elseSchema: Schema?,
+    override val location: SourceLocation
+) : Schema(location) {
+    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitIfThenElseSchema(this)
+    override fun subschemas() = listOf(ifSchema, thenSchema, elseSchema).filterNotNull()
+}

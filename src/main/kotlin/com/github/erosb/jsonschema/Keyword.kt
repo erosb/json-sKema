@@ -42,5 +42,8 @@ enum class Keyword(
     ITEMS("items"),
     CONTAINS("contains"),
     MIN_CONTAINS("minContains"),
-    MAX_CONTAINS("maxContains")
+    MAX_CONTAINS("maxContains"),
+    IF("if"),
+    THEN("then"),
+    ELSE("else")
 }

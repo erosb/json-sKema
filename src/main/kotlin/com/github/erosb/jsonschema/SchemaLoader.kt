@@ -363,6 +363,7 @@ class SchemaLoader(
                     Keyword.UNIQUE_ITEMS.value -> subschema = UniqueItemsSchema(value.requireBoolean().value, name.location)
                     Keyword.ITEMS.value -> subschema = ItemsSchema(loadChild(value), name.location)
                     Keyword.CONTAINS.value -> subschema = buildContainsSchema(schemaJson, value, name.location)
+                    Keyword.IF.value -> subschema = buildIfThenElseSchema(schemaJson, name.location)
 //                else -> TODO("unhandled property ${name.value}")
                 }
                 if (subschema != null) subschemas.add(subschema)
@@ -382,6 +383,13 @@ class SchemaLoader(
                 dynamicAnchor = dynamicAnchor?.toString()
             )
         }
+    }
+
+    private fun buildIfThenElseSchema(schemaJson: IJsonObj, location: SourceLocation): Schema {
+        val ifSchema = loadChild(schemaJson[Keyword.IF.value]!!)
+        val thenSchema = schemaJson[Keyword.THEN.value]?.let { loadChild(it) }
+        val elseSchema = schemaJson[Keyword.ELSE.value]?.let { loadChild(it) }
+        return IfThenElseSchema(ifSchema, thenSchema, elseSchema, location)
     }
 
     private fun buildAdditionalPropertiesSchema(

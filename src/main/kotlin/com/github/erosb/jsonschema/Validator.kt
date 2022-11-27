@@ -300,6 +300,15 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
     }
 
+    override fun visitIfThenElseSchema(ifThenElseSchema: IfThenElseSchema): ValidationFailure? {
+        val ifFailure = ifThenElseSchema.ifSchema.accept(this)
+        return if (ifFailure == null) {
+            ifThenElseSchema.thenSchema?.accept(this)
+        } else {
+            ifThenElseSchema.elseSchema?.accept(this)
+        }
+    }
+
     override fun accumulate(parent: Schema, previous: ValidationFailure?, current: ValidationFailure?): ValidationFailure? {
         if (previous === null) {
             return current

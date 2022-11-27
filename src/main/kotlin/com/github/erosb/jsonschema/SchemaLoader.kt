@@ -371,6 +371,10 @@ class SchemaLoader(
                     Keyword.PREFIX_ITEMS.value -> subschema = PrefixItemsSchema(value.requireArray().elements.map { loadChild(it) }, name.location)
                     Keyword.CONTAINS.value -> subschema = buildContainsSchema(schemaJson, value, name.location)
                     Keyword.IF.value -> subschema = buildIfThenElseSchema(schemaJson, name.location)
+                    Keyword.DEPENDENT_SCHEMAS.value -> subschema = DependentSchemasSchema(
+                        value.requireObject().properties.mapKeys { it.key.value }.mapValues { loadChild(it.value) },
+                        name.location
+                    )
 //                else -> TODO("unhandled property ${name.value}")
                 }
                 if (subschema != null) subschemas.add(subschema)

@@ -199,6 +199,17 @@ data class OneOfValidationFailure(
     causes = causes
 )
 
+data class DependentSchemasValidationFailure(
+    override val schema: DependentSchemasSchema,
+    override val instance: IJsonValue,
+    val causesByProperty: Map<String, ValidationFailure>
+) : ValidationFailure(
+    message = "some dependent subschemas did not match",
+    schema = schema,
+    instance = instance,
+    causes = causesByProperty.values.toSet()
+)
+
 internal class AggregatingValidationFailure(
     schema: Schema,
     instance: IJsonValue,

@@ -345,6 +345,18 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
     }
 
+    override fun visitDependentSchemas(schema: DependentSchemasSchema): ValidationFailure? = instance.maybeObject { obj ->
+        val failures: MutableMap<String, ValidationFailure> = mutableMapOf()
+        schema.dependentSchemas.forEach { propName, schema ->
+            if (obj[propName] != null) {
+                schema.accept(this)?.let { failures[propName] = it }
+            }
+        }
+        if (failures.isEmpty()) null else {
+            DependentSchemasValidationFailure(schema, instance, failures)
+        }
+    }
+
     override fun accumulate(parent: Schema, previous: ValidationFailure?, current: ValidationFailure?): ValidationFailure? {
         if (previous === null) {
             return current

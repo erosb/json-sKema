@@ -152,7 +152,6 @@ data class PrefixItemsSchema(val prefixSchemas: List<Schema>, override val locat
     override fun subschemas(): Collection<Schema> = prefixSchemas
 }
 
-
 data class ContainsSchema(
     val containedSchema: Schema,
     val minContains: Number = 1,
@@ -170,5 +169,12 @@ data class IfThenElseSchema(
     override val location: SourceLocation
 ) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitIfThenElseSchema(this)
-    override fun subschemas() = listOf(ifSchema, thenSchema, elseSchema).filterNotNull()
+    override fun subschemas() = listOfNotNull(ifSchema, thenSchema, elseSchema)
+}
+
+data class DependentSchemasSchema(
+    val dependentSchemas: Map<String, Schema>,
+    override val location: SourceLocation
+) : Schema(location) {
+    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitDependentSchemas(this)
 }

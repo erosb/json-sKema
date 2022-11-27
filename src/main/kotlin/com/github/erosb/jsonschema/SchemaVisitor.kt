@@ -86,6 +86,7 @@ abstract class SchemaVisitor<P> {
     open fun visitPrefixItemsSchema(schema: PrefixItemsSchema): P? = visitChildren(schema)
     open fun visitContainsSchema(schema: ContainsSchema): P? = visitChildren(schema)
     open fun visitIfThenElseSchema(ifThenElseSchema: IfThenElseSchema): P? = visitChildren(ifThenElseSchema)
+    open fun visitDependentSchemas(schema: DependentSchemasSchema): P? = visitChildren(schema)
 
     open fun identity(): P? = null
     open fun accumulate(parent: Schema, previous: P?, current: P?): P? = current ?: previous

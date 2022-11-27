@@ -48,5 +48,6 @@ enum class Keyword(
     MAX_CONTAINS("maxContains"),
     IF("if"),
     THEN("then"),
-    ELSE("else")
+    ELSE("else"),
+    DEPENDENT_SCHEMAS("dependentSchemas")
 }

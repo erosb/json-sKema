@@ -37,6 +37,8 @@ enum class Keyword(
     REQUIRED("required"),
     MAXIMUM("maximum"),
     MINIMUM("minimum"),
+    EXCLUSIVE_MAXIMUM("exclusiveMaximum"),
+    EXCLUSIVE_MINIMUM("exclusiveMinimum"),
     MULTIPLE_OF("multipleOf"),
     UNIQUE_ITEMS("uniqueItems"),
     ITEMS("items"),

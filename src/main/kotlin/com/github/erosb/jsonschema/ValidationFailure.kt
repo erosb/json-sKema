@@ -42,6 +42,16 @@ data class MaximumValidationFailure(
     override val instance: IJsonNumber
 ) : ValidationFailure("${instance.value} is greater than maximum ${schema.maximum}", schema, instance, Keyword.MINIMUM)
 
+data class ExclusiveMinimumValidationFailure(
+    override val schema: ExclusiveMinimumSchema,
+    override val instance: IJsonNumber
+) : ValidationFailure("${instance.value} is lower than or equal to minimum ${schema.minimum}", schema, instance, Keyword.MINIMUM)
+
+data class ExclusiveMaximumValidationFailure(
+    override val schema: ExclusiveMaximumSchema,
+    override val instance: IJsonNumber
+) : ValidationFailure("${instance.value} is greater than or equal to maximum ${schema.maximum}", schema, instance, Keyword.MINIMUM)
+
 data class MultipleOfValidationFailure(
     override val schema: MultipleOfSchema,
     override val instance: IJsonNumber

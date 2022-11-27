@@ -204,6 +204,22 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
     }
 
+    override fun visitExclusiveMaximumSchema(schema: ExclusiveMaximumSchema): ValidationFailure? = instance.maybeNumber {
+        if (it.value.toDouble() >= schema.maximum.toDouble()) {
+            ExclusiveMaximumValidationFailure(schema, it)
+        } else {
+            null
+        }
+    }
+
+    override fun visitExclusiveMinimumSchema(schema: ExclusiveMinimumSchema): ValidationFailure? = instance.maybeNumber {
+        if (it.value.toDouble() <= schema.minimum.toDouble()) {
+            ExclusiveMinimumValidationFailure(schema, it)
+        } else {
+            null
+        }
+    }
+
     override fun visitMultipleOfSchema(schema: MultipleOfSchema): ValidationFailure? = instance.maybeNumber {
         if (getAsBigDecimal(it.value).remainder(getAsBigDecimal(schema.denominator)).compareTo(BigDecimal.ZERO) == 0) {
             null

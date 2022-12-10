@@ -50,10 +50,11 @@ internal data class Anchor(
 internal data class LoadingState(
     val documentRoot: IJsonValue,
     var baseURI: URI = URI(DEFAULT_BASE_URI),
-    private val anchors: MutableMap<String, Anchor> = mutableMapOf()
+    private val anchors: MutableMap<String, Anchor> = mutableMapOf(),
+    private val dynamicAnchors: MutableMap<String, Anchor> = mutableMapOf()
 ) {
 
-    fun registerRawSchema(id: String, json: IJsonValue): Anchor {
+    fun registerRawSchemaByAnchor(id: String, json: IJsonValue): Anchor {
         val anchor = getAnchorByURI(id)
         if (anchor.json !== null && anchor.json !== json) {
             throw IllegalStateException("raw schema already registered by URI $id")
@@ -68,10 +69,16 @@ internal data class LoadingState(
 
     fun getAnchorByURI(uri: String): Anchor = anchors.getOrPut(removeEmptyFragment(uri)) { Anchor() }
 
+    fun getDynAnchorByURI(uri: String): Anchor = dynamicAnchors.getOrPut(removeEmptyFragment(uri)) { Anchor() }
+
     fun anchorByURI(ref: String): Anchor? = anchors[removeEmptyFragment(ref)]
 
     private fun removeEmptyFragment(uri: String): String {
         return if (uri.endsWith("#")) uri.substring(0, uri.length - 1) else uri
+    }
+
+    fun registerRawSchemaByDynAnchor(dynAnchor: String, json: IJsonObject<*, *>) {
+        getDynAnchorByURI(dynAnchor).json = json
     }
 }
 
@@ -110,13 +117,19 @@ class SchemaLoader(
                 withBaseUriAdjustment(json) {
                     when (val id = json[Keyword.ID.value]) {
                         is IJsonString -> {
-                            loadingState.registerRawSchema(loadingState.baseURI.toString(), json)
+                            loadingState.registerRawSchemaByAnchor(loadingState.baseURI.toString(), json)
                         }
                     }
                     when (val anchor = json[Keyword.ANCHOR.value]) {
                         is IJsonString -> {
                             val resolvedAnchor = loadingState.baseURI.resolve("#" + anchor.value)
-                            loadingState.registerRawSchema(resolvedAnchor.toString(), json)
+                            loadingState.registerRawSchemaByAnchor(resolvedAnchor.toString(), json)
+                        }
+                    }
+                    when (val anchor = json[Keyword.DYNAMIC_ANCHOR.value]) {
+                        is IJsonString -> {
+                            val resolvedAnchor = loadingState.baseURI.resolve("#" + anchor.value)
+                            loadingState.registerRawSchemaByDynAnchor(resolvedAnchor.toString(), json)
                         }
                     }
 //                    when (val anchor = json[Keyword.DYNAMIC_ANCHOR.value]) {
@@ -177,7 +190,7 @@ class SchemaLoader(
 
     private fun loadSchema(): Schema {
         val finalRef = createReferenceSchema(schemaJson.location, "#")
-        loadingState.registerRawSchema(loadingState.baseURI.toString(), schemaJson)
+        loadingState.registerRawSchemaByAnchor(loadingState.baseURI.toString(), schemaJson)
 
         do {
             val anchor: Anchor? = loadingState.nextLoadableAnchor()
@@ -222,7 +235,7 @@ class SchemaLoader(
             } catch (ex: JsonParseException) {
                 throw SchemaLoadingException("failed to parse json content returned from ${uri.toBeQueried}", ex)
             }
-            loadingState.registerRawSchema(uri.toBeQueried.toString(), continingRoot)
+            loadingState.registerRawSchemaByAnchor(uri.toBeQueried.toString(), continingRoot)
 
             runWithChangedBaseURI(URI(ref)) {
                 adjustBaseURI(continingRoot)
@@ -235,6 +248,10 @@ class SchemaLoader(
         val byURIWithAnchor = loadingState.anchorByURI(ref)
         if (byURIWithAnchor?.json !== null) {
             return Pair(byURIWithAnchor.json!!, URI(ref))
+        }
+        val byURIWithDynAnchor = loadingState.getDynAnchorByURI(ref)
+        if (byURIWithDynAnchor.json != null) {
+            return Pair(byURIWithDynAnchor.json!!, URI(ref))
         }
         return evaluateJsonPointer(continingRoot, uri.fragment)
     }
@@ -438,7 +455,7 @@ class SchemaLoader(
         try {
             s = loadingState.baseURI.resolve(ref).toString()
         } catch (e: java.lang.IllegalArgumentException) {
-            s =loadingState.baseURI.toString() + ref
+            s = loadingState.baseURI.toString() + ref
         }
         val anchor = loadingState.getAnchorByURI(s)
         return anchor.createReference(location, s)

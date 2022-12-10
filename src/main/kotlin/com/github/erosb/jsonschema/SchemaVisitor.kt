@@ -18,17 +18,17 @@ abstract class SchemaVisitor<P> {
         } ?: false
         var product: P?
         if (schema.dynamicRef != null) {
-            val referred = anchors[schema.dynamicRef]
+            var referred: Schema? = anchors[schema.dynamicRef.ref]
             if (referred === null) {
-                TODO("not implemented (no matching dynamicAnchor for dynamicRef ${schema.dynamicRef}")
+                if (schema.dynamicRef.fallbackReferredSchema == null) {
+                    TODO("not implemented (no matching dynamicAnchor for dynamicRef ${schema.dynamicRef}")
+                } else {
+                    referred = schema.dynamicRef.fallbackReferredSchema!!.referredSchema
+                }
             }
-            val merged = CompositeSchema(
-                location = schema.location,
-                default = schema.default ?: referred.default,
-                subschemas = schema.subschemas ?: referred.subschemas,
-                title = schema.title ?: referred.title
-            )
-            product = visitCompositeSchema(merged)
+            val referredProduct = referred?.accept(this)
+            val selfProduct = visitCompositeSchema(schema)
+            product = accumulate(schema, referredProduct, selfProduct)
         } else {
             product = visitCompositeSchema(schema)
         }

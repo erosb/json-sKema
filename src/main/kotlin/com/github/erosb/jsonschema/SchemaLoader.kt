@@ -176,7 +176,7 @@ class SchemaLoader(
     }
 
     private fun loadSchema(): Schema {
-        val finalRef = createReferenceSchema(schemaJson.location, JsonString("#"))
+        val finalRef = createReferenceSchema(schemaJson.location, "#")
         loadingState.registerRawSchema(loadingState.baseURI.toString(), schemaJson)
 
         do {
@@ -321,7 +321,7 @@ class SchemaLoader(
         var writeOnly: IJsonBoolean? = null
         var deprecated: IJsonBoolean? = null
         var default: IJsonValue? = null
-        var dynamicRef: URI? = null
+        var dynamicRef: DynamicReference? = null
         var dynamicAnchor: URI? = null
         adjustBaseURI(schemaJson)
         var propertySchemas: Map<String, Schema> = emptyMap()
@@ -336,8 +336,8 @@ class SchemaLoader(
                     Keyword.ONE_OF.value -> subschema = OneOfSchema(arrayToSubschemaList(value.requireArray()), name.location)
                     Keyword.ADDITIONAL_PROPERTIES.value -> subschema = buildAdditionalPropertiesSchema(schemaJson, value, name)
                     Keyword.PROPERTIES.value -> propertySchemas = loadPropertySchemas(value.requireObject())
-                    Keyword.REF.value -> subschema = createReferenceSchema(name.location, value.requireString())
-                    Keyword.DYNAMIC_REF.value -> dynamicRef = loadingState.baseURI.resolve(value.requireString().value)
+                    Keyword.REF.value -> subschema = createReferenceSchema(name.location, value.requireString().value)
+                    Keyword.DYNAMIC_REF.value -> dynamicRef = DynamicReference(ref = value.requireString().value, fallbackReferredSchema = createReferenceSchema(ref = value.requireString().value, location = schemaJson.location))
                     Keyword.DYNAMIC_ANCHOR.value ->
                         dynamicAnchor =
                             loadingState.baseURI.resolve("#" + value.requireString().value)
@@ -390,7 +390,7 @@ class SchemaLoader(
                 deprecated = deprecated,
                 default = default,
                 propertySchemas = propertySchemas,
-                dynamicRef = dynamicRef?.toString(),
+                dynamicRef = dynamicRef,
                 dynamicAnchor = dynamicAnchor?.toString()
             )
         }
@@ -431,8 +431,15 @@ class SchemaLoader(
         return rval.toMap()
     }
 
-    private fun createReferenceSchema(location: SourceLocation, ref: IJsonString): ReferenceSchema {
-        val s: String = loadingState.baseURI.resolve(ref.value).toString()
+    private fun createReferenceSchema(location: SourceLocation, ref: String): ReferenceSchema {
+//        println(ref)
+//        println(loadingState.baseURI)
+        var s: String
+        try {
+            s = loadingState.baseURI.resolve(ref).toString()
+        } catch (e: java.lang.IllegalArgumentException) {
+            s =loadingState.baseURI.toString() + ref
+        }
         val anchor = loadingState.getAnchorByURI(s)
         return anchor.createReference(location, s)
     }

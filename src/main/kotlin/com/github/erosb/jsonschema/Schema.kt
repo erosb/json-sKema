@@ -15,7 +15,7 @@ data class CompositeSchema(
     val readOnly: IJsonBoolean? = null,
     val writeOnly: IJsonBoolean? = null,
     val default: IJsonValue? = null,
-    val dynamicRef: String? = null,
+    val dynamicRef: DynamicReference? = null,
     val dynamicAnchor: String? = null,
     val propertySchemas: Map<String, Schema> = emptyMap()
 ) : Schema(location) {
@@ -75,6 +75,8 @@ data class DynamicRefSchema(var referredSchema: Schema?, val dynamicRef: String,
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitDynamicRefSchema(this)
     override fun subschemas() = referredSchema?.let { listOf(it) } ?: emptyList()
 }
+
+data class DynamicReference(val ref: String, var fallbackReferredSchema: ReferenceSchema? = null)
 
 data class TrueSchema(override val location: SourceLocation) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>) = visitor.visitTrueSchema(this)

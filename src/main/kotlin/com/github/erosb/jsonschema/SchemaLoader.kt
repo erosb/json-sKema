@@ -346,8 +346,8 @@ class SchemaLoader(
             schemaJson.properties.forEach { (name, value) ->
                 var subschema: Schema? = null
                 when (name.value) {
-                    Keyword.MIN_LENGTH.value -> subschema = MinLengthSchema(value.requireNumber().value.toInt(), name.location)
-                    Keyword.MAX_LENGTH.value -> subschema = MaxLengthSchema(value.requireNumber().value.toInt(), name.location)
+                    Keyword.MIN_LENGTH.value -> subschema = MinLengthSchema(value.requireInt(), name.location)
+                    Keyword.MAX_LENGTH.value -> subschema = MaxLengthSchema(value.requireInt(), name.location)
                     Keyword.ALL_OF.value -> subschema = createAllOfSubschema(name.location, value.requireArray())
                     Keyword.ANY_OF.value -> subschema = createAnyOfSubschema(name.location, value.requireArray())
                     Keyword.ONE_OF.value -> subschema = OneOfSchema(arrayToSubschemaList(value.requireArray()), name.location)

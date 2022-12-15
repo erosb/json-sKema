@@ -98,10 +98,7 @@ interface IJsonValue {
     fun requireBoolean(): IJsonBoolean = throw unexpectedType("boolean")
     fun requireString(): IJsonString = throw unexpectedType("string")
     fun requireNumber(): IJsonNumber = throw unexpectedType("number")
-    fun requireInt(): Int {
-        val num = requireNumber()
-        if (num.value is Int) return num.value.toInt() else throw unexpectedType("integer")
-    }
+    fun requireInt(): Int = requireNumber().value.toInt()
 
     fun requireNull(): IJsonNull = throw unexpectedType("null")
     fun requireObject(): IJsonObject<*, *> = throw unexpectedType("object")

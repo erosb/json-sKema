@@ -152,6 +152,7 @@ interface IJsonArray<T : IJsonValue> : IJsonValue {
     operator fun get(index: Int) = elements[index]
     fun length() = elements.size
     fun markUnread(idx: Int) {}
+    fun markAsRead(idx: Int) {}
 }
 
 interface IJsonObject<P : IJsonString, V : IJsonValue> : IJsonValue {

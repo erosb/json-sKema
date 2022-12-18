@@ -38,15 +38,15 @@ private class UsageTrackingJsonArray<I : IJsonValue>(private val original: IJson
         return super.get(index)
     }
 
-    fun unevaluatedItems(): List<IJsonValue> {
-        val rval: MutableList<IJsonValue> = mutableListOf()
+    fun unevaluatedItems(): Map<Int, IJsonValue> {
+        val rval: MutableMap<Int, IJsonValue> = mutableMapOf()
         for (idx in 0 until original.length()) {
             if (!evaluatedIndexes.contains(idx)) {
-                rval.add(original[idx])
+                rval.put(idx, original[idx])
             }
         }
         println("returning ${rval.size} / ${original.length()} unevaluated items")
-        return rval.toList()
+        return rval.toMap()
     }
 
     override fun requireArray(): IJsonArray<IJsonValue> = this
@@ -56,6 +56,11 @@ private class UsageTrackingJsonArray<I : IJsonValue>(private val original: IJson
     override fun markUnread(idx: Int) {
         println("mar unread $idx")
         evaluatedIndexes.remove(idx)
+    }
+
+    override fun markAsRead(idx: Int) {
+        println("mar read $idx")
+        evaluatedIndexes.add(idx)
     }
 }
 
@@ -120,7 +125,9 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
     private fun usageTrackingArray(original: IJsonArray<IJsonValue>): UsageTrackingJsonArray<*> {
         return if (original is UsageTrackingJsonArray<*>) {
             original
-        } else UsageTrackingJsonArray<IJsonValue>(instance as IJsonArray<IJsonValue>)
+        } else {
+            UsageTrackingJsonArray<IJsonValue>(instance as IJsonArray<IJsonValue>)
+        }
     }
 
     lateinit var instance: IJsonValue
@@ -413,20 +420,18 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         val instance = this.instance
         if (instance is UsageTrackingJsonArray<*>) {
             val failures = mutableMapOf<Int, ValidationFailure>()
-            var index = 0
-            instance.unevaluatedItems().forEach {
-                withOtherInstance(it) {
+            instance.unevaluatedItems().forEach { (index, item) ->
+                withOtherInstance(item) {
                     schema.unevaluatedItemsSchema.accept(this)?.let { current ->
                         failures.put(index, current)
                     }
                 }
-                ++index
+                instance.markAsRead(index)
             }
             return if (failures.isNotEmpty()) {
                 UnevaluatedItemsValidationFailure(failures, schema, instance)
             } else null
         } else {
-            println("not an array ")
             return super.visitUnevaluatedItemsSchema(schema)
         }
     }

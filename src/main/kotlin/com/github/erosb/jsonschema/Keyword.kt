@@ -49,5 +49,7 @@ enum class Keyword(
     IF("if"),
     THEN("then"),
     ELSE("else"),
-    DEPENDENT_SCHEMAS("dependentSchemas")
+    DEPENDENT_SCHEMAS("dependentSchemas"),
+    UNEVALUATED_ITEMS("unevaluatedItems"),
+    UNEVALUATED_PROPERTIES("unevaluatedProperties")
 }

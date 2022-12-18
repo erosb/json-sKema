@@ -27,6 +27,33 @@ interface Validator {
     fun validate(instance: IJsonValue): ValidationFailure?
 }
 
+private class UsageTrackingJsonArray<I : IJsonValue>(private val original: IJsonArray<IJsonValue>) :
+    IJsonArray<IJsonValue> by original {
+
+    val evaluatedIndexes: MutableList<Int> = mutableListOf()
+
+    override fun get(index: Int): IJsonValue {
+        evaluatedIndexes.add(index)
+        println("${System.identityHashCode(this)} marks index $index as evaluated => " + super.get(index))
+        return super.get(index)
+    }
+
+    fun unevaluatedItems(): List<IJsonValue> {
+        val rval: MutableList<IJsonValue> = mutableListOf()
+        for (idx in 0 until original.length()) {
+            if (!evaluatedIndexes.contains(idx)) {
+                rval.add(original[idx])
+            }
+        }
+        println("returning ${rval.size} / ${original.length()} unevaluated items")
+        return rval.toList()
+    }
+
+    override fun requireArray(): IJsonArray<IJsonValue> = this
+
+    override fun <P> maybeArray(fn: (IJsonArray<*>) -> P?): P? = fn(this)
+}
+
 private class DefaultValidator(private val rootSchema: Schema) : Validator, SchemaVisitor<ValidationFailure>() {
 
     abstract inner class AbstractTypeValidatingVisitor : JsonVisitor<ValidationFailure> {
@@ -85,11 +112,27 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
     }
 
+    private fun usageTrackingArray(original: IJsonArray<IJsonValue>): UsageTrackingJsonArray<*> {
+        return if (original is UsageTrackingJsonArray<*>) {
+            original
+        } else UsageTrackingJsonArray<IJsonValue>(instance as IJsonArray<IJsonValue>)
+    }
+
     lateinit var instance: IJsonValue
 
     override fun validate(instance: IJsonValue): ValidationFailure? {
         this.instance = instance
         return rootSchema.accept(this)
+    }
+
+    override fun visitCompositeSchema(schema: CompositeSchema): ValidationFailure? {
+        if (instance is IJsonArray<*>) {
+            return withOtherInstance(usageTrackingArray(instance as IJsonArray<IJsonValue>)) {
+                return@withOtherInstance super.visitCompositeSchema(schema)
+            }
+        } else {
+            return super.visitCompositeSchema(schema)
+        }
     }
 
     override fun visitConstSchema(schema: ConstSchema): ValidationFailure? {
@@ -245,17 +288,13 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
     } else null
 
     override fun visitItemsSchema(schema: ItemsSchema): ValidationFailure? = instance.maybeArray { array ->
+        println("itten ${array.javaClass}")
         val failures = mutableMapOf<Int, ValidationFailure>()
         for (index in schema.prefixItemCount until array.length()) {
             withOtherInstance(array[index]) {
                 schema.itemsSchema.accept(this) ?. let { failures[index] = it }
             }
         }
-//        array.elements.forEachIndexed { index, it ->
-//            withOtherInstance(it) {
-//                schema.itemsSchema.accept(this) ?. let { failures[index] = it }
-//            }
-//        }
         if (failures.isEmpty()) {
             null
         } else {
@@ -284,8 +323,8 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
             return@maybeArray if (minContainsIsZero) null else ContainsValidationFailure("no array items are valid against \"contains\" subschema, expected minimum is ${schema.minContains}", schema, array)
         }
         var successCount = 0
-        array.elements.forEach {
-            val maybeChildFailure = withOtherInstance(it) {
+        for (idx in 0 until array.length()) {
+            val maybeChildFailure = withOtherInstance(array[idx]) {
                 schema.containedSchema.accept(this)
             }
             if (maybeChildFailure === null) {
@@ -295,6 +334,17 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
                 }
             }
         }
+//        array.elements.forEach {
+//            val maybeChildFailure = withOtherInstance(it) {
+//                schema.containedSchema.accept(this)
+//            }
+//            if (maybeChildFailure === null) {
+//                ++successCount
+//                if (schema.minContains == 1 && schema.maxContains === null) {
+//                    return@maybeArray null
+//                }
+//            }
+//        }
         if (schema.maxContains != null && schema.maxContains.toInt() < successCount) {
             return@maybeArray ContainsValidationFailure("$successCount array items are valid against \"contains\" subschema, expected maximum is 1", schema, array)
         }
@@ -336,12 +386,12 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
     }
 
-    override fun visitIfThenElseSchema(ifThenElseSchema: IfThenElseSchema): ValidationFailure? {
-        val ifFailure = ifThenElseSchema.ifSchema.accept(this)
+    override fun visitIfThenElseSchema(schema: IfThenElseSchema): ValidationFailure? {
+        val ifFailure = schema.ifSchema.accept(this)
         return if (ifFailure == null) {
-            ifThenElseSchema.thenSchema?.accept(this)
+            schema.thenSchema?.accept(this)
         } else {
-            ifThenElseSchema.elseSchema?.accept(this)
+            schema.elseSchema?.accept(this)
         }
     }
 
@@ -354,6 +404,28 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
         if (failures.isEmpty()) null else {
             DependentSchemasValidationFailure(schema, instance, failures)
+        }
+    }
+
+    override fun visitUnevaluatedItemsSchema(schema: UnevaluatedItemsSchema): ValidationFailure? {
+        val instance = this.instance
+        if (instance is UsageTrackingJsonArray<*>) {
+            val failures = mutableMapOf<Int, ValidationFailure>()
+            var index = 0
+            instance.unevaluatedItems().forEach {
+                withOtherInstance(it) {
+                    schema.unevaluatedItemsSchema.accept(this)?.let { current ->
+                        failures.put(index, current)
+                    }
+                }
+                ++index
+            }
+            return if (failures.isNotEmpty()) {
+                UnevaluatedItemsValidationFailure(failures, schema, instance)
+            } else null
+        } else {
+            println("not an array ")
+            return super.visitUnevaluatedItemsSchema(schema)
         }
     }
 

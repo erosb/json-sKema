@@ -155,6 +155,18 @@ data class PrefixItemsValidationFailure(
     itemFailures.values.toSet()
 )
 
+data class UnevaluatedItemsValidationFailure(
+    val itemFailures: Map<Int, ValidationFailure>,
+    override val schema: UnevaluatedItemsSchema,
+    override val instance: IJsonArray<*>
+) : ValidationFailure(
+    "array items ${itemFailures.keys.joinToString(", ")} failed to validate against \"unevaluatedItems\" subschema",
+    schema,
+    instance,
+    Keyword.UNEVALUATED_ITEMS,
+    itemFailures.values.toSet()
+)
+
 data class ContainsValidationFailure(
     override val message: String,
     override val schema: ContainsSchema,
@@ -227,7 +239,7 @@ internal class AggregatingValidationFailure(
             TODO("something went wrong")
         }
         if (instance != this.instance) {
-            TODO("something went wrong")
+            TODO("something went wrong: $instance vs ${this.instance}")
         }
         _causes.add(other)
         return this

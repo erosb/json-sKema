@@ -342,6 +342,8 @@ class SchemaLoader(
         var dynamicAnchor: URI? = null
         adjustBaseURI(schemaJson)
         var propertySchemas: Map<String, Schema> = emptyMap()
+        var unevaluatedItemsSchema: Schema? = null
+        var unevaluatedPropertiesSchema: Schema? = null
         return withBaseUriAdjustment(schemaJson) {
             schemaJson.properties.forEach { (name, value) ->
                 var subschema: Schema? = null
@@ -392,7 +394,7 @@ class SchemaLoader(
                         value.requireObject().properties.mapKeys { it.key.value }.mapValues { loadChild(it.value) },
                         name.location
                     )
-//                else -> TODO("unhandled property ${name.value}")
+                    Keyword.UNEVALUATED_ITEMS.value -> unevaluatedItemsSchema = UnevaluatedItemsSchema(loadChild(value), name.location)
                 }
                 if (subschema != null) subschemas.add(subschema)
             }
@@ -408,7 +410,8 @@ class SchemaLoader(
                 default = default,
                 propertySchemas = propertySchemas,
                 dynamicRef = dynamicRef,
-                dynamicAnchor = dynamicAnchor?.toString()
+                dynamicAnchor = dynamicAnchor?.toString(),
+                unevaluatedItemsSchema = unevaluatedItemsSchema
             )
         }
     }

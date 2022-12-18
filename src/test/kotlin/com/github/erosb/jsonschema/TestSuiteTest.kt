@@ -41,19 +41,24 @@ private fun <T : JsonValue> trimLeadingPointer(obj: T, pointerPrefixLength: Int)
     } as T
 }
 
-internal fun loadParamsFromPackage(packageName: String, vararg includedFiles: String): List<Arguments> {
+internal fun loadParamsFromPackage(packageName: String, vararg fileFilters: String): List<Arguments> {
     val rval = mutableListOf<Arguments>()
     val refs = Reflections(
         packageName,
         ResourcesScanner()
     )
+    val excludedFiles = fileFilters
+        .filter { it.startsWith("!") }
+        .map { it.substring(1) }
+    val includedFiles = fileFilters.filter { !it.startsWith("!") }.toTypedArray()
     val paths: Set<String> = refs.getResources(Pattern.compile(".*\\.json"))
     for (path in paths) {
         if (path.indexOf("/optional/") > -1 || path.indexOf("/remotes/") > -1) {
             continue
         }
         val fileName = path.substring(path.lastIndexOf('/') + 1)
-        if (includedFiles.isNotEmpty() && !includedFiles.contains(fileName)) {
+        if ((includedFiles.isNotEmpty() && !includedFiles.contains(fileName)) || excludedFiles.contains(fileName)) {
+            println("exclude $fileName")
             continue
         }
         val arr: JsonArray = loadTests(TestSuiteTest::class.java.getResourceAsStream("/$path"))
@@ -103,7 +108,8 @@ class TestSuiteTest {
     companion object {
         @JvmStatic
         fun params(): Stream<Arguments> = loadParamsFromPackage(
-            "test-suite.tests.draft2020-12"
+            "test-suite.tests.draft2020-12",
+            "!unevaluatedItems.json"
 //            ,"dynamicRef.json", "anchor.json", "ref.json"
         ).stream()
 

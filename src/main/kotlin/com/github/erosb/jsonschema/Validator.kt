@@ -312,7 +312,11 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         for (index in 0 until Math.min(array.length(), schema.prefixSchemas.size)) {
             val subschema = schema.prefixSchemas[index]
             withOtherInstance(array[index]) {
-                subschema.accept(this) ?.let { arrayFailure -> failures[index] = arrayFailure }
+                val failure = subschema.accept(this)
+                if (failure != null) {
+                    failures[index] = failure
+                    array.markUnread(index)
+                }
             }
         }
         if (failures.isEmpty()) {

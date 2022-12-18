@@ -75,7 +75,7 @@ internal fun loadParamsFromPackage(packageName: String, vararg fileFilters: Stri
 }
 
 class TestCase(input: JsonObject, schemaTest: JsonObject, fileName: String) {
-    val schemaDescription = "[" + fileName + "]/" + schemaTest["description"]!!.requireString().value
+    val schemaDescription = "[" + fileName + ":" + input.location.lineNumber + "]/" + schemaTest["description"]!!.requireString().value
     val schemaJson: IJsonValue = trimLeadingPointer(schemaTest["schema"]!!, 2)
     val inputDescription = schemaDescription + "/" + input["description"]!!.requireString().value
     val expectedToBeValid = input["valid"]!!.requireBoolean().value
@@ -107,8 +107,8 @@ class TestSuiteTest {
     companion object {
         @JvmStatic
         fun params(): Stream<Arguments> = loadParamsFromPackage(
-            "test-suite.tests.draft2020-12"
-//            , "!unevaluatedItems.json"
+            "test-suite.tests.draft2020-12",
+            "unevaluatedItems.json"
 //            ,"dynamicRef.json", "anchor.json", "ref.json"
         ).stream()
 

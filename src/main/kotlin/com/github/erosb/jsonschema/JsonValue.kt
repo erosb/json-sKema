@@ -151,6 +151,7 @@ interface IJsonArray<T : IJsonValue> : IJsonValue {
     override fun <P> accept(visitor: JsonVisitor<P>): P? = visitor.visitArray(this)
     operator fun get(index: Int) = elements[index]
     fun length() = elements.size
+    fun markUnread(idx: Int) {}
 }
 
 interface IJsonObject<P : IJsonString, V : IJsonValue> : IJsonValue {

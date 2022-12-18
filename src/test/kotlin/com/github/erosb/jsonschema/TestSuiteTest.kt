@@ -58,7 +58,6 @@ internal fun loadParamsFromPackage(packageName: String, vararg fileFilters: Stri
         }
         val fileName = path.substring(path.lastIndexOf('/') + 1)
         if ((includedFiles.isNotEmpty() && !includedFiles.contains(fileName)) || excludedFiles.contains(fileName)) {
-            println("exclude $fileName")
             continue
         }
         val arr: JsonArray = loadTests(TestSuiteTest::class.java.getResourceAsStream("/$path"))
@@ -109,7 +108,7 @@ class TestSuiteTest {
         @JvmStatic
         fun params(): Stream<Arguments> = loadParamsFromPackage(
             "test-suite.tests.draft2020-12"
-            , "!unevaluatedItems.json"
+            , "unevaluatedItems.json"
 //            ,"dynamicRef.json", "anchor.json", "ref.json"
         ).stream()
 

@@ -329,22 +329,8 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
             }
             if (maybeChildFailure === null) {
                 ++successCount
-                if (schema.minContains == 1 && schema.maxContains === null) {
-                    return@maybeArray null
-                }
             }
         }
-//        array.elements.forEach {
-//            val maybeChildFailure = withOtherInstance(it) {
-//                schema.containedSchema.accept(this)
-//            }
-//            if (maybeChildFailure === null) {
-//                ++successCount
-//                if (schema.minContains == 1 && schema.maxContains === null) {
-//                    return@maybeArray null
-//                }
-//            }
-//        }
         if (schema.maxContains != null && schema.maxContains.toInt() < successCount) {
             return@maybeArray ContainsValidationFailure("$successCount array items are valid against \"contains\" subschema, expected maximum is 1", schema, array)
         }

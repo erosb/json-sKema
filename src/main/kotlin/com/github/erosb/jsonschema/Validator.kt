@@ -34,6 +34,7 @@ private class UsageTrackingJsonArray<I : IJsonValue>(private val original: IJson
 
     override fun get(index: Int): IJsonValue {
         evaluatedIndexes.add(index)
+        println("${System.identityHashCode(this)} marks index $index as evaluated => " + super.get(index))
         return super.get(index)
     }
 
@@ -44,6 +45,7 @@ private class UsageTrackingJsonArray<I : IJsonValue>(private val original: IJson
                 rval.add(original[idx])
             }
         }
+        println("returning ${rval.size} / ${original.length()} unevaluated items")
         return rval.toList()
     }
 
@@ -52,6 +54,7 @@ private class UsageTrackingJsonArray<I : IJsonValue>(private val original: IJson
     override fun <P> maybeArray(fn: (IJsonArray<*>) -> P?): P? = fn(this)
 
     override fun markUnread(idx: Int) {
+        println("mar unread $idx")
         evaluatedIndexes.remove(idx)
     }
 }
@@ -290,6 +293,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
     } else null
 
     override fun visitItemsSchema(schema: ItemsSchema): ValidationFailure? = instance.maybeArray { array ->
+        println("itten ${array.javaClass}")
         val failures = mutableMapOf<Int, ValidationFailure>()
         for (index in schema.prefixItemCount until array.length()) {
             withOtherInstance(array[index]) {
@@ -325,6 +329,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
         var successCount = 0
         for (idx in 0 until array.length()) {
+            println("contains accesses array[$idx]")
             val maybeChildFailure = withOtherInstance(array[idx]) {
                 schema.containedSchema.accept(this)
             }
@@ -334,6 +339,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
                 array.markUnread(idx)
             }
         }
+        println("successCount = $successCount")
         if (schema.maxContains != null && schema.maxContains.toInt() < successCount) {
             return@maybeArray ContainsValidationFailure("$successCount array items are valid against \"contains\" subschema, expected maximum is 1", schema, array)
         }
@@ -344,6 +350,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         return@maybeArray if (schema.maxContains == null && schema.minContains == 1 && successCount == 0) {
             ContainsValidationFailure("expected at least 1 array item to be valid against \"contains\" subschema, found 0", schema, array)
         } else {
+            println("\"contains\" success $successCount")
             null
         }
     }
@@ -377,9 +384,11 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
 
     override fun visitIfThenElseSchema(schema: IfThenElseSchema): ValidationFailure? {
         val ifFailure = schema.ifSchema.accept(this)
+        println("ifFailure = $ifFailure")
         return if (ifFailure == null) {
             schema.thenSchema?.accept(this)
         } else {
+            println("else? ")
             schema.elseSchema?.accept(this)
         }
     }
@@ -413,6 +422,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
                 UnevaluatedItemsValidationFailure(failures, schema, instance)
             } else null
         } else {
+            println("not an array ")
             return super.visitUnevaluatedItemsSchema(schema)
         }
     }

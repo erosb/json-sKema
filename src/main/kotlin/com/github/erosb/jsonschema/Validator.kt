@@ -311,7 +311,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
                 val failure = schema.itemsSchema.accept(this)
                 println("$index => $failure")
                 if (failure === null) {
-                    array.markAllEvaluated()
+//                    array.markAllEvaluated()
                 } else {
                     failures[index] = failure
 //                    array.markUnevaluated(index)
@@ -319,6 +319,9 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
             }
         }
         if (failures.isEmpty()) {
+            if (array.length() > schema.prefixItemCount) {
+                array.markAllEvaluated()
+            }
             null
         } else {
             ItemsValidationFailure(failures.toMap(), schema, array)

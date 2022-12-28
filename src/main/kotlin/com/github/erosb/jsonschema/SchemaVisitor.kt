@@ -61,9 +61,11 @@ abstract class SchemaVisitor<P> {
             .reduce { a, b -> accumulate(schema, a, b) }
         var result = accumulate(schema, subschemaProduct, propSchemaProduct)
         println("result before uneval: $result")
-        schema.unevaluatedItemsSchema?.accept(this)?.let {
-            result = accumulate(schema, result, it)
-            println("result after uneval: $result")
+        if (result === null) {
+            schema.unevaluatedItemsSchema?.accept(this)?.let {
+                result = accumulate(schema, result, it)
+                println("result after uneval: $result")
+            }
         }
         println("finalResult = $result")
         return result

@@ -32,13 +32,22 @@ private class UsageTrackingJsonArray<I : IJsonValue>(private val original: IJson
 
     val evaluatedIndexes: MutableList<Int> = mutableListOf()
 
-    override fun get(index: Int): IJsonValue {
+    var allEvaluated: Boolean = false
+
+    override fun markEvaluated(index: Int): IJsonValue {
         evaluatedIndexes.add(index)
         println("${System.identityHashCode(this)} marks index $index as evaluated => " + super.get(index))
         return super.get(index)
     }
 
+    override fun markAllEvaluated() {
+        this.allEvaluated = true
+    }
+
     fun unevaluatedItems(): Map<Int, IJsonValue> {
+        if (allEvaluated) {
+            return emptyMap()
+        }
         val rval: MutableMap<Int, IJsonValue> = mutableMapOf()
         for (idx in 0 until original.length()) {
             if (!evaluatedIndexes.contains(idx)) {
@@ -53,14 +62,9 @@ private class UsageTrackingJsonArray<I : IJsonValue>(private val original: IJson
 
     override fun <P> maybeArray(fn: (IJsonArray<*>) -> P?): P? = fn(this)
 
-    override fun markUnread(idx: Int) {
-        println("mar unread $idx")
+    override fun markUnevaluated(idx: Int) {
+        println("mark unevaluated $idx")
         evaluatedIndexes.remove(idx)
-    }
-
-    override fun markAsRead(idx: Int) {
-        println("mar read $idx")
-        evaluatedIndexes.add(idx)
     }
 }
 
@@ -138,7 +142,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
     }
 
     override fun visitCompositeSchema(schema: CompositeSchema): ValidationFailure? {
-        if (instance is IJsonArray<*>) {
+        if (instance is IJsonArray<*> && schema.unevaluatedItemsSchema != null) {
             return withOtherInstance(usageTrackingArray(instance as IJsonArray<IJsonValue>)) {
                 return@withOtherInstance super.visitCompositeSchema(schema)
             }
@@ -304,7 +308,14 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         val failures = mutableMapOf<Int, ValidationFailure>()
         for (index in schema.prefixItemCount until array.length()) {
             withOtherInstance(array[index]) {
-                schema.itemsSchema.accept(this) ?. let { failures[index] = it }
+                val failure = schema.itemsSchema.accept(this)
+                println("$index => $failure")
+                if (failure === null) {
+                    array.markAllEvaluated()
+                } else {
+                    failures[index] = failure
+//                    array.markUnevaluated(index)
+                }
             }
         }
         if (failures.isEmpty()) {
@@ -318,11 +329,11 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         val failures = mutableMapOf<Int, ValidationFailure>()
         for (index in 0 until Math.min(array.length(), schema.prefixSchemas.size)) {
             val subschema = schema.prefixSchemas[index]
-            withOtherInstance(array[index]) {
+            withOtherInstance(array.markEvaluated(index)) {
                 val failure = subschema.accept(this)
                 if (failure != null) {
                     failures[index] = failure
-                    array.markUnread(index)
+                    array.markUnevaluated(index)
                 }
             }
         }
@@ -341,13 +352,13 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         var successCount = 0
         for (idx in 0 until array.length()) {
             println("contains accesses array[$idx]")
-            val maybeChildFailure = withOtherInstance(array[idx]) {
+            val maybeChildFailure = withOtherInstance(array.markEvaluated(idx)) {
                 schema.containedSchema.accept(this)
             }
             if (maybeChildFailure === null) {
                 ++successCount
             } else {
-                array.markUnread(idx)
+                array.markUnevaluated(idx)
             }
         }
         println("successCount = $successCount")
@@ -426,8 +437,9 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
                         failures.put(index, current)
                     }
                 }
-                instance.markAsRead(index)
+                instance.markEvaluated(index)
             }
+            println("uneval failures: $failures")
             return if (failures.isNotEmpty()) {
                 UnevaluatedItemsValidationFailure(failures, schema, instance)
             } else null

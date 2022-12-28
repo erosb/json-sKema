@@ -51,14 +51,21 @@ abstract class SchemaVisitor<P> {
     }
 
     open fun visitCompositeSchema(schema: CompositeSchema): P? {
+        println("START ${schema.location.pointer}")
         val subschemaProduct = visitChildren(schema)
+        println("subschemaProduct = $subschemaProduct")
         val propSchemaProduct: P? = if (schema.propertySchemas.isEmpty()) {
             null
         } else schema.propertySchemas
             .map { visitPropertySchema(it.key, it.value) }
             .reduce { a, b -> accumulate(schema, a, b) }
         var result = accumulate(schema, subschemaProduct, propSchemaProduct)
-        schema.unevaluatedItemsSchema?.accept(this)?.let { result = accumulate(schema, result, it) }
+        println("result before uneval: $result")
+        schema.unevaluatedItemsSchema?.accept(this)?.let {
+            result = accumulate(schema, result, it)
+            println("result after uneval: $result")
+        }
+        println("finalResult = $result")
         return result
     }
 

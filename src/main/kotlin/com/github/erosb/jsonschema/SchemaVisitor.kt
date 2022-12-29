@@ -57,7 +57,13 @@ abstract class SchemaVisitor<P> {
         } else schema.propertySchemas
             .map { visitPropertySchema(it.key, it.value) }
             .reduce { a, b -> accumulate(schema, a, b) }
-        return accumulate(schema, subschemaProduct, propSchemaProduct)
+        val result = accumulate(schema, subschemaProduct, propSchemaProduct)
+        val patternSchemaProduct: P? = if (schema.patternPropertySchemas.isEmpty()) {
+            null
+        } else schema.patternPropertySchemas
+            .map { visitPatternPropertySchema(it.key, it.value) }
+            .reduce { a, b -> accumulate(schema, a, b) }
+        return accumulate(schema, result, patternSchemaProduct)
     }
 
     open fun visitTrueSchema(schema: TrueSchema): P? = visitChildren(schema)
@@ -74,6 +80,7 @@ abstract class SchemaVisitor<P> {
     open fun visitTypeSchema(schema: TypeSchema): P? = visitChildren(schema)
     open fun visitMultiTypeSchema(schema: MultiTypeSchema): P? = visitChildren(schema)
     open fun visitPropertySchema(property: String, schema: Schema): P? = visitChildren(schema)
+    open fun visitPatternPropertySchema(pattern: Regexp, schema: Schema): P? = visitChildren(schema)
     open fun visitNotSchema(schema: NotSchema): P? = visitChildren(schema)
     open fun visitRequiredSchema(schema: RequiredSchema): P? = visitChildren(schema)
     open fun visitMaximumSchema(schema: MaximumSchema): P? = visitChildren(schema)

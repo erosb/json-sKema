@@ -7,7 +7,7 @@ enum class SpecificationVersion {
 enum class Keyword(
     val value: String,
     internal val hasMapLikeSemantics: Boolean = false,
-    val specificationVersion: SpecificationVersion = SpecificationVersion.DRAFT_2020_12
+    internal val specificationVersion: SpecificationVersion = SpecificationVersion.DRAFT_2020_12
 ) {
     ID("\$id"),
     ANCHOR("\$anchor"),
@@ -22,6 +22,7 @@ enum class Keyword(
     ONE_OF("oneOf"),
     ADDITIONAL_PROPERTIES("additionalProperties"),
     PROPERTIES("properties", true),
+    PATTERN_PROPERTIES("patternProperties", true),
     TITLE("title"),
     DESCRIPTION("description"),
     READ_ONLY("readOnly"),

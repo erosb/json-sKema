@@ -17,7 +17,8 @@ data class CompositeSchema(
     val default: IJsonValue? = null,
     val dynamicRef: DynamicReference? = null,
     val dynamicAnchor: String? = null,
-    val propertySchemas: Map<String, Schema> = emptyMap()
+    val propertySchemas: Map<String, Schema> = emptyMap(),
+    val patternPropertySchemas: Map<Regexp, Schema> = emptyMap()
 ) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>) = visitor.internallyVisitCompositeSchema(this)
     override fun subschemas() = subschemas

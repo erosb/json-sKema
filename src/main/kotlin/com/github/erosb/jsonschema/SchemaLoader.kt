@@ -342,6 +342,7 @@ class SchemaLoader(
         var dynamicAnchor: URI? = null
         adjustBaseURI(schemaJson)
         var propertySchemas: Map<String, Schema> = emptyMap()
+        var patternPropertySchemas: Map<Regexp, Schema> = emptyMap()
         return withBaseUriAdjustment(schemaJson) {
             schemaJson.properties.forEach { (name, value) ->
                 var subschema: Schema? = null
@@ -353,6 +354,7 @@ class SchemaLoader(
                     Keyword.ONE_OF.value -> subschema = OneOfSchema(arrayToSubschemaList(value.requireArray()), name.location)
                     Keyword.ADDITIONAL_PROPERTIES.value -> subschema = buildAdditionalPropertiesSchema(schemaJson, value, name)
                     Keyword.PROPERTIES.value -> propertySchemas = loadPropertySchemas(value.requireObject())
+                    Keyword.PATTERN_PROPERTIES.value -> patternPropertySchemas = loadPatternPropertySchemas(value.requireObject())
                     Keyword.REF.value -> subschema = createReferenceSchema(name.location, value.requireString().value)
                     Keyword.DYNAMIC_REF.value -> dynamicRef = DynamicReference(ref = value.requireString().value, fallbackReferredSchema = createReferenceSchema(ref = value.requireString().value, location = schemaJson.location))
                     Keyword.DYNAMIC_ANCHOR.value ->
@@ -407,10 +409,20 @@ class SchemaLoader(
                 deprecated = deprecated,
                 default = default,
                 propertySchemas = propertySchemas,
+                patternPropertySchemas = patternPropertySchemas,
                 dynamicRef = dynamicRef,
                 dynamicAnchor = dynamicAnchor?.toString()
             )
         }
+    }
+
+    private fun loadPatternPropertySchemas(obj: IJsonObject<*, *>): Map<Regexp, Schema> {
+        val factory: RegexpFactory = JavaUtilRegexpFactory()
+        val rval = mutableMapOf<Regexp, Schema>()
+        obj.properties.forEach { (name, value) ->
+            rval[factory.createHandler(name.value)] = loadChild(value)
+        }
+        return rval.toMap()
     }
 
     private fun buildIfThenElseSchema(schemaJson: IJsonObj, location: SourceLocation): Schema {

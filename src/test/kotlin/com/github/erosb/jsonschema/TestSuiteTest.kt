@@ -108,8 +108,8 @@ class TestSuiteTest {
     companion object {
         @JvmStatic
         fun params(): Stream<Arguments> = loadParamsFromPackage(
-            "test-suite.tests.draft2020-12",
-            "!unevaluatedItems.json"
+            "test-suite.tests.draft2020-12"
+//            , "patternProperties.json", "properties.json", "additionalProperties.json"
 //            ,"dynamicRef.json", "anchor.json", "ref.json"
         ).stream()
 

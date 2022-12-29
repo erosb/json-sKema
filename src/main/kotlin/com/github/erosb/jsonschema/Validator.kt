@@ -132,6 +132,17 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
     }
 
+    override fun visitPatternPropertySchema(pattern: Regexp, schema: Schema): ValidationFailure? = instance.maybeObject { obj ->
+        val failures = obj.properties
+            .filter { pattern.patternMatchingFailure(it.key.value) === null }
+            .map {
+                withOtherInstance(it.value) {
+                    schema.accept(this)
+                }
+            }
+        failures.firstOrNull()
+    }
+
     private fun <T> withOtherInstance(otherInstance: IJsonValue, cb: () -> T): T {
         val origInstance = instance
         instance = otherInstance

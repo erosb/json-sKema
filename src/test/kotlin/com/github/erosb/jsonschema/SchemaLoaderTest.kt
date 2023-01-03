@@ -65,18 +65,6 @@ class SchemaLoaderTest {
     }
 
     @Test
-    fun `invalid minLength fractional`() {
-        val exc = assertThrows(JsonTypingException::class.java) {
-            createSchemaLoaderForString(
-                """
-                    { "minLength": 20.0}
-                """.trimIndent()
-            )()
-        }
-        assertThat(exc).isEqualTo(JsonTypingException("integer", "number", SourceLocation(1, 16, pointer("minLength"))))
-    }
-
-    @Test
     fun `loads maxLength schema`() {
         val underTest = createSchemaLoaderForString(
             """

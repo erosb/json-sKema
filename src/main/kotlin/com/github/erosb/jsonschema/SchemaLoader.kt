@@ -84,8 +84,10 @@ internal data class LoadingState(
 
 class SchemaLoader(
     val schemaJson: IJsonValue,
-    val config: SchemaLoaderConfig = createDefaultConfig()
+    val config: SchemaLoaderConfig = createDefaultConfig(),
 ) {
+
+    private val regexpFactory: RegexpFactory = JavaUtilRegexpFactory()
 
     private constructor(
         schemaJson: IJsonValue,
@@ -421,10 +423,9 @@ class SchemaLoader(
     }
 
     private fun loadPatternPropertySchemas(obj: IJsonObject<*, *>): Map<Regexp, Schema> {
-        val factory: RegexpFactory = JavaUtilRegexpFactory()
         val rval = mutableMapOf<Regexp, Schema>()
         obj.properties.forEach { (name, value) ->
-            rval[factory.createHandler(name.value)] = loadChild(value)
+            rval[regexpFactory.createHandler(name.value)] = loadChild(value)
         }
         return rval.toMap()
     }
@@ -443,7 +444,11 @@ class SchemaLoader(
     ): AdditionalPropertiesSchema {
         val keysInProperties = containingObject["properties"]?.requireObject()
             ?.properties?.keys?.map { it.value } ?: listOf()
-        return AdditionalPropertiesSchema(loadChild(value), keysInProperties, name.location)
+        val patternPropertyKeys = containingObject["patternProperties"]
+            ?.requireObject()?.properties?.keys
+            ?.map { regexpFactory.createHandler(it.value) }
+            ?: emptyList()
+        return AdditionalPropertiesSchema(loadChild(value), keysInProperties, patternPropertyKeys, name.location)
     }
 
     private fun buildContainsSchema(

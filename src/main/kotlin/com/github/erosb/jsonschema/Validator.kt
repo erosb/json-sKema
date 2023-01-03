@@ -219,6 +219,9 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
                     if (schema.keysInProperties.contains(keyStr)) {
                         return@forEach
                     }
+                    if (schema.patternPropertyKeys.any { it.patternMatchingFailure(keyStr) == null }) {
+                        return@forEach
+                    }
                     endResult = accumulate(
                         schema,
                         endResult,

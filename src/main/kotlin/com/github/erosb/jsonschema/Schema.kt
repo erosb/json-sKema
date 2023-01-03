@@ -1,5 +1,7 @@
 package com.github.erosb.jsonschema
 
+import java.util.Collections
+
 abstract class Schema(open val location: SourceLocation) {
     abstract fun <P> accept(visitor: SchemaVisitor<P>): P?
     open fun subschemas(): Collection<Schema> = emptyList()
@@ -96,7 +98,12 @@ data class MaxLengthSchema(val maxLength: Int, override val location: SourceLoca
     override fun <P> accept(visitor: SchemaVisitor<P>) = visitor.visitMaxLengthSchema(this)
 }
 
-data class AdditionalPropertiesSchema(val subschema: Schema, val keysInProperties: List<String>, override val location: SourceLocation) : Schema(location) {
+data class AdditionalPropertiesSchema(
+    val subschema: Schema,
+    val keysInProperties: List<String>,
+    val patternPropertyKeys: Collection<Regexp>,
+    override val location: SourceLocation
+) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>) = visitor.visitAdditionalPropertiesSchema(this)
     override fun subschemas() = listOf(subschema)
 }

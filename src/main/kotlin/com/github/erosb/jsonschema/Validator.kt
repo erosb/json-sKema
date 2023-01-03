@@ -252,6 +252,14 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
     }
 
+    override fun visitMaxItemsSchema(schema: MaxItemsSchema): ValidationFailure? = instance.maybeArray { array ->
+        if (array.length() > schema.maxItems.toInt()) {
+            MaxItemsValidationFailure(schema, array)
+        } else {
+            null
+        }
+    }
+
     override fun visitNotSchema(schema: NotSchema): ValidationFailure? = if (schema.negatedSchema.accept(this) != null) {
         null
     } else {

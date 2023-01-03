@@ -92,7 +92,8 @@ class SchemaLoader(
     private val regexpFactory: RegexpFactory = JavaUtilRegexpFactory()
 
     private val keywordLoaders: Map<String, KeywordLoader> = mapOf(
-        Keyword.MIN_ITEMS.value to minItemsLoader
+        Keyword.MIN_ITEMS.value to minItemsLoader,
+        Keyword.MAX_ITEMS.value to maxItemsLoader
     )
 
     private constructor(

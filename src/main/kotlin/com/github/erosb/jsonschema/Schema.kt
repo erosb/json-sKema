@@ -18,7 +18,8 @@ data class CompositeSchema(
     val dynamicRef: DynamicReference? = null,
     val dynamicAnchor: String? = null,
     val propertySchemas: Map<String, Schema> = emptyMap(),
-    val patternPropertySchemas: Map<Regexp, Schema> = emptyMap()
+    val patternPropertySchemas: Map<Regexp, Schema> = emptyMap(),
+    val unevaluatedItemsSchema: Schema? = null
 ) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>) = visitor.internallyVisitCompositeSchema(this)
     override fun subschemas() = subschemas
@@ -180,4 +181,11 @@ data class DependentSchemasSchema(
     override val location: SourceLocation
 ) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitDependentSchemas(this)
+}
+
+data class UnevaluatedItemsSchema(
+    val unevaluatedItemsSchema: Schema,
+    override val location: SourceLocation
+) : Schema(location) {
+    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitUnevaluatedItemsSchema(this)
 }

@@ -151,6 +151,10 @@ interface IJsonArray<T : IJsonValue> : IJsonValue {
     override fun <P> accept(visitor: JsonVisitor<P>): P? = visitor.visitArray(this)
     operator fun get(index: Int) = elements[index]
     fun length() = elements.size
+    fun markUnevaluated(idx: Int) {}
+    fun markAsRead(idx: Int) {}
+    fun markEvaluated(idx: Int): IJsonValue
+    fun markAllEvaluated()
 }
 
 interface IJsonObject<P : IJsonString, V : IJsonValue> : IJsonValue {
@@ -231,6 +235,9 @@ data class JsonArray(
     override val location: SourceLocation = UnknownSource
 ) : JsonValue(location), IJsonArray<JsonValue> {
     override fun unwrap() = elements
+    override fun markEvaluated(idx: Int): IJsonValue = get(idx)
+    override fun markAllEvaluated() {
+    }
     override fun equals(other: Any?) = super.equals(other)
 }
 

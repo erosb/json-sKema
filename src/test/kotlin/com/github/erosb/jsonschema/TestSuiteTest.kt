@@ -58,7 +58,6 @@ internal fun loadParamsFromPackage(packageName: String, vararg fileFilters: Stri
         }
         val fileName = path.substring(path.lastIndexOf('/') + 1)
         if ((includedFiles.isNotEmpty() && !includedFiles.contains(fileName)) || excludedFiles.contains(fileName)) {
-            println("exclude $fileName")
             continue
         }
         val arr: JsonArray = loadTests(TestSuiteTest::class.java.getResourceAsStream("/$path"))
@@ -76,7 +75,7 @@ internal fun loadParamsFromPackage(packageName: String, vararg fileFilters: Stri
 }
 
 class TestCase(input: JsonObject, schemaTest: JsonObject, fileName: String) {
-    val schemaDescription = "[" + fileName + "]/" + schemaTest["description"]!!.requireString().value
+    val schemaDescription = "[" + fileName + ":" + input.location.lineNumber + "]/" + schemaTest["description"]!!.requireString().value
     val schemaJson: IJsonValue = trimLeadingPointer(schemaTest["schema"]!!, 2)
     val inputDescription = schemaDescription + "/" + input["description"]!!.requireString().value
     val expectedToBeValid = input["valid"]!!.requireBoolean().value

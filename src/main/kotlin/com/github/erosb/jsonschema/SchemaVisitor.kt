@@ -51,19 +51,30 @@ abstract class SchemaVisitor<P> {
     }
 
     open fun visitCompositeSchema(schema: CompositeSchema): P? {
+        println("START ${schema.location.pointer}")
         val subschemaProduct = visitChildren(schema)
+        println("subschemaProduct = $subschemaProduct")
         val propSchemaProduct: P? = if (schema.propertySchemas.isEmpty()) {
             null
         } else schema.propertySchemas
             .map { visitPropertySchema(it.key, it.value) }
             .reduce { a, b -> accumulate(schema, a, b) }
-        val result = accumulate(schema, subschemaProduct, propSchemaProduct)
+        var result = accumulate(schema, subschemaProduct, propSchemaProduct)
         val patternSchemaProduct: P? = if (schema.patternPropertySchemas.isEmpty()) {
             null
         } else schema.patternPropertySchemas
             .map { visitPatternPropertySchema(it.key, it.value) }
             .reduce { a, b -> accumulate(schema, a, b) }
-        return accumulate(schema, result, patternSchemaProduct)
+        result = accumulate(schema, result, patternSchemaProduct)
+        println("result before uneval: $result")
+        if (result === null) {
+            schema.unevaluatedItemsSchema?.accept(this)?.let {
+                result = accumulate(schema, result, it)
+                println("result after uneval: $result")
+            }
+        }
+        println("finalResult = $result")
+        return result
     }
 
     open fun visitTrueSchema(schema: TrueSchema): P? = visitChildren(schema)
@@ -92,8 +103,9 @@ abstract class SchemaVisitor<P> {
     open fun visitItemsSchema(schema: ItemsSchema): P? = visitChildren(schema)
     open fun visitPrefixItemsSchema(schema: PrefixItemsSchema): P? = visitChildren(schema)
     open fun visitContainsSchema(schema: ContainsSchema): P? = visitChildren(schema)
-    open fun visitIfThenElseSchema(ifThenElseSchema: IfThenElseSchema): P? = visitChildren(ifThenElseSchema)
+    open fun visitIfThenElseSchema(schema: IfThenElseSchema): P? = visitChildren(schema)
     open fun visitDependentSchemas(schema: DependentSchemasSchema): P? = visitChildren(schema)
+    open fun visitUnevaluatedItemsSchema(schema: UnevaluatedItemsSchema): P? = visitChildren(schema)
 
     open fun identity(): P? = null
     open fun accumulate(parent: Schema, previous: P?, current: P?): P? = current ?: previous

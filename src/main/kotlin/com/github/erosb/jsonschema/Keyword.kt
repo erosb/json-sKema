@@ -54,5 +54,7 @@ enum class Keyword(
     UNEVALUATED_ITEMS("unevaluatedItems"),
     UNEVALUATED_PROPERTIES("unevaluatedProperties"),
     MIN_ITEMS("minItems"),
-    MAX_ITEMS("maxItems")
+    MAX_ITEMS("maxItems"),
+    MIN_PROPERTIES("minProperties"),
+    MAX_PROPERTIES("maxProperties")
 }

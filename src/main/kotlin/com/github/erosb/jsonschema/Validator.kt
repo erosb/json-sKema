@@ -260,6 +260,22 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
     }
 
+    override fun visitMinPropertiesSchema(schema: MinPropertiesSchema): ValidationFailure? = instance.maybeObject { obj ->
+        if (obj.properties.size < schema.minProperties.toInt()) {
+            MinPropertiesValidationFailure(schema, obj)
+        } else {
+            null
+        }
+    }
+
+    override fun visitMaxPropertiesSchema(schema: MaxPropertiesSchema): ValidationFailure? = instance.maybeObject { obj ->
+        if (obj.properties.size > schema.maxProperties.toInt()) {
+            MaxPropertiesValidationFailure(schema, obj)
+        } else {
+            null
+        }
+    }
+
     override fun visitNotSchema(schema: NotSchema): ValidationFailure? = if (schema.negatedSchema.accept(this) != null) {
         null
     } else {

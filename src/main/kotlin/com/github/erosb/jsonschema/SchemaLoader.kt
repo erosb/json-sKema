@@ -93,7 +93,9 @@ class SchemaLoader(
 
     private val keywordLoaders: Map<String, KeywordLoader> = mapOf(
         Keyword.MIN_ITEMS.value to minItemsLoader,
-        Keyword.MAX_ITEMS.value to maxItemsLoader
+        Keyword.MAX_ITEMS.value to maxItemsLoader,
+        Keyword.MIN_PROPERTIES.value to minPropertiesLoader,
+        Keyword.MAX_PROPERTIES.value to maxPropertiesLoader
     )
 
     private constructor(

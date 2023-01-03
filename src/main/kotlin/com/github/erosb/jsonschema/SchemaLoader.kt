@@ -95,7 +95,8 @@ class SchemaLoader(
         Keyword.MIN_ITEMS.value to minItemsLoader,
         Keyword.MAX_ITEMS.value to maxItemsLoader,
         Keyword.MIN_PROPERTIES.value to minPropertiesLoader,
-        Keyword.MAX_PROPERTIES.value to maxPropertiesLoader
+        Keyword.MAX_PROPERTIES.value to maxPropertiesLoader,
+        Keyword.ENUM.value to enumLoader
     )
 
     private constructor(

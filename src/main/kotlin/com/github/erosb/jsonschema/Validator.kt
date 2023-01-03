@@ -282,6 +282,13 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         NotValidationFailure(schema, instance)
     }
 
+    override fun visitEnumSchema(schema: EnumSchema): ValidationFailure? =
+        if (schema.potentialValues.any { it == instance }) {
+            null
+        } else {
+            EnumValidationFailure(schema, instance)
+        }
+
     override fun visitRequiredSchema(schema: RequiredSchema): ValidationFailure? =
         instance.maybeObject {
             val instanceKeys = it.properties.keys.map { it.value }

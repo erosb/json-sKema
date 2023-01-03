@@ -88,6 +88,7 @@ abstract class SchemaVisitor<P> {
     open fun visitDynamicRefSchema(schema: DynamicRefSchema): P? = visitChildren(schema)
     open fun visitAdditionalPropertiesSchema(schema: AdditionalPropertiesSchema): P? = visitChildren(schema)
     open fun visitConstSchema(schema: ConstSchema): P? = visitChildren(schema)
+    open fun visitEnumSchema(schema: EnumSchema): P? = visitChildren(schema)
     open fun visitTypeSchema(schema: TypeSchema): P? = visitChildren(schema)
     open fun visitMultiTypeSchema(schema: MultiTypeSchema): P? = visitChildren(schema)
     open fun visitPropertySchema(property: String, schema: Schema): P? = visitChildren(schema)

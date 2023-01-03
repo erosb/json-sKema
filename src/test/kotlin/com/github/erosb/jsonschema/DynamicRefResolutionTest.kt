@@ -31,7 +31,7 @@ class DynamicRefResolutionTest {
             }
         """
         )() as CompositeSchema
-        val actualTitle: String = root.accept(TraversingSchemaVisitor("properties", "a", "$ref", "properties", "anchored", "title"))!!
+        val actualTitle: String = root.accept(TraversingSchemaVisitor("properties", "a", "$ref", "properties", "anchored", "$dynamicRef", "title"))!!
         assertEquals("properties/a", actualTitle)
     }
 

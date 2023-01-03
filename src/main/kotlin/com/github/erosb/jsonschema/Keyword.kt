@@ -51,6 +51,7 @@ enum class Keyword(
     THEN("then"),
     ELSE("else"),
     DEPENDENT_SCHEMAS("dependentSchemas"),
+    DEPENDENT_REQUIRED("dependentRequired"),
     UNEVALUATED_ITEMS("unevaluatedItems"),
     UNEVALUATED_PROPERTIES("unevaluatedProperties"),
     MIN_ITEMS("minItems"),

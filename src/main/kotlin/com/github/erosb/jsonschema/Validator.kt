@@ -483,6 +483,19 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
     }
 
+    override fun visitDependentRequiredSchema(schema: DependentRequiredSchema): ValidationFailure? = instance.maybeObject { obj ->
+        val instanceKeys = obj.properties.keys.map { it.value }
+        for (entry in schema.dependentRequired.entries) {
+            if (instanceKeys.contains(entry.key)) {
+                val missingKeys = entry.value.filter { !instanceKeys.contains(it) }
+                if (missingKeys.isNotEmpty()) {
+                    return@maybeObject DependentRequiredValidationFailure(entry.key, missingKeys.toSet(), schema, obj)
+                }
+            }
+        }
+        null
+    }
+
     override fun visitUnevaluatedItemsSchema(schema: UnevaluatedItemsSchema): ValidationFailure? {
         val instance = this.instance
         if (instance is UsageTrackingJsonArray<*>) {

@@ -110,6 +110,7 @@ abstract class SchemaVisitor<P> {
     open fun visitContainsSchema(schema: ContainsSchema): P? = visitChildren(schema)
     open fun visitIfThenElseSchema(schema: IfThenElseSchema): P? = visitChildren(schema)
     open fun visitDependentSchemas(schema: DependentSchemasSchema): P? = visitChildren(schema)
+    open fun visitDependentRequiredSchema(schema: DependentRequiredSchema): P? = visitChildren(schema)
     open fun visitUnevaluatedItemsSchema(schema: UnevaluatedItemsSchema): P? = visitChildren(schema)
 
     open fun identity(): P? = null

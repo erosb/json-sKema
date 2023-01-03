@@ -134,7 +134,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
     }
 
-    lateinit var instance: IJsonValue
+    public lateinit var instance: IJsonValue
 
     override fun validate(instance: IJsonValue): ValidationFailure? {
         this.instance = instance
@@ -241,6 +241,14 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
             } else {
                 null
             }
+        }
+    }
+
+    override fun visitMinItemsSchema(schema: MinItemsSchema): ValidationFailure? = instance.maybeArray { array ->
+        if (array.length() < schema.minItems.toInt()) {
+            MinItemsValidationFailure(schema, array)
+        } else {
+            null
         }
     }
 

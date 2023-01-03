@@ -99,6 +99,7 @@ abstract class SchemaVisitor<P> {
     open fun visitExclusiveMaximumSchema(schema: ExclusiveMaximumSchema): P? = visitChildren(schema)
     open fun visitExclusiveMinimumSchema(schema: ExclusiveMinimumSchema): P? = visitChildren(schema)
     open fun visitMultipleOfSchema(schema: MultipleOfSchema): P? = visitChildren(schema)
+    open fun visitMinItemsSchema(schema: MinItemsSchema): P? = visitChildren(schema)
     open fun visitUniqueItemsSchema(schema: UniqueItemsSchema): P? = visitChildren(schema)
     open fun visitItemsSchema(schema: ItemsSchema): P? = visitChildren(schema)
     open fun visitPrefixItemsSchema(schema: PrefixItemsSchema): P? = visitChildren(schema)

@@ -82,12 +82,18 @@ internal data class LoadingState(
     }
 }
 
+typealias KeywordLoader = (IJsonObj, IJsonValue, SourceLocation) -> Schema
+
 class SchemaLoader(
     val schemaJson: IJsonValue,
-    val config: SchemaLoaderConfig = createDefaultConfig(),
+    val config: SchemaLoaderConfig = createDefaultConfig()
 ) {
 
     private val regexpFactory: RegexpFactory = JavaUtilRegexpFactory()
+
+    private val keywordLoaders: Map<String, KeywordLoader> = mapOf(
+        Keyword.MIN_ITEMS.value to minItemsLoader
+    )
 
     private constructor(
         schemaJson: IJsonValue,
@@ -105,7 +111,6 @@ class SchemaLoader(
         } finally {
             loadingState.baseURI = origBaseUri
         }
-        val k: Keyword? = null
     }
 
     private var loadingState: LoadingState = LoadingState(schemaJson)
@@ -134,12 +139,6 @@ class SchemaLoader(
                             loadingState.registerRawSchemaByDynAnchor(resolvedAnchor.toString(), json)
                         }
                     }
-//                    when (val anchor = json[Keyword.DYNAMIC_ANCHOR.value]) {
-//                        is IJsonString -> {
-//                            val resolvedAnchor = loadingState.baseURI.resolve("#" + anchor.value)
-//                            loadingState.registerRawSchema(resolvedAnchor.toString(), json)
-//                        }
-//                    }
                     json.properties
                         .filter { (key, _) ->
                             key.value != Keyword.ENUM.value && key.value != Keyword.CONST.value
@@ -400,6 +399,10 @@ class SchemaLoader(
                     )
                     Keyword.UNEVALUATED_ITEMS.value -> unevaluatedItemsSchema = UnevaluatedItemsSchema(loadChild(value), name.location)
 //                else -> TODO("unhandled property ${name.value}")
+                }
+                val loader = keywordLoaders.get(name.value)
+                if (subschema === null && loader != null) {
+                    subschema = loader(schemaJson, value, name.location)
                 }
                 if (subschema != null) subschemas.add(subschema)
             }

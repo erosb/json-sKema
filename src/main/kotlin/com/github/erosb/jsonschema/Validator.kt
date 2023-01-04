@@ -560,7 +560,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
                 UnevaluatedItemsValidationFailure(failures, schema, instance)
             } else null
         } else {
-            return super.visitUnevaluatedItemsSchema(schema)
+            return null
         }
     }
 

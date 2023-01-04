@@ -70,13 +70,13 @@ abstract class SchemaVisitor<P> {
         if (result === null) {
             schema.unevaluatedItemsSchema?.accept(this)?.let {
                 result = accumulate(schema, result, it)
-                println("result after uneval: $result")
+                println("result after unevalItems: $result")
             }
         }
         if (result === null) {
             schema.unevaluatedPropertiesSchema?.accept(this)?.let {
                 result = accumulate(schema, result, it)
-                println("result after uneval: $result")
+                println("result after unevalProps: $result")
             }
         }
         println("finalResult = $result")

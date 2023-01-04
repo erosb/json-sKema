@@ -167,6 +167,18 @@ data class UnevaluatedItemsValidationFailure(
     itemFailures.values.toSet()
 )
 
+data class UnevaluatedPropertiesValidationFailure(
+    val propertyFailures: Map<String, ValidationFailure>,
+    override val schema: UnevaluatedPropertiesSchema,
+    override val instance: IJsonObj
+) : ValidationFailure(
+    "object properties ${propertyFailures.keys.joinToString(", ")} failed to validate against \"unevaluatedProperties\" subschema",
+    schema,
+    instance,
+    Keyword.UNEVALUATED_ITEMS,
+    propertyFailures.values.toSet()
+)
+
 data class ContainsValidationFailure(
     override val message: String,
     override val schema: ContainsSchema,

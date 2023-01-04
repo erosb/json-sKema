@@ -73,6 +73,12 @@ abstract class SchemaVisitor<P> {
                 println("result after uneval: $result")
             }
         }
+        if (result === null) {
+            schema.unevaluatedPropertiesSchema?.accept(this)?.let {
+                result = accumulate(schema, result, it)
+                println("result after uneval: $result")
+            }
+        }
         println("finalResult = $result")
         return result
     }
@@ -112,6 +118,7 @@ abstract class SchemaVisitor<P> {
     open fun visitDependentSchemas(schema: DependentSchemasSchema): P? = visitChildren(schema)
     open fun visitDependentRequiredSchema(schema: DependentRequiredSchema): P? = visitChildren(schema)
     open fun visitUnevaluatedItemsSchema(schema: UnevaluatedItemsSchema): P? = visitChildren(schema)
+    open fun visitUnevaluatedPropertiesSchema(schema: UnevaluatedPropertiesSchema): P? = visitChildren(schema)
 
     open fun identity(): P? = null
     open fun accumulate(parent: Schema, previous: P?, current: P?): P? = current ?: previous

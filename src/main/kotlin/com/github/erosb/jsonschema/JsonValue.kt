@@ -152,7 +152,6 @@ interface IJsonArray<T : IJsonValue> : IJsonValue {
     operator fun get(index: Int) = elements[index]
     fun length() = elements.size
     fun markUnevaluated(idx: Int) {}
-    fun markAsRead(idx: Int) {}
     fun markEvaluated(idx: Int): IJsonValue
     fun markAllEvaluated()
 }
@@ -165,6 +164,8 @@ interface IJsonObject<P : IJsonString, V : IJsonValue> : IJsonValue {
     override fun <P> accept(visitor: JsonVisitor<P>): P? = visitor.visitObject(this)
 
     operator fun get(key: String) = properties[JsonString(key) as P]
+    fun markUnevaluated(propName: String)
+    fun markEvaluated(propName: String)
 }
 
 typealias IJsonObj = IJsonObject<*, *>
@@ -246,5 +247,9 @@ data class JsonObject(
     override val location: SourceLocation = UnknownSource
 ) : JsonValue(location), IJsonObject<JsonString, JsonValue> {
     override fun unwrap() = properties
+    override fun markUnevaluated(propName: String) {}
+
+    override fun markEvaluated(propName: String) {}
+
     override fun equals(other: Any?) = super.equals(other)
 }

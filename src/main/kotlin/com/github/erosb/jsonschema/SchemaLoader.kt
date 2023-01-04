@@ -403,6 +403,7 @@ class SchemaLoader(
                         name.location
                     )
                     Keyword.UNEVALUATED_ITEMS.value -> unevaluatedItemsSchema = UnevaluatedItemsSchema(loadChild(value), name.location)
+                    Keyword.UNEVALUATED_PROPERTIES.value -> unevaluatedPropertiesSchema = UnevaluatedPropertiesSchema(loadChild(value), name.location)
 //                else -> TODO("unhandled property ${name.value}")
                 }
                 val loader = keywordLoaders.get(name.value)
@@ -425,7 +426,8 @@ class SchemaLoader(
                 patternPropertySchemas = patternPropertySchemas,
                 dynamicRef = dynamicRef,
                 dynamicAnchor = dynamicAnchor?.toString(),
-                unevaluatedItemsSchema = unevaluatedItemsSchema
+                unevaluatedItemsSchema = unevaluatedItemsSchema,
+                unevaluatedPropertiesSchema = unevaluatedPropertiesSchema
             )
         }
     }

@@ -346,7 +346,7 @@ class SchemaLoader(
         var default: IJsonValue? = null
         var dynamicRef: DynamicReference? = null
         var dynamicAnchor: URI? = null
-        adjustBaseURI(schemaJson)
+        // adjustBaseURI(schemaJson)
         var propertySchemas: Map<String, Schema> = emptyMap()
         var patternPropertySchemas: Map<Regexp, Schema> = emptyMap()
         var unevaluatedItemsSchema: Schema? = null

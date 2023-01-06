@@ -49,10 +49,18 @@ internal data class Anchor(
 
 internal data class LoadingState(
     val documentRoot: IJsonValue,
-    var baseURI: URI = URI(DEFAULT_BASE_URI),
+
     private val anchors: MutableMap<String, Anchor> = mutableMapOf(),
     private val dynamicAnchors: MutableMap<String, Anchor> = mutableMapOf()
 ) {
+
+    var _baseURI: URI = URI(DEFAULT_BASE_URI)
+    var baseURI: URI
+        get() = this._baseURI
+        set(value) {
+            _baseURI = value
+            println("baseURI := $value")
+        }
 
     fun registerRawSchemaByAnchor(id: String, json: IJsonValue): Anchor {
         val anchor = getAnchorByURI(id)
@@ -129,7 +137,8 @@ class SchemaLoader(
                 withBaseUriAdjustment(json) {
                     when (val id = json[Keyword.ID.value]) {
                         is IJsonString -> {
-                            loadingState.registerRawSchemaByAnchor(loadingState.baseURI.toString(), json)
+//                            loadingState.registerRawSchemaByAnchor(loadingState.baseURI.toString(), json)
+                            loadingState.registerRawSchemaByAnchor(loadingState.baseURI.resolve(id.value).toString(), json)
                         }
                     }
                     when (val anchor = json[Keyword.ANCHOR.value]) {
@@ -189,7 +198,6 @@ class SchemaLoader(
     }
 
     private fun loadRootSchema(): Schema {
-        adjustBaseURI(schemaJson)
         lookupAnchors(schemaJson, loadingState.baseURI)
         return loadSchema()
     }
@@ -229,6 +237,7 @@ class SchemaLoader(
     private fun resolve(referenceSchema: ReferenceSchema): Pair<IJsonValue, URI> {
         val ref = referenceSchema.ref
         val uri = parseUri(ref)
+        println("resolve $ref -> $uri")
         val continingRoot: IJsonValue?
         val byURI = loadingState.anchorByURI(uri.toBeQueried.toString())
         if (byURI !== null && byURI.json !== null) {

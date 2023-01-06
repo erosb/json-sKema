@@ -1,7 +1,9 @@
 package com.github.erosb.jsonschema
 
 import java.io.*
+import java.lang.IllegalArgumentException
 import java.net.URI
+import java.net.URL
 
 fun interface SchemaClient {
     fun get(uri: URI): InputStream
@@ -11,12 +13,20 @@ internal class DefaultSchemaClient : SchemaClient {
 
     override fun get(uri: URI): InputStream {
         try {
-            val u = uri.toURL()
+            val u = toURL(uri)
             val conn = u.openConnection()
             val location = conn.getHeaderField("Location")
             return location?.let { get(URI(location)) } ?: conn.content as InputStream
         } catch (e: IOException) {
             throw UncheckedIOException(e)
+        }
+    }
+
+    private fun toURL(uri: URI): URL {
+        try {
+            return uri.toURL()
+        } catch (e: IllegalArgumentException) {
+            throw IllegalArgumentException("URI '$uri' can't be converted to URL: ${e.message}", e);
         }
     }
 }

@@ -11,7 +11,7 @@ import java.net.URI
 
 private class SourceWalker(
     input: InputStream,
-    private val reader: Reader = BufferedReader(InputStreamReader(input))
+    private val reader: Reader = BufferedReader(InputStreamReader(input)),
 ) {
 
     private var lineNumber = 1
@@ -185,7 +185,7 @@ class JsonParser {
             walker.location.lineNumber,
             walker.location.position,
             JsonPointer(nestingPath.toList()),
-            documentSource
+            documentSource,
         )
         return sourceLocation
     }
@@ -206,6 +206,7 @@ class JsonParser {
             }
             return JsonNumber(value, location)
         } catch (ex: NumberFormatException) {
+            println("$location :  $str")
             return JsonNumber(BigDecimal(str), location)
         }
     }
@@ -218,16 +219,19 @@ class JsonParser {
             buffer.append(walker.curr())
             walker.forward()
             if (walker.reachedEOF()) {
-                return toNumber(buffer.toString(), location) }
+                return toNumber(buffer.toString(), location)
+            }
         }
-        if (walker.curr() != '.' && walker.curr().toLowerCase() != 'e') {
+        if (walker.curr() != '.' && walker.curr().lowercaseChar() != 'e') {
             return toNumber(buffer.toString(), location)
         }
         buffer.append(walker.curr())
         walker.forward()
+        optParseSign(buffer)
         if (appendDigits(buffer)) return toDouble(buffer.toString(), location)
         if (!(walker.curr() == 'e' || walker.curr() == 'E')) {
-            return toDouble(buffer.toString(), location) }
+            return toDouble(buffer.toString(), location)
+        }
         buffer.append(walker.curr())
         walker.forward()
         optParseSign(buffer)

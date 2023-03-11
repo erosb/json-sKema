@@ -4,7 +4,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.math.BigInteger
@@ -123,7 +122,7 @@ class JsonParserTest {
         val actual = JsonParser(" [null, null\r\n]")()
         val expected = JsonArray(
             listOf(JsonNull(SourceLocation(1, 3, pointer("0"))), JsonNull(SourceLocation(1, 9, pointer("1")))),
-            SourceLocation(1, 2, pointer())
+            SourceLocation(1, 2, pointer()),
         )
         assertEquals(expected, actual)
     }
@@ -133,7 +132,7 @@ class JsonParserTest {
         val actual = JsonParser("[  \n ]")()
         val expected = JsonArray(
             emptyList(),
-            SourceLocation(1, 1, pointer())
+            SourceLocation(1, 1, pointer()),
         )
         assertEquals(expected, actual)
     }
@@ -143,7 +142,7 @@ class JsonParserTest {
         val actual = JsonParser("[ null \n ]")()
         val expected = JsonArray(
             listOf(JsonNull(SourceLocation(1, 3, pointer("0")))),
-            SourceLocation(1, 1, pointer())
+            SourceLocation(1, 1, pointer()),
         )
         assertEquals(expected, actual)
     }
@@ -153,7 +152,7 @@ class JsonParserTest {
         val actual = JsonParser("{}")()
         val expected = JsonObject(
             emptyMap(),
-            SourceLocation(1, 1, pointer())
+            SourceLocation(1, 1, pointer()),
         )
         assertEquals(expected, actual)
     }
@@ -163,7 +162,7 @@ class JsonParserTest {
         val actual = JsonParser("{\"key\":\"value\"}")()
         val expected = JsonObject(
             mapOf(Pair(JsonString("key", SourceLocation(1, 2, pointer("key"))), JsonString("value", SourceLocation(1, 8, pointer("key"))))),
-            SourceLocation(1, 1, pointer())
+            SourceLocation(1, 1, pointer()),
         )
         assertEquals(expected, actual)
     }
@@ -174,9 +173,9 @@ class JsonParserTest {
         val expected = JsonObject(
             mapOf(
                 Pair(JsonString("key", SourceLocation(1, 3, pointer("key"))), JsonString("value", SourceLocation(1, 9, pointer("key")))),
-                Pair(JsonString("key2", SourceLocation(1, 18, pointer("key2"))), JsonNull(SourceLocation(1, 27, pointer("key2"))))
+                Pair(JsonString("key2", SourceLocation(1, 18, pointer("key2"))), JsonNull(SourceLocation(1, 27, pointer("key2")))),
             ),
-            SourceLocation(1, 2, pointer())
+            SourceLocation(1, 2, pointer()),
         )
         assertEquals(expected, actual)
     }
@@ -251,6 +250,13 @@ class JsonParserTest {
     }
 
     @Test
+    fun `negative exponential without fractal`() {
+        val actual = JsonParser("1e-8")()
+        val expected = JsonNumber(1e-8, SourceLocation(1, 1, pointer()))
+        assertEquals(expected, actual)
+    }
+
+    @Test
     fun `real with Exponent 12_34E+22`() {
         val actual = JsonParser("12.34E+22")()
         val expected = JsonNumber(12.34E+22, SourceLocation(1, 1, pointer()))
@@ -273,7 +279,7 @@ class JsonParserTest {
                 "array": [null, true, 12.34],
                 "object": { "": 0 }
             }
-            """.trimIndent()
+            """.trimIndent(),
         )()
 
         val expected = JsonObject(
@@ -284,11 +290,11 @@ class JsonParserTest {
                     JsonString("object"),
                     JsonObject(
                         mapOf(
-                            Pair(JsonString(""), JsonNumber(0))
-                        )
-                    )
-                )
-            )
+                            Pair(JsonString(""), JsonNumber(0)),
+                        ),
+                    ),
+                ),
+            ),
         )
         assertThat(actual)
             .usingRecursiveComparison()

@@ -131,14 +131,14 @@ class SchemaLoader(
     operator fun invoke(): Schema = loadRootSchema()
 
     private fun lookupAnchors(json: IJsonValue, baseURI: URI) {
-        if (shouldProceedWithAnchorLookup(json)) return
+        if (shouldStopAnchorLookup(json)) return
         when (json) {
-            is IJsonObject<*, *> -> {
+            is IJsonObj -> {
                 withBaseUriAdjustment(json) {
                     when (val id = json[Keyword.ID.value]) {
                         is IJsonString -> {
-//                            loadingState.registerRawSchemaByAnchor(loadingState.baseURI.toString(), json)
-                            loadingState.registerRawSchemaByAnchor(loadingState.baseURI.resolve(id.value).toString(), json)
+                            // baseURI is already resolved to child ID
+                            loadingState.registerRawSchemaByAnchor(loadingState.baseURI.toString(), json)
                         }
                     }
                     when (val anchor = json[Keyword.ANCHOR.value]) {
@@ -167,11 +167,10 @@ class SchemaLoader(
     /**
      * lookupAnchors() should not proceed with the recursion into values of unknown keywords
      */
-    private fun shouldProceedWithAnchorLookup(json: IJsonValue): Boolean {
+    private fun shouldStopAnchorLookup(json: IJsonValue): Boolean {
         val locationSegments = json.location.pointer.segments
         if (locationSegments.isNotEmpty()) {
-            val lastSegment = locationSegments.last()
-            if (!Keyword.values().any { lastSegment == it.value }) { // last segment is unknown keyword
+            if (!isKnownKeyword(locationSegments.last())) { // last segment is unknown keyword
                 if (locationSegments.size == 1) {
                     return true
                 }
@@ -184,6 +183,8 @@ class SchemaLoader(
         }
         return false
     }
+
+    private fun isKnownKeyword(lastSegment: String) = Keyword.values().any { lastSegment == it.value }
 
     private fun adjustBaseURI(json: IJsonValue) {
         when (json) {

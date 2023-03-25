@@ -31,12 +31,14 @@ private fun <T : JsonValue> trimLeadingPointer(obj: T, pointerPrefixLength: Int)
         is JsonNumber -> obj.copy(location = trimmedLocation)
         is JsonArray -> obj.copy(
             location = trimmedLocation,
-            elements = obj.elements.map { trimLeadingPointer(it, pointerPrefixLength) }
+            elements = obj.elements.map { trimLeadingPointer(it, pointerPrefixLength) },
         )
+
         is JsonObject -> obj.copy(
             location = trimmedLocation,
-            properties = obj.properties.mapValues { trimLeadingPointer(it.value, pointerPrefixLength) }
+            properties = obj.properties.mapValues { trimLeadingPointer(it.value, pointerPrefixLength) },
         )
+
         else -> TODO()
     } as T
 }
@@ -45,7 +47,7 @@ internal fun loadParamsFromPackage(packageName: String, vararg fileFilters: Stri
     val rval = mutableListOf<Arguments>()
     val refs = Reflections(
         packageName,
-        ResourcesScanner()
+        ResourcesScanner(),
     )
     val excludedFiles = fileFilters
         .filter { it.startsWith("!") }
@@ -107,9 +109,13 @@ class TestSuiteTest {
     companion object {
         @JvmStatic
         fun params(): Stream<Arguments> = loadParamsFromPackage(
-            "test-suite.tests.draft2020-12"
+            "test-suite.tests.draft2020-12",
 //            , "unevaluatedProperties.json"
-//            ,"dynamicRef.json", "anchor.json", "ref.json", "id.json", "refRemote.json"
+//            "dynamicRef.json",
+//            "anchor.json",
+//            "ref.json",
+//            "id.json",
+//            "refRemote.json",
         ).stream()
 
         private val server = JettyWrapper("/test-suite/remotes")

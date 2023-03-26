@@ -21,7 +21,7 @@ internal fun createDefaultConfig() = SchemaLoaderConfig(
  */
 val DEFAULT_BASE_URI: String = "mem://input"
 
-internal data class Anchor(
+internal data class Knot(
     var json: IJsonValue? = null,
     var lexicalContextBaseURI: URI? = null,
     var schema: Schema? = null,
@@ -48,10 +48,10 @@ internal data class Anchor(
 }
 
 internal data class LoadingState(
-    val documentRoot: IJsonValue,
+        val documentRoot: IJsonValue,
 
-    private val anchors: MutableMap<String, Anchor> = mutableMapOf(),
-    private val dynamicAnchors: MutableMap<String, Anchor> = mutableMapOf()
+        private val anchors: MutableMap<String, Knot> = mutableMapOf(),
+        private val dynamicAnchors: MutableMap<String, Knot> = mutableMapOf()
 ) {
 
     var _baseURI: URI = URI(DEFAULT_BASE_URI)
@@ -62,7 +62,7 @@ internal data class LoadingState(
             println("baseURI := $value")
         }
 
-    fun registerRawSchemaByAnchor(id: String, json: IJsonValue): Anchor {
+    fun registerRawSchemaByAnchor(id: String, json: IJsonValue): Knot {
         val anchor = getAnchorByURI(id)
         if (anchor.json !== null && anchor.json !== json) {
             throw IllegalStateException("raw schema already registered by URI $id")
@@ -71,15 +71,15 @@ internal data class LoadingState(
         return anchor
     }
 
-    fun nextLoadableAnchor(): Anchor? = anchors.values.find { it.isLoadable() }
+    fun nextLoadableAnchor(): Knot? = anchors.values.find { it.isLoadable() }
 
-    fun nextUnresolvedAnchor(): Anchor? = anchors.values.find { it.json === null }
+    fun nextUnresolvedAnchor(): Knot? = anchors.values.find { it.json === null }
 
-    fun getAnchorByURI(uri: String): Anchor = anchors.getOrPut(removeEmptyFragment(uri)) { Anchor() }
+    fun getAnchorByURI(uri: String): Knot = anchors.getOrPut(removeEmptyFragment(uri)) { Knot() }
 
-    fun getDynAnchorByURI(uri: String): Anchor = dynamicAnchors.getOrPut(removeEmptyFragment(uri)) { Anchor() }
+    fun getDynAnchorByURI(uri: String): Knot = dynamicAnchors.getOrPut(removeEmptyFragment(uri)) { Knot() }
 
-    fun anchorByURI(ref: String): Anchor? = anchors[removeEmptyFragment(ref)]
+    fun anchorByURI(ref: String): Knot? = anchors[removeEmptyFragment(ref)]
 
     private fun removeEmptyFragment(uri: String): String {
         return if (uri.endsWith("#")) uri.substring(0, uri.length - 1) else uri
@@ -220,9 +220,9 @@ class SchemaLoader(
         loadingState.registerRawSchemaByAnchor(loadingState.baseURI.toString(), schemaJson)
 
         do {
-            val anchor: Anchor? = loadingState.nextLoadableAnchor()
-            if (anchor === null) {
-                val unresolved: Anchor? = loadingState.nextUnresolvedAnchor()
+            val knot: Knot? = loadingState.nextLoadableAnchor()
+            if (knot === null) {
+                val unresolved: Knot? = loadingState.nextUnresolvedAnchor()
                 if (unresolved === null) {
                     break
                 }
@@ -230,18 +230,18 @@ class SchemaLoader(
                 unresolved.json = pair.first
                 unresolved.lexicalContextBaseURI = pair.second
             } else {
-                anchor.underLoading = true
+                knot.underLoading = true
 
                 val origBaseURI = loadingState.baseURI
 
-                anchor.lexicalContextBaseURI?.let {
+                knot.lexicalContextBaseURI?.let {
                     loadingState.baseURI = it
                 }
-                val schema = doLoadSchema(anchor.json!!)
+                val schema = doLoadSchema(knot.json!!)
                 loadingState.baseURI = origBaseURI
 
-                anchor.resolveWith(schema)
-                anchor.underLoading = false
+                knot.resolveWith(schema)
+                knot.underLoading = false
             }
         } while (true)
         return finalRef.referredSchema!!

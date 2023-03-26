@@ -158,10 +158,21 @@ class SchemaLoader(
                             key.value != Keyword.ENUM.value && key.value != Keyword.CONST.value
                             //        && Keyword.values().any { it.value == key.value }
                         }
-                        .forEach { (_, value) -> lookupAnchors(value, baseURI) }
+                        .forEach { (_, value) -> lookupAnchors(value, loadingState.baseURI) }
                 }
             }
         }
+    }
+
+    private fun createReferenceSchema(location: SourceLocation, ref: String): ReferenceSchema {
+        var s: String
+        try {
+            s = loadingState.baseURI.resolve(ref).toString()
+        } catch (e: java.lang.IllegalArgumentException) {
+            s = loadingState.baseURI.toString() + ref
+        }
+        val anchor = loadingState.getAnchorByURI(s)
+        return anchor.createReference(location, s)
     }
 
     /**
@@ -188,7 +199,7 @@ class SchemaLoader(
 
     private fun adjustBaseURI(json: IJsonValue) {
         when (json) {
-            is IJsonObject<*, *> -> {
+            is IJsonObj -> {
                 when (val id = json[Keyword.ID.value]) {
                     is IJsonString -> {
                         loadingState.baseURI = loadingState.baseURI.resolve(id.value)
@@ -204,6 +215,7 @@ class SchemaLoader(
     }
 
     private fun loadSchema(): Schema {
+        adjustBaseURI(schemaJson)
         val finalRef = createReferenceSchema(schemaJson.location, "#")
         loadingState.registerRawSchemaByAnchor(loadingState.baseURI.toString(), schemaJson)
 
@@ -487,19 +499,6 @@ class SchemaLoader(
             rval[name.value] = loadChild(value)
         }
         return rval.toMap()
-    }
-
-    private fun createReferenceSchema(location: SourceLocation, ref: String): ReferenceSchema {
-//        println(ref)
-//        println(loadingState.baseURI)
-        var s: String
-        try {
-            s = loadingState.baseURI.resolve(ref).toString()
-        } catch (e: java.lang.IllegalArgumentException) {
-            s = loadingState.baseURI.toString() + ref
-        }
-        val anchor = loadingState.getAnchorByURI(s)
-        return anchor.createReference(location, s)
     }
 
     private fun loadChild(schemaJson: IJsonValue): Schema {

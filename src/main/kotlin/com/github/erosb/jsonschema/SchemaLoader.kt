@@ -116,7 +116,7 @@ class SchemaLoader(
         this.loadingState = loadingState
     }
 
-    private fun <R> withBaseUriAdjustment(json: IJsonValue, runnable: () -> R): R {
+    private fun <R> enterScope(json: IJsonValue, runnable: () -> R): R {
         val origBaseUri = loadingState.baseURI
         adjustBaseURI(json)
         try {
@@ -134,7 +134,7 @@ class SchemaLoader(
         if (shouldStopAnchorLookup(json)) return
         when (json) {
             is IJsonObj -> {
-                withBaseUriAdjustment(json) {
+                enterScope(json) {
                     when (val id = json[Keyword.ID.value]) {
                         is IJsonString -> {
                             // baseURI is already resolved to child ID
@@ -294,9 +294,9 @@ class SchemaLoader(
             .replace("~0", "~")
 
         fun lookupNext(root: IJsonValue, segments: LinkedList<String>): Pair<IJsonValue, URI> {
-            return withBaseUriAdjustment(root) {
+            return enterScope(root) {
                 if (segments.isEmpty()) {
-                    return@withBaseUriAdjustment Pair(root, loadingState.baseURI)
+                    return@enterScope Pair(root, loadingState.baseURI)
                 }
                 val segment = unescape(segments.poll())
                 when (root) {
@@ -305,14 +305,14 @@ class SchemaLoader(
                         if (child === null) {
                             throw Error("json pointer evaluation error: could not resolve property $segment in $root")
                         }
-                        return@withBaseUriAdjustment lookupNext(child, segments)
+                        return@enterScope lookupNext(child, segments)
                     }
                     is IJsonArray<*> -> {
                         val child = root[Integer.parseInt(segment)]
                         if (child === null) {
                             throw Error("json pointer evaluation error: could not resolve property $segment in $root")
                         }
-                        return@withBaseUriAdjustment lookupNext(child, segments)
+                        return@enterScope lookupNext(child, segments)
                     }
                     else -> {
                         throw Error("json pointer evaluation error: could not resolve property $segment")
@@ -373,7 +373,7 @@ class SchemaLoader(
         var patternPropertySchemas: Map<Regexp, Schema> = emptyMap()
         var unevaluatedItemsSchema: Schema? = null
         var unevaluatedPropertiesSchema: Schema? = null
-        return withBaseUriAdjustment(schemaJson) {
+        return enterScope(schemaJson) {
             schemaJson.properties.forEach { (name, value) ->
                 var subschema: Schema? = null
                 when (name.value) {
@@ -434,7 +434,7 @@ class SchemaLoader(
                 }
                 if (subschema != null) subschemas.add(subschema)
             }
-            return@withBaseUriAdjustment CompositeSchema(
+            return@enterScope CompositeSchema(
                 subschemas = subschemas,
                 location = schemaJson.location,
 //            id = id,

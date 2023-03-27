@@ -3,6 +3,7 @@ package com.github.erosb.jsonschema
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.URI
+import java.net.URISyntaxException
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -13,7 +14,7 @@ class SchemaLoaderConfig(val schemaClient: SchemaClient)
 class SchemaLoadingException(msg: String, cause: Throwable) : RuntimeException(msg, cause)
 
 internal fun createDefaultConfig() = SchemaLoaderConfig(
-    schemaClient = MemoizingSchemaClient(DefaultSchemaClient())
+        schemaClient = MemoizingSchemaClient(DefaultSchemaClient())
 )
 
 /**
@@ -22,11 +23,11 @@ internal fun createDefaultConfig() = SchemaLoaderConfig(
 val DEFAULT_BASE_URI: String = "mem://input"
 
 internal data class Knot(
-    var json: IJsonValue? = null,
-    var lexicalContextBaseURI: URI? = null,
-    var schema: Schema? = null,
-    var underLoading: Boolean = false,
-    val referenceSchemas: MutableList<ReferenceSchema> = mutableListOf()
+        var json: IJsonValue? = null,
+        var lexicalContextBaseURI: URI? = null,
+        var schema: Schema? = null,
+        var underLoading: Boolean = false,
+        val referenceSchemas: MutableList<ReferenceSchema> = mutableListOf()
 ) {
     fun createReference(location: SourceLocation, refText: String): ReferenceSchema {
         val rval = ReferenceSchema(schema, refText, location)
@@ -59,7 +60,7 @@ internal data class LoadingState(
         get() = this._baseURI
         set(value) {
             _baseURI = value
-            println("baseURI := $value")
+//            println("baseURI := $value")
         }
 
     fun registerRawSchemaByAnchor(id: String, json: IJsonValue): Knot {
@@ -93,25 +94,25 @@ internal data class LoadingState(
 typealias KeywordLoader = (IJsonObj, IJsonValue, SourceLocation) -> Schema
 
 class SchemaLoader(
-    val schemaJson: IJsonValue,
-    val config: SchemaLoaderConfig = createDefaultConfig()
+        val schemaJson: IJsonValue,
+        val config: SchemaLoaderConfig = createDefaultConfig()
 ) {
 
     private val regexpFactory: RegexpFactory = JavaUtilRegexpFactory()
 
     private val keywordLoaders: Map<String, KeywordLoader> = mapOf(
-        Keyword.MIN_ITEMS.value to minItemsLoader,
-        Keyword.MAX_ITEMS.value to maxItemsLoader,
-        Keyword.MIN_PROPERTIES.value to minPropertiesLoader,
-        Keyword.MAX_PROPERTIES.value to maxPropertiesLoader,
-        Keyword.ENUM.value to enumLoader,
-        Keyword.DEPENDENT_REQUIRED.value to dependentRequiredLoader
+            Keyword.MIN_ITEMS.value to minItemsLoader,
+            Keyword.MAX_ITEMS.value to maxItemsLoader,
+            Keyword.MIN_PROPERTIES.value to minPropertiesLoader,
+            Keyword.MAX_PROPERTIES.value to maxPropertiesLoader,
+            Keyword.ENUM.value to enumLoader,
+            Keyword.DEPENDENT_REQUIRED.value to dependentRequiredLoader
     )
 
     private constructor(
-        schemaJson: IJsonValue,
-        config: SchemaLoaderConfig,
-        loadingState: LoadingState
+            schemaJson: IJsonValue,
+            config: SchemaLoaderConfig,
+            loadingState: LoadingState
     ) : this(schemaJson, config) {
         this.loadingState = loadingState
     }
@@ -154,20 +155,39 @@ class SchemaLoader(
                         }
                     }
                     json.properties
-                        .filter { (key, _) ->
-                            key.value != Keyword.ENUM.value && key.value != Keyword.CONST.value
-                            //        && Keyword.values().any { it.value == key.value }
-                        }
-                        .forEach { (_, value) -> lookupAnchors(value, loadingState.baseURI) }
+                            .filter { (key, _) ->
+                                key.value != Keyword.ENUM.value && key.value != Keyword.CONST.value
+                                //        && Keyword.values().any { it.value == key.value }
+                            }
+                            .forEach { (_, value) -> lookupAnchors(value, loadingState.baseURI) }
                 }
             }
         }
     }
 
+    private fun resolveRelativeURI(ref: String): URI {
+        try {
+            if (URI(ref).isAbsolute) {
+                return URI(ref)
+            } else{
+                return resolveAgainstBaseURI(ref)
+            }
+        } catch (e: URISyntaxException) {
+            return resolveAgainstBaseURI(ref)
+        }
+    }
+
+    private fun resolveAgainstBaseURI(ref: String): URI {
+        if (loadingState.baseURI.toString().startsWith("urn:")) {
+            return URI(loadingState.baseURI.toString() + ref)
+        }
+        return loadingState.baseURI.resolve(ref)
+    }
+
     private fun createReferenceSchema(location: SourceLocation, ref: String): ReferenceSchema {
         var s: String
         try {
-            s = loadingState.baseURI.resolve(ref).toString()
+            s = resolveRelativeURI(ref).toString()
         } catch (e: java.lang.IllegalArgumentException) {
             s = loadingState.baseURI.toString() + ref
         }
@@ -250,7 +270,6 @@ class SchemaLoader(
     private fun resolve(referenceSchema: ReferenceSchema): Pair<IJsonValue, URI> {
         val ref = referenceSchema.ref
         val uri = parseUri(ref)
-        println("resolve $ref -> $uri")
         val continingRoot: IJsonValue?
         val byURI = loadingState.anchorByURI(uri.toBeQueried.toString())
         if (byURI !== null && byURI.json !== null) {
@@ -290,8 +309,8 @@ class SchemaLoader(
             throw Error("invalid json pointer: $pointer")
         }
         fun unescape(s: String) = URLDecoder.decode(s, StandardCharsets.UTF_8)
-            .replace("~1", "/")
-            .replace("~0", "~")
+                .replace("~1", "/")
+                .replace("~0", "~")
 
         fun lookupNext(root: IJsonValue, segments: LinkedList<String>): Pair<IJsonValue, URI> {
             return enterScope(root) {
@@ -307,6 +326,7 @@ class SchemaLoader(
                         }
                         return@enterScope lookupNext(child, segments)
                     }
+
                     is IJsonArray<*> -> {
                         val child = root[Integer.parseInt(segment)]
                         if (child === null) {
@@ -314,6 +334,7 @@ class SchemaLoader(
                         }
                         return@enterScope lookupNext(child, segments)
                     }
+
                     else -> {
                         throw Error("json pointer evaluation error: could not resolve property $segment")
                     }
@@ -326,8 +347,8 @@ class SchemaLoader(
             else -> null
         }
         val baseURIofRoot: String = idKeywordValue
-            ?: root.location.documentSource?.toString()
-            ?: DEFAULT_BASE_URI
+                ?: root.location.documentSource?.toString()
+                ?: DEFAULT_BASE_URI
 
         return runWithChangedBaseURI(URI(baseURIofRoot)) {
             lookupNext(root, segments)
@@ -346,15 +367,16 @@ class SchemaLoader(
 
     private fun doLoadSchema(schemaJson: IJsonValue): Schema {
         val retval: Schema =
-            when (schemaJson) {
-                is IJsonBoolean -> if (schemaJson.value) {
-                    TrueSchema(schemaJson.location)
-                } else {
-                    FalseSchema(schemaJson.location)
+                when (schemaJson) {
+                    is IJsonBoolean -> if (schemaJson.value) {
+                        TrueSchema(schemaJson.location)
+                    } else {
+                        FalseSchema(schemaJson.location)
+                    }
+
+                    is IJsonObject<*, *> -> createCompositeSchema(schemaJson)
+                    else -> TODO()
                 }
-                is IJsonObject<*, *> -> createCompositeSchema(schemaJson)
-                else -> TODO()
-            }
         return retval
     }
 
@@ -389,7 +411,8 @@ class SchemaLoader(
                     Keyword.DYNAMIC_REF.value -> dynamicRef = DynamicReference(ref = value.requireString().value, fallbackReferredSchema = createReferenceSchema(ref = value.requireString().value, location = schemaJson.location))
                     Keyword.DYNAMIC_ANCHOR.value ->
                         dynamicAnchor =
-                            loadingState.baseURI.resolve("#" + value.requireString().value)
+                                loadingState.baseURI.resolve("#" + value.requireString().value)
+
                     Keyword.TITLE.value -> title = value.requireString()
                     Keyword.DESCRIPTION.value -> description = value.requireString()
                     Keyword.READ_ONLY.value -> readOnly = value.requireBoolean()
@@ -399,13 +422,15 @@ class SchemaLoader(
                     Keyword.CONST.value -> subschema = ConstSchema(value, name.location)
                     Keyword.TYPE.value -> {
                         subschema = value.maybeString { TypeSchema(it, name.location) }
-                            ?: value.maybeArray { MultiTypeSchema(it, name.location) }
+                                ?: value.maybeArray { MultiTypeSchema(it, name.location) }
                     }
+
                     Keyword.NOT.value -> subschema = NotSchema(loadChild(value), name.location)
                     Keyword.REQUIRED.value -> subschema = RequiredSchema(
-                        value.requireArray().elements.map { it.requireString().value },
-                        name.location
+                            value.requireArray().elements.map { it.requireString().value },
+                            name.location
                     )
+
                     Keyword.MAXIMUM.value -> subschema = MaximumSchema(value.requireNumber().value, name.location)
                     Keyword.MINIMUM.value -> subschema = MinimumSchema(value.requireNumber().value, name.location)
                     Keyword.EXCLUSIVE_MAXIMUM.value -> subschema = ExclusiveMaximumSchema(value.requireNumber().value, name.location)
@@ -413,17 +438,19 @@ class SchemaLoader(
                     Keyword.MULTIPLE_OF.value -> subschema = MultipleOfSchema(value.requireNumber().value, name.location)
                     Keyword.UNIQUE_ITEMS.value -> subschema = UniqueItemsSchema(value.requireBoolean().value, name.location)
                     Keyword.ITEMS.value -> subschema = ItemsSchema(
-                        loadChild(value),
-                        schemaJson[Keyword.PREFIX_ITEMS.value]?.maybeArray { it.length() } ?: 0,
-                        name.location
+                            loadChild(value),
+                            schemaJson[Keyword.PREFIX_ITEMS.value]?.maybeArray { it.length() } ?: 0,
+                            name.location
                     )
+
                     Keyword.PREFIX_ITEMS.value -> subschema = PrefixItemsSchema(value.requireArray().elements.map { loadChild(it) }, name.location)
                     Keyword.CONTAINS.value -> subschema = buildContainsSchema(schemaJson, value, name.location)
                     Keyword.IF.value -> subschema = buildIfThenElseSchema(schemaJson, name.location)
                     Keyword.DEPENDENT_SCHEMAS.value -> subschema = DependentSchemasSchema(
-                        value.requireObject().properties.mapKeys { it.key.value }.mapValues { loadChild(it.value) },
-                        name.location
+                            value.requireObject().properties.mapKeys { it.key.value }.mapValues { loadChild(it.value) },
+                            name.location
                     )
+
                     Keyword.UNEVALUATED_ITEMS.value -> unevaluatedItemsSchema = UnevaluatedItemsSchema(loadChild(value), name.location)
                     Keyword.UNEVALUATED_PROPERTIES.value -> unevaluatedPropertiesSchema = UnevaluatedPropertiesSchema(loadChild(value), name.location)
 //                else -> TODO("unhandled property ${name.value}")
@@ -435,21 +462,21 @@ class SchemaLoader(
                 if (subschema != null) subschemas.add(subschema)
             }
             return@enterScope CompositeSchema(
-                subschemas = subschemas,
-                location = schemaJson.location,
+                    subschemas = subschemas,
+                    location = schemaJson.location,
 //            id = id,
-                title = title,
-                description = description,
-                readOnly = readOnly,
-                writeOnly = writeOnly,
-                deprecated = deprecated,
-                default = default,
-                propertySchemas = propertySchemas,
-                patternPropertySchemas = patternPropertySchemas,
-                dynamicRef = dynamicRef,
-                dynamicAnchor = dynamicAnchor?.toString(),
-                unevaluatedItemsSchema = unevaluatedItemsSchema,
-                unevaluatedPropertiesSchema = unevaluatedPropertiesSchema
+                    title = title,
+                    description = description,
+                    readOnly = readOnly,
+                    writeOnly = writeOnly,
+                    deprecated = deprecated,
+                    default = default,
+                    propertySchemas = propertySchemas,
+                    patternPropertySchemas = patternPropertySchemas,
+                    dynamicRef = dynamicRef,
+                    dynamicAnchor = dynamicAnchor?.toString(),
+                    unevaluatedItemsSchema = unevaluatedItemsSchema,
+                    unevaluatedPropertiesSchema = unevaluatedPropertiesSchema
             )
         }
     }
@@ -470,23 +497,23 @@ class SchemaLoader(
     }
 
     private fun buildAdditionalPropertiesSchema(
-        containingObject: IJsonObject<*, *>,
-        value: IJsonValue,
-        name: IJsonString
+            containingObject: IJsonObject<*, *>,
+            value: IJsonValue,
+            name: IJsonString
     ): AdditionalPropertiesSchema {
         val keysInProperties = containingObject["properties"]?.requireObject()
-            ?.properties?.keys?.map { it.value } ?: listOf()
+                ?.properties?.keys?.map { it.value } ?: listOf()
         val patternPropertyKeys = containingObject["patternProperties"]
-            ?.requireObject()?.properties?.keys
-            ?.map { regexpFactory.createHandler(it.value) }
-            ?: emptyList()
+                ?.requireObject()?.properties?.keys
+                ?.map { regexpFactory.createHandler(it.value) }
+                ?: emptyList()
         return AdditionalPropertiesSchema(loadChild(value), keysInProperties, patternPropertyKeys, name.location)
     }
 
     private fun buildContainsSchema(
-        containingObject: IJsonObject<*, *>,
-        value: IJsonValue,
-        location: SourceLocation
+            containingObject: IJsonObject<*, *>,
+            value: IJsonValue,
+            location: SourceLocation
     ): ContainsSchema {
         val minContains = containingObject[Keyword.MIN_CONTAINS.value]?.maybeNumber { it.value } ?: 1
         val maxContains = containingObject[Keyword.MAX_CONTAINS.value]?.maybeNumber { it.value }
@@ -506,16 +533,17 @@ class SchemaLoader(
     }
 
     private fun createAllOfSubschema(location: SourceLocation, subschemas: IJsonArray<*>) = AllOfSchema(
-        arrayToSubschemaList(subschemas),
-        location
+            arrayToSubschemaList(subschemas),
+            location
     )
+
     private fun createAnyOfSubschema(location: SourceLocation, subschemas: IJsonArray<*>) = AnyOfSchema(
-        arrayToSubschemaList(subschemas),
-        location
+            arrayToSubschemaList(subschemas),
+            location
     )
 
     private fun arrayToSubschemaList(subschemas: IJsonArray<*>): List<Schema> =
-        subschemas.elements.stream()
-            .map { loadChild(it) }
-            .collect(toList())
+            subschemas.elements.stream()
+                    .map { loadChild(it) }
+                    .collect(toList())
 }

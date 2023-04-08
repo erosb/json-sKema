@@ -71,6 +71,7 @@ abstract class SchemaVisitor<P> {
     open fun visitMultiTypeSchema(schema: MultiTypeSchema): P? = visitChildren(schema)
     open fun visitPropertySchema(property: String, schema: Schema): P? = visitChildren(schema)
     open fun visitPatternPropertySchema(pattern: Regexp, schema: Schema): P? = visitChildren(schema)
+    open fun visitPatternSchema(schema: PatternSchema): P? = visitChildren(schema)
     open fun visitNotSchema(schema: NotSchema): P? = visitChildren(schema)
     open fun visitRequiredSchema(schema: RequiredSchema): P? = visitChildren(schema)
     open fun visitMaximumSchema(schema: MaximumSchema): P? = visitChildren(schema)

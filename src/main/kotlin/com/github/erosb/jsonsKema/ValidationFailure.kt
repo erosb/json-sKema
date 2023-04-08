@@ -93,7 +93,7 @@ data class RequiredValidationFailure(
 data class NotValidationFailure(
     override val schema: Schema,
     override val instance: IJsonValue
-) : ValidationFailure("negated subschema did not fail", schema, instance)
+) : ValidationFailure("negated subschema did not fail", schema, instance, Keyword.NOT)
 
 data class MaxLengthValidationFailure(
     override val schema: MaxLengthSchema,
@@ -198,7 +198,8 @@ data class AllOfValidationFailure(
     message = "${causes.size} subschemas out of ${schema.subschemas.size} failed to validate",
     schema = schema,
     instance = instance,
-    causes = causes
+    causes = causes,
+    keyword = Keyword.ALL_OF
 )
 
 data class AnyOfValidationFailure(
@@ -209,7 +210,8 @@ data class AnyOfValidationFailure(
     message = "no subschema out of ${schema.subschemas.size} matched",
     schema = schema,
     instance = instance,
-    causes = causes
+    causes = causes,
+    keyword = Keyword.ANY_OF
 )
 
 data class OneOfValidationFailure(
@@ -220,7 +222,8 @@ data class OneOfValidationFailure(
     message = "expected 1 subschema to match out of ${schema.subschemas.size}, ${schema.subschemas.size - causes.size} matched",
     schema = schema,
     instance = instance,
-    causes = causes
+    causes = causes,
+    keyword = Keyword.ONE_OF
 )
 
 data class DependentSchemasValidationFailure(
@@ -231,7 +234,18 @@ data class DependentSchemasValidationFailure(
     message = "some dependent subschemas did not match",
     schema = schema,
     instance = instance,
+    keyword = Keyword.DEPENDENT_SCHEMAS,
     causes = causesByProperty.values.toSet()
+)
+
+data class PatternValidationFailure(
+    override val schema: PatternSchema,
+    override val instance: IJsonValue,
+) : ValidationFailure(
+    message = "some dependent subschemas did not match",
+    schema = schema,
+    instance = instance,
+    keyword = Keyword.PATTERN
 )
 
 internal class AggregatingValidationFailure(

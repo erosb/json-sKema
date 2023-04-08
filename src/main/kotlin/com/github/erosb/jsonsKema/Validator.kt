@@ -248,6 +248,24 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
     }
 
+    override fun visitPropertyNamesSchema(propertyNamesSchema: PropertyNamesSchema): ValidationFailure? {
+        return instance.maybeObject { obj ->
+            val failures: Map<IJsonString ,ValidationFailure> = obj.properties.keys.map {
+                it to withOtherInstance(it) {
+                    propertyNamesSchema.propertyNamesSchema.accept(this)
+                }
+            }
+                .filter { pair -> pair.second != null }
+                .map { it as Pair<IJsonString, ValidationFailure> }
+                .toMap()
+            return@maybeObject if (failures.isNotEmpty()) {
+                PropertyNamesValidationFailure(schema = propertyNamesSchema, instance = obj, causesByProperties = failures)
+            } else {
+                null
+            }
+        }
+    }
+
     private fun <T> withOtherInstance(otherInstance: IJsonValue, cb: () -> T): T {
         val origInstance = instance
         instance = otherInstance

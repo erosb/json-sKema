@@ -58,5 +58,6 @@ enum class Keyword(
     MAX_ITEMS("maxItems"),
     MIN_PROPERTIES("minProperties"),
     MAX_PROPERTIES("maxProperties"),
+    PROPERTY_NAMES("propertyNames"),
     PATTERN("pattern")
 }

@@ -159,6 +159,14 @@ data class PatternSchema(
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitPatternSchema(this)
 }
 
+data class PropertyNamesSchema(
+    val propertyNamesSchema: Schema,
+    override val location: SourceLocation
+) : Schema(location) {
+    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitPropertyNamesSchema(this)
+    override fun subschemas(): Collection<Schema> = setOf(propertyNamesSchema)
+}
+
 data class ItemsSchema(val itemsSchema: Schema, val prefixItemCount: Int, override val location: SourceLocation) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitItemsSchema(this)
     override fun subschemas(): Collection<Schema> = listOf(itemsSchema)

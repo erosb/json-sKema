@@ -103,6 +103,8 @@ abstract class SchemaVisitor<P> {
         }
         return product
     }
+
+    open fun visitPropertyNamesSchema(propertyNamesSchema: PropertyNamesSchema): P? = visitChildren(propertyNamesSchema)
 }
 
 internal class SchemaNotFoundException(expectedKey: String, actualKey: String) :

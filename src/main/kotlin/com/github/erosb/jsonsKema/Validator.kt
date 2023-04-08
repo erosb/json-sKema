@@ -75,10 +75,6 @@ private class MarkableJsonObject<P : IJsonString, V : IJsonValue>(
         evaluatedProperties.add(propName)
     }
 
-    override fun markUnevaluated(propName: String) {
-        evaluatedProperties.remove(propName)
-    }
-
     fun getUnevaluated(): Map<String, IJsonValue> = original.properties
         .mapKeys { it.key.value }
         .filter { it.key !in evaluatedProperties }
@@ -169,19 +165,19 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         return rootSchema.accept(this)
     }
 
-    override fun visitCompositeSchema(schema: CompositeSchema): ValidationFailure? {
-        if (instance is IJsonArray<*> && schema.unevaluatedItemsSchema != null) {
-            return withOtherInstance(markableArray(instance as IJsonArray<IJsonValue>)) {
-                return@withOtherInstance super.visitCompositeSchema(schema)
-            }
-        } else if (schema.unevaluatedPropertiesSchema != null && instance is IJsonObj) {
-            return withOtherInstance(markableObject(instance as IJsonObj)) {
-                return@withOtherInstance super.visitCompositeSchema(schema)
-            }
-        } else {
-            return super.visitCompositeSchema(schema)
-        }
-    }
+//    override fun visitCompositeSchema(schema: CompositeSchema): ValidationFailure? {
+//        if (instance is IJsonArray<*> && schema.unevaluatedItemsSchema != null) {
+//            return withOtherInstance(markableArray(instance as IJsonArray<IJsonValue>)) {
+//                return@withOtherInstance super.visitCompositeSchema(schema)
+//            }
+//        } else if (schema.unevaluatedPropertiesSchema != null && instance is IJsonObj) {
+//            return withOtherInstance(markableObject(instance as IJsonObj)) {
+//                return@withOtherInstance super.visitCompositeSchema(schema)
+//            }
+//        } else {
+//            return super.visitCompositeSchema(schema)
+//        }
+//    }
 
     override fun visitConstSchema(schema: ConstSchema): ValidationFailure? {
         val isValid = schema.constant == instance
@@ -344,10 +340,22 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
     }
 
-    override fun visitNotSchema(schema: NotSchema): ValidationFailure? = if (schema.negatedSchema.accept(this) != null) {
-        null
-    } else {
-        NotValidationFailure(schema, instance)
+    override fun visitNotSchema(schema: NotSchema): ValidationFailure? = asApplicator {
+        if (schema.negatedSchema.accept(this) != null) {
+            null
+        } else {
+            NotValidationFailure(schema, instance)
+        }
+    }
+
+    private fun <P> asApplicator(cb: () -> P): P {
+        if (instance is IJsonArray<*>) {
+            return withOtherInstance(markableArray(instance as IJsonArray<IJsonValue>), cb)
+        } else if (instance is IJsonObj) {
+            return withOtherInstance(markableObject(instance as IJsonObj), cb)
+        } else {
+            return cb()
+        }
     }
 
     override fun visitEnumSchema(schema: EnumSchema): ValidationFailure? =

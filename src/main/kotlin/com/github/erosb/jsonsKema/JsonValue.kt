@@ -164,7 +164,6 @@ interface IJsonObject<P : IJsonString, V : IJsonValue> : IJsonValue {
     override fun <P> accept(visitor: JsonVisitor<P>): P? = visitor.visitObject(this)
 
     operator fun get(key: String) = properties[JsonString(key) as P]
-    fun markUnevaluated(propName: String)
     fun markEvaluated(propName: String)
 }
 
@@ -247,7 +246,6 @@ data class JsonObject(
     override val location: SourceLocation = UnknownSource
 ) : JsonValue(location), IJsonObject<JsonString, JsonValue> {
     override fun unwrap() = properties
-    override fun markUnevaluated(propName: String) {}
 
     override fun markEvaluated(propName: String) {}
 

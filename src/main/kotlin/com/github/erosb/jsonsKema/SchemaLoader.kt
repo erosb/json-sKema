@@ -162,6 +162,9 @@ class SchemaLoader(
                             .forEach { (_, value) -> lookupAnchors(value, loadingState.baseURI) }
                 }
             }
+            is IJsonArray<*> -> {
+                json.elements.forEach { lookupAnchors(it, loadingState.baseURI) }
+            }
         }
     }
 

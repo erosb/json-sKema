@@ -13,7 +13,23 @@
 
     <scm>
         <connection>https://github.com/erosb/json-sKema</connection>
+        <url>https://github.com/erosb/json-sKema</url>
     </scm>
+
+    <licenses>
+        <license>
+            <name>MIT</name>
+            <url>https://opensource.org/license/mit/</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Bence Erős</name>
+            <email>ebence88@gmail.com</email>
+        </developer>
+    </developers>
 
     <properties>
         <kotlin.version>1.7.10</kotlin.version>

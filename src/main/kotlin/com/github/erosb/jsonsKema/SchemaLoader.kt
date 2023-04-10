@@ -76,14 +76,20 @@ internal data class LoadingState(
 
     fun nextUnresolvedAnchor(): Knot? = anchors.values.find { it.json === null }
 
-    fun getAnchorByURI(uri: String): Knot = anchors.getOrPut(removeEmptyFragment(uri)) { Knot() }
+    fun getAnchorByURI(uri: String): Knot = anchors.getOrPut(normalizeUri(uri)) { Knot() }
 
-    fun getDynAnchorByURI(uri: String): Knot = dynamicAnchors.getOrPut(removeEmptyFragment(uri)) { Knot() }
+    fun getDynAnchorByURI(uri: String): Knot = dynamicAnchors.getOrPut(normalizeUri(uri)) { Knot() }
 
-    fun anchorByURI(ref: String): Knot? = anchors[removeEmptyFragment(ref)]
+    fun anchorByURI(ref: String): Knot? = anchors[normalizeUri(ref)]
 
-    private fun removeEmptyFragment(uri: String): String {
-        return if (uri.endsWith("#")) uri.substring(0, uri.length - 1) else uri
+    private fun normalizeUri(uri: String): String {
+        val effectiveUri: String
+        if (uri.startsWith("file:/") && !uri.startsWith("file:///")) {
+            effectiveUri = "file:///" + uri.substring("file:/".length)
+        } else {
+            effectiveUri = uri
+        }
+        return if (effectiveUri.endsWith("#")) effectiveUri.substring(0, effectiveUri.length - 1) else effectiveUri
     }
 
     fun registerRawSchemaByDynAnchor(dynAnchor: String, json: IJsonObject<*, *>) {

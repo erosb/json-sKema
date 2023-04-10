@@ -71,6 +71,15 @@ open class SourceLocation(
         return result
     }
 
+    fun getLocation(): String {
+        val sb = StringBuilder()
+        if (documentSource !== null) {
+            sb.append(documentSource).append(": ")
+        }
+        sb.append("Line $lineNumber, character $position")
+        return sb.toString()
+    }
+
     override fun toString(): String {
         return "line $lineNumber, character $position, pointer: $pointer"
     }

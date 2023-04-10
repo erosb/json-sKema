@@ -98,6 +98,8 @@ class SchemaLoader(
         val config: SchemaLoaderConfig = createDefaultConfig()
 ) {
 
+    constructor(schemaJson: IJsonValue) : this(schemaJson, createDefaultConfig()) {}
+
     private val regexpFactory: RegexpFactory = JavaUtilRegexpFactory()
 
     private val keywordLoaders: Map<String, KeywordLoader> = mapOf(
@@ -130,6 +132,7 @@ class SchemaLoader(
     private var loadingState: LoadingState = LoadingState(schemaJson)
 
     operator fun invoke(): Schema = loadRootSchema()
+    fun load(): Schema = loadRootSchema()
 
     private fun lookupAnchors(json: IJsonValue, baseURI: URI) {
         if (shouldStopAnchorLookup(json)) return

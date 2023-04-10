@@ -100,6 +100,7 @@ class JsonParser {
     private val walker: SourceWalker
     private val documentSource: URI?
 
+    @JvmOverloads
     constructor(schemaJson: String, documentSource: URI? = null) {
         this.walker = SourceWalker(ByteArrayInputStream(schemaJson.toByteArray()))
         this.documentSource = documentSource

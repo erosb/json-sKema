@@ -19,6 +19,8 @@ internal fun getAsBigDecimal(number: Any): BigDecimal {
 interface Validator {
 
     companion object {
+
+        @JvmStatic
         fun forSchema(schema: Schema): Validator {
             return DefaultValidator(schema)
         }

@@ -7,8 +7,26 @@ abstract class ValidationFailure(
     val keyword: Keyword? = null,
     open val causes: Set<ValidationFailure> = setOf()
 ) {
+
+    private fun appendTo(sb: StringBuilder, linePrefix: String) {
+        sb.append("${linePrefix}${instance.location.getLocation()}: $message\n" +
+                "${linePrefix}Keyword: ${keyword?.value}\n"  +
+                "${linePrefix}Schema pointer: ${schema.location.pointer}\n" +
+                "${linePrefix}Schema location: Line ${schema.location.lineNumber}, character ${schema.location.position}\n" +
+                "${linePrefix}Instance pointer: ${instance.location.pointer}\n" +
+                "${linePrefix}Instance location: ${instance.location.getLocation()}")
+        if (causes.isNotEmpty()) {
+            sb.append("\nCauses:")
+            for (cause in causes) {
+                sb.append("\n\n")
+                cause.appendTo(sb, linePrefix + "\t")
+            }
+        }
+    }
     final override fun toString(): String {
-        return "Line ${instance.location.lineNumber}, character ${instance.location.position}: $message"
+        val sb = StringBuilder()
+        appendTo(sb, "")
+        return sb.toString()
     }
 
     fun toJSON(): JsonObject {

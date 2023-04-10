@@ -17,7 +17,7 @@ class ValidatorTest {
         val instance = JsonParser("  \"hey\"")()
         val actual = Validator.forSchema(schema).validate(instance)!!
 
-        assertEquals("Line 1, character 3: actual string length 3 is lower than minLength 5", actual.toString())
+        assertEquals("actual string length 3 is lower than minLength 5", actual.message)
         assertSame(schema.subschemas.stream().findFirst().get(), actual.schema)
         assertSame(instance, actual.instance)
         assertSame(Keyword.MIN_LENGTH, actual.keyword)
@@ -38,7 +38,7 @@ class ValidatorTest {
         )
         val instance = JsonParser("  \"heyy\"")()
         val actual = Validator.forSchema(schema).validate(instance)!!
-        assertEquals("Line 1, character 3: multiple validation failures", actual.toString())
+        assertEquals("multiple validation failures", actual.message)
 
         assertEquals(
             JsonParser(

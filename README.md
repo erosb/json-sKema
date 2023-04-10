@@ -26,8 +26,41 @@ dependencies {
 
 ## Usage
 
-```kotlin
+```java
+// parse the schema JSON as string
+JsonValue  schemaJson = new JsonParser("""
+        {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        }
+        """).parse();
+// map the raw json to a reusable Schema instance
+Schema schema = new SchemaLoader(schemaJson).load();
 
+// create a reusable validator instance for each validation (one-time use object) 
+Validator validator = Validator.forSchema(schema);
+
+// parse the input instance to validate against the schema
+JsonValue instance = new JsonParser("""
+        {
+            "age": -5,
+            "name": null
+        }
+        """).parse();
+
+// run the validation
+ValidationFailure failure = validator.validate(instance);
+
+// print the validation failures (if any)
+System.out.println(failure);
 ```
 
 ## Compatibility notes
@@ -36,7 +69,7 @@ The library implements the JSON Schema draft 2020-12 core and validation specifi
  * `$dynamicAnchor` and `$dynamicRef` support is partially implemented
 
 
-## Support for older JSON Schema drafts
+### Support for older JSON Schema drafts
 
 This project is the successor of [everit-org/json-schema](https://github.com/everit-org/json-schema). If you want to use draft-04, draft-06 or draft-07 versions of JSON Schema, then you can use the everit library.
 

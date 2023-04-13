@@ -1,14 +1,13 @@
 package com.github.erosb.jsonsKema
 
-import java.time.LocalDate
-import java.time.LocalTime
+import java.net.URI
+import java.net.URISyntaxException
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.format.DateTimeParseException
 import java.time.format.ResolverStyle
 import java.time.temporal.ChronoField
-import java.time.temporal.TemporalQueries
 
 typealias FormatValidator = (instance: IJsonValue, schema: FormatSchema) -> ValidationFailure?
 
@@ -52,6 +51,18 @@ private fun validateDateTime(str: IJsonString, schema: FormatSchema): FormatVali
 
 internal val dateTimeFormatValidator: FormatValidator = {inst, schema -> inst.maybeString { str ->
     validateDateTime(str, schema)
+}}
+
+internal val uriFormatValidator: FormatValidator = {inst, schema -> inst.maybeString { str ->
+    try {
+        if (URI(str.value).scheme == null) {
+            FormatValidationFailure(schema, str)
+        } else {
+            null
+        }
+    } catch (e: URISyntaxException) {
+        FormatValidationFailure(schema, str)
+    }
 }}
 
 data class FormatSchema(

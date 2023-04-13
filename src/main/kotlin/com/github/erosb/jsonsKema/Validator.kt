@@ -577,7 +577,8 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
 
     private val formatValidators: Map<String, FormatValidator> = mapOf(
         "date" to dateFormatValidator,
-        "date-time" to dateTimeFormatValidator
+        "date-time" to dateTimeFormatValidator,
+        "uri" to uriFormatValidator
     )
 
     override fun visitFormatSchema(schema: FormatSchema): ValidationFailure? =

@@ -575,19 +575,12 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
     }
 
-    override fun visitFormatSchema(schema: FormatSchema): ValidationFailure? {
-        if (schema.format == "date") {
-            return instance.maybeString {
-                try {
-                    DateTimeFormatter.ISO_LOCAL_DATE.parse(it.value)
-                    null
-                } catch (e: DateTimeParseException) {
-                   FormatValidationFailure(schema, instance)
-                }
-            }
-        }
-        return null
-    }
+    private val formatValidators: Map<String, FormatValidator> = mapOf(
+        "date" to dateFormatValidator
+    )
+
+    override fun visitFormatSchema(schema: FormatSchema): ValidationFailure? =
+        formatValidators[schema.format]?.let { it(instance, schema) }
 
     override fun visitUnevaluatedPropertiesSchema(schema: UnevaluatedPropertiesSchema): ValidationFailure? {
         val instance = this.instance

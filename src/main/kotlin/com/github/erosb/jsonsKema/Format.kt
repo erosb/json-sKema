@@ -1,5 +1,19 @@
 package com.github.erosb.jsonsKema
 
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
+
+typealias FormatValidator = (instance: IJsonValue, schema: FormatSchema) -> ValidationFailure?
+
+internal val dateFormatValidator: FormatValidator = { inst, schema -> inst.maybeString { str ->
+    try {
+        DateTimeFormatter.ISO_LOCAL_DATE.parse(str.value)
+        null
+    } catch (e: DateTimeParseException) {
+        FormatValidationFailure(schema, str)
+    }
+}}
+
 data class FormatSchema(
     val format: String,
     override val location: SourceLocation

@@ -75,6 +75,24 @@ internal val emailFormatValidator: FormatValidator = {inst, schema -> inst.maybe
     }
 }}
 
+internal val ipv4FormatValidator: FormatValidator = {inst, schema -> inst.maybeString { str ->
+    if (InetAddressValidator.getInstance().isValidInet4Address(str.value)) {
+        null
+    } else {
+        FormatValidationFailure(schema, str)
+    }
+}}
+
+private val allowedIpv6Chars = setOf('.', ':') + ('0'..'9') + ('a'..'f') + ('A'..'F')
+
+internal val ipv6FormatValidator: FormatValidator = {inst, schema -> inst.maybeString { str ->
+    if (InetAddressValidator.getInstance().isValidInet6Address(str.value)
+        && str.value.toCharArray().all { it in allowedIpv6Chars }) {
+        null
+    } else {
+        FormatValidationFailure(schema, str)
+    }
+}}
 data class FormatSchema(
     val format: String,
     override val location: SourceLocation

@@ -579,7 +579,9 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         "date" to dateFormatValidator,
         "date-time" to dateTimeFormatValidator,
         "uri" to uriFormatValidator,
-        "email" to emailFormatValidator
+        "email" to emailFormatValidator,
+        "ipv4" to ipv4FormatValidator,
+        "ipv6" to ipv6FormatValidator
     )
 
     override fun visitFormatSchema(schema: FormatSchema): ValidationFailure? =

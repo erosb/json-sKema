@@ -1,5 +1,7 @@
 package com.github.erosb.jsonsKema
 
+import org.apache.commons.validator.routines.EmailValidator
+import org.apache.commons.validator.routines.InetAddressValidator
 import java.net.URI
 import java.net.URISyntaxException
 import java.time.ZonedDateTime
@@ -61,6 +63,14 @@ internal val uriFormatValidator: FormatValidator = {inst, schema -> inst.maybeSt
             null
         }
     } catch (e: URISyntaxException) {
+        FormatValidationFailure(schema, str)
+    }
+}}
+
+internal val emailFormatValidator: FormatValidator = {inst, schema -> inst.maybeString { str ->
+    if (EmailValidator.getInstance(false, true).isValid(str.value)) {
+        null
+    } else {
         FormatValidationFailure(schema, str)
     }
 }}

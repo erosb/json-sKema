@@ -1,7 +1,14 @@
 package com.github.erosb.jsonsKema
 
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatterBuilder
 import java.time.format.DateTimeParseException
+import java.time.format.ResolverStyle
+import java.time.temporal.ChronoField
+import java.time.temporal.TemporalQueries
 
 typealias FormatValidator = (instance: IJsonValue, schema: FormatSchema) -> ValidationFailure?
 
@@ -12,6 +19,39 @@ internal val dateFormatValidator: FormatValidator = { inst, schema -> inst.maybe
     } catch (e: DateTimeParseException) {
         FormatValidationFailure(schema, str)
     }
+}}
+
+private val DATE_TIME_FORMATTER: DateTimeFormatter = run {
+    val secondsFractionFormatter = DateTimeFormatterBuilder()
+        .appendFraction(ChronoField.NANO_OF_SECOND, 1, 9, true)
+        .toFormatter()
+    DateTimeFormatterBuilder()
+        .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
+        .appendOptional(secondsFractionFormatter)
+        .appendPattern("XXX")
+        .toFormatter()
+        .withResolverStyle(ResolverStyle.STRICT)
+}
+
+private fun validateDateTime(str: IJsonString, schema: FormatSchema): FormatValidationFailure? {
+    try {
+        DATE_TIME_FORMATTER.parse(str.value.uppercase())
+        ZonedDateTime.parse(str.value)
+    } catch (e: DateTimeParseException) {
+        if ((e.message?.indexOf("Invalid value for SecondOfMinute") ?: -1) > -1) {
+            // handle leap second
+            if (str.value.indexOf("23:59:60") > -1) {
+                val sanitized = JsonString(str.value.replace("23:59:60", "23:59:59"), str.location)
+                return validateDateTime(sanitized, schema)
+            }
+        }
+        return FormatValidationFailure(schema, str)
+    }
+    return null
+}
+
+internal val dateTimeFormatValidator: FormatValidator = {inst, schema -> inst.maybeString { str ->
+    validateDateTime(str, schema)
 }}
 
 data class FormatSchema(

@@ -43,7 +43,10 @@ private fun <T : JsonValue> trimLeadingPointer(obj: T, pointerPrefixLength: Int)
     } as T
 }
 
-internal val SUPPORTED_FORMATS: List<String> = listOf("date.json");
+internal val SUPPORTED_FORMATS: List<String> = listOf(
+    "date.json",
+    "date-time.json"
+)
 
 internal fun loadParamsFromPackage(packageName: String, vararg fileFilters: String): List<Arguments> {
     val rval = mutableListOf<Arguments>()

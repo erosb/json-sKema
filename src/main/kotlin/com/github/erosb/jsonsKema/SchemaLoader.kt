@@ -114,7 +114,8 @@ class SchemaLoader(
             Keyword.MIN_PROPERTIES.value to minPropertiesLoader,
             Keyword.MAX_PROPERTIES.value to maxPropertiesLoader,
             Keyword.ENUM.value to enumLoader,
-            Keyword.DEPENDENT_REQUIRED.value to dependentRequiredLoader
+            Keyword.DEPENDENT_REQUIRED.value to dependentRequiredLoader,
+            Keyword.FORMAT.value to formatLoader
     )
 
     private constructor(
@@ -467,7 +468,6 @@ class SchemaLoader(
                     Keyword.UNEVALUATED_PROPERTIES.value -> unevaluatedPropertiesSchema = UnevaluatedPropertiesSchema(loadChild(value), name.location)
                     Keyword.PATTERN.value -> subschema = PatternSchema(regexpFactory.createHandler(value.requireString().value), name.location)
                     Keyword.PROPERTY_NAMES.value -> subschema = PropertyNamesSchema(loadChild(value), name.location)
-                    Keyword.FORMAT.value -> subschema = FormatSchema(value.requireString().value, name.location)
 //                else -> TODO("unhandled property ${name.value}")
                 }
                 val loader = keywordLoaders.get(name.value)

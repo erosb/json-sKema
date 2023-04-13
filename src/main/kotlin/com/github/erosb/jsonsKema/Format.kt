@@ -7,7 +7,9 @@ data class FormatSchema(
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitFormatSchema(this)
 }
 
-
+internal val formatLoader: KeywordLoader = { _, keywordValue, location ->
+    FormatSchema(keywordValue.requireString().value, location)
+}
 data class FormatValidationFailure(
     override val schema: FormatSchema,
     override val instance: IJsonValue

@@ -43,6 +43,8 @@ private fun <T : JsonValue> trimLeadingPointer(obj: T, pointerPrefixLength: Int)
     } as T
 }
 
+internal val SUPPORTED_FORMATS: List<String> = listOf("date.json");
+
 internal fun loadParamsFromPackage(packageName: String, vararg fileFilters: String): List<Arguments> {
     val rval = mutableListOf<Arguments>()
     val refs = Reflections(
@@ -55,8 +57,14 @@ internal fun loadParamsFromPackage(packageName: String, vararg fileFilters: Stri
     val includedFiles = fileFilters.filter { !it.startsWith("!") }.toTypedArray()
     val paths: Set<String> = refs.getResources(Pattern.compile(".*\\.json"))
     for (path in paths) {
-        if (path.indexOf("/optional/") > -1 || path.indexOf("/remotes/") > -1) {
+        if (path.indexOf("/remotes/") > -1) {
             continue
+        }
+        if (path.indexOf("/optional/") > -1) {
+            if (path.indexOf("/format/") == -1
+                || SUPPORTED_FORMATS.none { path.endsWith(it) }) {
+                continue
+            }
         }
         val fileName = path.substring(path.lastIndexOf('/') + 1)
         if ((includedFiles.isNotEmpty() && !includedFiles.contains(fileName)) || excludedFiles.contains(fileName)) {

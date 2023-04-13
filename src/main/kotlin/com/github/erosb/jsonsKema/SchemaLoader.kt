@@ -467,6 +467,7 @@ class SchemaLoader(
                     Keyword.UNEVALUATED_PROPERTIES.value -> unevaluatedPropertiesSchema = UnevaluatedPropertiesSchema(loadChild(value), name.location)
                     Keyword.PATTERN.value -> subschema = PatternSchema(regexpFactory.createHandler(value.requireString().value), name.location)
                     Keyword.PROPERTY_NAMES.value -> subschema = PropertyNamesSchema(loadChild(value), name.location)
+                    Keyword.FORMAT.value -> subschema = FormatSchema(value.requireString().value, name.location)
 //                else -> TODO("unhandled property ${name.value}")
                 }
                 val loader = keywordLoaders.get(name.value)

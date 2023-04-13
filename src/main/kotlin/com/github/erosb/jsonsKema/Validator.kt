@@ -2,6 +2,8 @@ package com.github.erosb.jsonsKema
 
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
 internal fun getAsBigDecimal(number: Any): BigDecimal {
     return if (number is BigDecimal) {
@@ -571,6 +573,20 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         } else {
             return null
         }
+    }
+
+    override fun visitFormatSchema(schema: FormatSchema): ValidationFailure? {
+        if (schema.format == "date") {
+            return instance.maybeString {
+                try {
+                    DateTimeFormatter.ISO_LOCAL_DATE.parse(it.value)
+                    null
+                } catch (e: DateTimeParseException) {
+                   FormatValidationFailure(schema, instance)
+                }
+            }
+        }
+        return null
     }
 
     override fun visitUnevaluatedPropertiesSchema(schema: UnevaluatedPropertiesSchema): ValidationFailure? {

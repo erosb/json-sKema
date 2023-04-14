@@ -51,7 +51,8 @@ internal val SUPPORTED_FORMATS: List<String> = listOf(
     "/email.json",
     "/ipv4.json",
     "/ipv6.json",
-    "/uuid.json"
+    "/uuid.json",
+    "/duration.json"
 )
 
 internal fun loadParamsFromPackage(packageName: String, vararg fileFilters: String): List<Arguments> {
@@ -134,6 +135,7 @@ class TestSuiteTest {
 //            "id.json",
 //            "refRemote.json",
 //            "uuid.json"
+            "duration.json"
         ).stream()
 
         private val server = JettyWrapper("/test-suite/remotes")

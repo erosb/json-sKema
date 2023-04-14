@@ -5,6 +5,7 @@ import org.apache.commons.validator.routines.InetAddressValidator
 import java.lang.IllegalArgumentException
 import java.net.URI
 import java.net.URISyntaxException
+import java.time.Duration
 import java.time.LocalTime
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -13,6 +14,7 @@ import java.time.format.DateTimeParseException
 import java.time.format.ResolverStyle
 import java.time.temporal.ChronoField
 import java.util.UUID
+import java.util.regex.Pattern
 
 typealias FormatValidator = (instance: IJsonValue, schema: FormatSchema) -> ValidationFailure?
 
@@ -116,6 +118,20 @@ internal val uuidFormatValidator: FormatValidator = {inst, schema -> inst.maybeS
     } else {
         FormatValidationFailure(schema, str)
     }
+}}
+
+internal val durationFormatValidator: FormatValidator = {inst, schema -> inst.maybeString { str ->
+    val regex = Pattern.compile("^P(?=\\d|T\\d)(?:(\\d+)Y)?(?:(\\d+)M)?(?:(\\d+)([DW]))?(?:T(?:(\\d+)H)?(?:(\\d+)M)?(?:(\\d+(?:\\.\\d+)?)S)?)?$")
+    if (!regex.matcher(str.value).matches()) {
+        return@maybeString FormatValidationFailure(schema, str)
+    }
+    return@maybeString null
+//    try {
+//        Duration.parse(str.value)
+//        null
+//    } catch (e: DateTimeParseException) {
+//        FormatValidationFailure(schema, str)
+//    }
 }}
 
 data class FormatSchema(

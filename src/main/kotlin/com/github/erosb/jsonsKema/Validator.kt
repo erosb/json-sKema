@@ -579,6 +579,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         "date" to dateFormatValidator,
         "date-time" to dateTimeFormatValidator,
         "time" to timeFormatValidator,
+        "duration" to durationFormatValidator,
         "uri" to uriFormatValidator,
         "email" to emailFormatValidator,
         "ipv4" to ipv4FormatValidator,

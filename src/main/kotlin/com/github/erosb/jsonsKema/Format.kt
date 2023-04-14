@@ -4,6 +4,7 @@ import org.apache.commons.validator.routines.EmailValidator
 import org.apache.commons.validator.routines.InetAddressValidator
 import java.net.URI
 import java.net.URISyntaxException
+import java.time.LocalTime
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
@@ -90,6 +91,15 @@ internal val ipv6FormatValidator: FormatValidator = {inst, schema -> inst.maybeS
         && str.value.toCharArray().all { it in allowedIpv6Chars }) {
         null
     } else {
+        FormatValidationFailure(schema, str)
+    }
+}}
+
+internal val timeFormatValidator: FormatValidator = {inst, schema -> inst.maybeString { str ->
+    try {
+        DateTimeFormatter.ISO_OFFSET_TIME.parse(str.value)
+        null
+    } catch (e: DateTimeParseException) {
         FormatValidationFailure(schema, str)
     }
 }}

@@ -578,6 +578,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
     private val formatValidators: Map<String, FormatValidator> = mapOf(
         "date" to dateFormatValidator,
         "date-time" to dateTimeFormatValidator,
+        "time" to timeFormatValidator,
         "uri" to uriFormatValidator,
         "email" to emailFormatValidator,
         "ipv4" to ipv4FormatValidator,

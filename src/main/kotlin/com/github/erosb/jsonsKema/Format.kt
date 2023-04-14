@@ -2,6 +2,7 @@ package com.github.erosb.jsonsKema
 
 import org.apache.commons.validator.routines.EmailValidator
 import org.apache.commons.validator.routines.InetAddressValidator
+import java.lang.IllegalArgumentException
 import java.net.URI
 import java.net.URISyntaxException
 import java.time.LocalTime
@@ -11,6 +12,7 @@ import java.time.format.DateTimeFormatterBuilder
 import java.time.format.DateTimeParseException
 import java.time.format.ResolverStyle
 import java.time.temporal.ChronoField
+import java.util.UUID
 
 typealias FormatValidator = (instance: IJsonValue, schema: FormatSchema) -> ValidationFailure?
 
@@ -103,6 +105,19 @@ internal val timeFormatValidator: FormatValidator = {inst, schema -> inst.maybeS
         FormatValidationFailure(schema, str)
     }
 }}
+
+internal val uuidFormatValidator: FormatValidator = {inst, schema -> inst.maybeString { str ->
+    if (str.value.length == 36)
+    try {
+        UUID.fromString(str.value)
+        null
+    } catch (e: IllegalArgumentException) {
+        FormatValidationFailure(schema, str)
+    } else {
+        FormatValidationFailure(schema, str)
+    }
+}}
+
 data class FormatSchema(
     val format: String,
     override val location: SourceLocation

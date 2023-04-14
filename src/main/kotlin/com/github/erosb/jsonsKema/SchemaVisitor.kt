@@ -92,6 +92,7 @@ abstract class SchemaVisitor<P> {
     open fun visitDependentRequiredSchema(schema: DependentRequiredSchema): P? = visitChildren(schema)
     open fun visitUnevaluatedItemsSchema(schema: UnevaluatedItemsSchema): P? = visitChildren(schema)
     open fun visitUnevaluatedPropertiesSchema(schema: UnevaluatedPropertiesSchema): P? = visitChildren(schema)
+    open fun visitFormatSchema(schema: FormatSchema): P? = visitChildren(schema)
 
     open fun identity(): P? = null
     open fun accumulate(parent: Schema, previous: P?, current: P?): P? = current ?: previous

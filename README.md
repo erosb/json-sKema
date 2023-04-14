@@ -68,6 +68,69 @@ System.out.println(failure);
 The library implements the JSON Schema draft 2020-12 core and validation specifications, with the following notes:
  * `$dynamicAnchor` and `$dynamicRef` support is partially implemented
 
+### `"format"` support
+
+The library currently has built-in support for the following `"format"` values defined in the specification:
+
+<table>
+    <thead>
+        <tr>
+            <td>"format"</td>
+            <td>Supported?</td>
+            <td>Notes</td>
+        </tr>
+    </thead>
+<tbody>
+    <tr>
+        <td>date</td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>date-time</td>
+        <td>Yes</td>
+        <td>Non-UTC values with leap seconds not supported</td>
+    </tr>
+    <tr>
+        <td>time</td>
+        <td>Yes</td>
+        <td>Leap seconds not supported</td>
+    </tr>
+    <tr>
+        <td>duration</td>
+        <td>Partially</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>email</td>
+        <td>Yes</td>
+        <td>IPV6 domain parts not supported</td>
+    </tr>
+    <tr>
+        <td>uri</td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>ipv4</td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>ipv6</td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>uuid</td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+</tbody>
+</table>
+
+The following formats are NOT supported: hostname, idn-email, idn-hostname, iri, iri-reference, json-pointer, regex, relative-json-pointer, uri-reference, uri-template .
+
 
 ### Support for older JSON Schema drafts
 

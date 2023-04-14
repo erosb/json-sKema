@@ -68,6 +68,32 @@ System.out.println(failure);
 The library implements the JSON Schema draft 2020-12 core and validation specifications, with the following notes:
  * `$dynamicAnchor` and `$dynamicRef` support is partially implemented
 
+### `"format"` support
+
+The library currently has built-in support for the following `"format"` values defined in the specification
+
+<table>
+    <thead>
+        <tr>
+            <td>"format"</td>
+            <td>Supported?</td>
+            <td>Notes</td>
+        </tr>
+    </thead>
+<tbody>
+    <tr style="background-color: green">
+        <td>date</td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+</tbody>
+</table>
+
 
 ### Support for older JSON Schema drafts
 

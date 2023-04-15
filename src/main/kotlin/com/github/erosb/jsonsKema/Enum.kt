@@ -4,8 +4,8 @@ class EnumSchema(val potentialValues: Collection<IJsonValue>, override val locat
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitEnumSchema(this)
 }
 
-internal val enumLoader: KeywordLoader = { _, keywordValue, location ->
-    EnumSchema(keywordValue.requireArray().elements, location)
+internal val enumLoader: KeywordLoader = { ctx ->
+    EnumSchema(ctx.keywordValue.requireArray().elements, ctx.location)
 }
 
 class EnumValidationFailure(

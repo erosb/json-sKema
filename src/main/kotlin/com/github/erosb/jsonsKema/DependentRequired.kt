@@ -4,11 +4,11 @@ data class DependentRequiredSchema(val dependentRequired: Map<String, List<Strin
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitDependentRequiredSchema(this)
 }
 
-internal val dependentRequiredLoader: KeywordLoader = { _, keywordValue, location ->
-    val dependentRequired = keywordValue.requireObject().properties
+internal val dependentRequiredLoader: KeywordLoader = { ctx ->
+    val dependentRequired = ctx.keywordValue.requireObject().properties
         .map { it.key.value to it.value.requireArray().elements.map { it.requireString().value } }
         .toMap()
-    DependentRequiredSchema(dependentRequired, location)
+    DependentRequiredSchema(dependentRequired, ctx.location)
 }
 
 data class DependentRequiredValidationFailure(

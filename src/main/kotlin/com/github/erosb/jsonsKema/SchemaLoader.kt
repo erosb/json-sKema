@@ -97,7 +97,14 @@ internal data class LoadingState(
     }
 }
 
-typealias KeywordLoader = (IJsonObj, IJsonValue, SourceLocation) -> Schema
+internal data class LoadingContext(
+    val containingObject: IJsonObj,
+    val keywordValue: IJsonValue,
+    val location: SourceLocation,
+    val subschemaLoader: (IJsonValue) -> Schema
+);
+
+internal typealias KeywordLoader = (context: LoadingContext) -> Schema
 
 class SchemaLoader(
         val schemaJson: IJsonValue,
@@ -472,7 +479,11 @@ class SchemaLoader(
                 }
                 val loader = keywordLoaders.get(name.value)
                 if (subschema === null && loader != null) {
-                    subschema = loader(schemaJson, value, name.location)
+                    subschema = loader(
+                        LoadingContext(
+                            schemaJson, value, name.location, { loadChild(it) }
+                        )
+                    )
                 }
                 if (subschema != null) subschemas.add(subschema)
             }
@@ -543,7 +554,7 @@ class SchemaLoader(
         return rval.toMap()
     }
 
-    private fun loadChild(schemaJson: IJsonValue): Schema {
+    internal fun loadChild(schemaJson: IJsonValue): Schema {
         return SchemaLoader(schemaJson, config, loadingState).doLoadSchema(schemaJson)
     }
 

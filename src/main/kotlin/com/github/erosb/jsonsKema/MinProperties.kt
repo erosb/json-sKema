@@ -3,8 +3,8 @@ package com.github.erosb.jsonsKema
 data class MinPropertiesSchema(val minProperties: Number, override val location: SourceLocation) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitMinPropertiesSchema(this)
 }
-internal val minPropertiesLoader: KeywordLoader = { containingObject: IJsonObj, keywordValue: IJsonValue, location: SourceLocation ->
-    MinPropertiesSchema(keywordValue.requireNumber().value, location)
+internal val minPropertiesLoader: KeywordLoader = { ctx ->
+    MinPropertiesSchema(ctx.keywordValue.requireNumber().value, ctx.location)
 }
 
 data class MinPropertiesValidationFailure(

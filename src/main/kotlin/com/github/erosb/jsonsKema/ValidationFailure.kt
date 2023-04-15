@@ -266,18 +266,6 @@ data class PatternValidationFailure(
     keyword = Keyword.PATTERN
 )
 
-data class PropertyNamesValidationFailure(
-    override val schema: PropertyNamesSchema,
-    override val instance: IJsonObj,
-    val causesByProperties: Map<IJsonString, ValidationFailure>
-) : ValidationFailure(
-    message = "",
-    schema = schema,
-    instance = instance,
-    keyword = Keyword.PROPERTY_NAMES,
-    causes = causesByProperties.values.toSet()
-)
-
 internal class AggregatingValidationFailure(
     schema: Schema,
     instance: IJsonValue,

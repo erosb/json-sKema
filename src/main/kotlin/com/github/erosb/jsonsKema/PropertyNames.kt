@@ -1,5 +1,13 @@
 package com.github.erosb.jsonsKema
 
+data class PropertyNamesSchema(
+    val propertyNamesSchema: Schema,
+    override val location: SourceLocation
+) : Schema(location) {
+    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitPropertyNamesSchema(this)
+    override fun subschemas(): Collection<Schema> = setOf(propertyNamesSchema)
+}
+
 internal val propertyNamesLoader: KeywordLoader = {ctx ->
         PropertyNamesSchema(ctx.subschemaLoader(ctx.keywordValue), ctx.location)
 }

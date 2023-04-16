@@ -101,7 +101,8 @@ internal data class LoadingContext(
     val containingObject: IJsonObj,
     val keywordValue: IJsonValue,
     val location: SourceLocation,
-    val subschemaLoader: (IJsonValue) -> Schema
+    val subschemaLoader: (IJsonValue) -> Schema,
+    val regexpFactory: RegexpFactory
 );
 
 internal typealias KeywordLoader = (context: LoadingContext) -> Schema
@@ -123,7 +124,16 @@ class SchemaLoader(
             Keyword.ENUM.value to enumLoader,
             Keyword.DEPENDENT_REQUIRED.value to dependentRequiredLoader,
             Keyword.FORMAT.value to formatLoader,
-            Keyword.PROPERTY_NAMES.value to propertyNamesLoader
+            Keyword.PROPERTY_NAMES.value to propertyNamesLoader,
+            Keyword.PATTERN.value to patternLoader,
+            Keyword.DEPENDENT_SCHEMAS.value to dependentSchemasLoader,
+            Keyword.IF.value to ifThenElseLoader,
+            Keyword.CONTAINS.value to containsLoader,
+            Keyword.PREFIX_ITEMS.value to prefixItemsLoader,
+            Keyword.ITEMS.value to itemsSchemaLoader,
+            Keyword.ONE_OF.value to oneOfLoader,
+            Keyword.ANY_OF.value to anyOfLoader,
+            Keyword.ALL_OF.value to allOfLoader
     )
 
     private constructor(
@@ -419,12 +429,14 @@ class SchemaLoader(
         return enterScope(schemaJson) {
             schemaJson.properties.forEach { (name, value) ->
                 var subschema: Schema? = null
+                val ctx = LoadingContext(
+                    schemaJson, value, name.location,
+                    { loadChild(it) },
+                    regexpFactory
+                )
                 when (name.value) {
                     Keyword.MIN_LENGTH.value -> subschema = MinLengthSchema(value.requireInt(), name.location)
                     Keyword.MAX_LENGTH.value -> subschema = MaxLengthSchema(value.requireInt(), name.location)
-                    Keyword.ALL_OF.value -> subschema = createAllOfSubschema(name.location, value.requireArray())
-                    Keyword.ANY_OF.value -> subschema = createAnyOfSubschema(name.location, value.requireArray())
-                    Keyword.ONE_OF.value -> subschema = OneOfSchema(arrayToSubschemaList(value.requireArray()), name.location)
                     Keyword.ADDITIONAL_PROPERTIES.value -> subschema = buildAdditionalPropertiesSchema(schemaJson, value, name)
                     Keyword.PROPERTIES.value -> propertySchemas = loadPropertySchemas(value.requireObject())
                     Keyword.PATTERN_PROPERTIES.value -> patternPropertySchemas = loadPatternPropertySchemas(value.requireObject())
@@ -458,32 +470,13 @@ class SchemaLoader(
                     Keyword.EXCLUSIVE_MINIMUM.value -> subschema = ExclusiveMinimumSchema(value.requireNumber().value, name.location)
                     Keyword.MULTIPLE_OF.value -> subschema = MultipleOfSchema(value.requireNumber().value, name.location)
                     Keyword.UNIQUE_ITEMS.value -> subschema = UniqueItemsSchema(value.requireBoolean().value, name.location)
-                    Keyword.ITEMS.value -> subschema = ItemsSchema(
-                            loadChild(value),
-                            schemaJson[Keyword.PREFIX_ITEMS.value]?.maybeArray { it.length() } ?: 0,
-                            name.location
-                    )
-
-                    Keyword.PREFIX_ITEMS.value -> subschema = PrefixItemsSchema(value.requireArray().elements.map { loadChild(it) }, name.location)
-                    Keyword.CONTAINS.value -> subschema = buildContainsSchema(schemaJson, value, name.location)
-                    Keyword.IF.value -> subschema = buildIfThenElseSchema(schemaJson, name.location)
-                    Keyword.DEPENDENT_SCHEMAS.value -> subschema = DependentSchemasSchema(
-                            value.requireObject().properties.mapKeys { it.key.value }.mapValues { loadChild(it.value) },
-                            name.location
-                    )
-
                     Keyword.UNEVALUATED_ITEMS.value -> unevaluatedItemsSchema = UnevaluatedItemsSchema(loadChild(value), name.location)
                     Keyword.UNEVALUATED_PROPERTIES.value -> unevaluatedPropertiesSchema = UnevaluatedPropertiesSchema(loadChild(value), name.location)
-                    Keyword.PATTERN.value -> subschema = PatternSchema(regexpFactory.createHandler(value.requireString().value), name.location)
 //                else -> TODO("unhandled property ${name.value}")
                 }
                 val loader = keywordLoaders.get(name.value)
                 if (subschema === null && loader != null) {
-                    subschema = loader(
-                        LoadingContext(
-                            schemaJson, value, name.location, { loadChild(it) }
-                        )
-                    )
+                    subschema = loader(ctx)
                 }
                 if (subschema != null) subschemas.add(subschema)
             }
@@ -507,19 +500,15 @@ class SchemaLoader(
         }
     }
 
+    private fun arrayToSubschemaList(arr: IJsonArray<*>): List<Schema>
+        = arrayToSubschemaList(arr, { loadChild(it) })
+
     private fun loadPatternPropertySchemas(obj: IJsonObject<*, *>): Map<Regexp, Schema> {
         val rval = mutableMapOf<Regexp, Schema>()
         obj.properties.forEach { (name, value) ->
             rval[regexpFactory.createHandler(name.value)] = loadChild(value)
         }
         return rval.toMap()
-    }
-
-    private fun buildIfThenElseSchema(schemaJson: IJsonObj, location: SourceLocation): Schema {
-        val ifSchema = loadChild(schemaJson[Keyword.IF.value]!!)
-        val thenSchema = schemaJson[Keyword.THEN.value]?.let { loadChild(it) }
-        val elseSchema = schemaJson[Keyword.ELSE.value]?.let { loadChild(it) }
-        return IfThenElseSchema(ifSchema, thenSchema, elseSchema, location)
     }
 
     private fun buildAdditionalPropertiesSchema(
@@ -536,16 +525,6 @@ class SchemaLoader(
         return AdditionalPropertiesSchema(loadChild(value), keysInProperties, patternPropertyKeys, name.location)
     }
 
-    private fun buildContainsSchema(
-            containingObject: IJsonObject<*, *>,
-            value: IJsonValue,
-            location: SourceLocation
-    ): ContainsSchema {
-        val minContains = containingObject[Keyword.MIN_CONTAINS.value]?.maybeNumber { it.value } ?: 1
-        val maxContains = containingObject[Keyword.MAX_CONTAINS.value]?.maybeNumber { it.value }
-        return ContainsSchema(loadChild(value), minContains, maxContains, location)
-    }
-
     private fun loadPropertySchemas(schemasMap: IJsonObject<*, *>): Map<String, Schema> {
         val rval = mutableMapOf<String, Schema>()
         schemasMap.properties.forEach { (name, value) ->
@@ -557,19 +536,9 @@ class SchemaLoader(
     internal fun loadChild(schemaJson: IJsonValue): Schema {
         return SchemaLoader(schemaJson, config, loadingState).doLoadSchema(schemaJson)
     }
-
-    private fun createAllOfSubschema(location: SourceLocation, subschemas: IJsonArray<*>) = AllOfSchema(
-            arrayToSubschemaList(subschemas),
-            location
-    )
-
-    private fun createAnyOfSubschema(location: SourceLocation, subschemas: IJsonArray<*>) = AnyOfSchema(
-            arrayToSubschemaList(subschemas),
-            location
-    )
-
-    private fun arrayToSubschemaList(subschemas: IJsonArray<*>): List<Schema> =
-            subschemas.elements.stream()
-                    .map { loadChild(it) }
-                    .collect(toList())
 }
+
+internal fun arrayToSubschemaList(subschemas: IJsonArray<*>, subschemaLoader: (IJsonValue) -> Schema): List<Schema> =
+    subschemas.elements.stream()
+        .map { subschemaLoader(it) }
+        .collect(toList())

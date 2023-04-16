@@ -26,30 +26,6 @@ data class CompositeSchema(
     override fun subschemas() = subschemas
 }
 
-data class AllOfSchema(
-    val subschemas: List<Schema>,
-    override val location: SourceLocation
-) : Schema(location) {
-    override fun <P> accept(visitor: SchemaVisitor<P>) = visitor.visitAllOfSchema(this)
-    override fun subschemas(): Collection<Schema> = subschemas
-}
-
-data class AnyOfSchema(
-    val subschemas: List<Schema>,
-    override val location: SourceLocation
-) : Schema(location) {
-    override fun <P> accept(visitor: SchemaVisitor<P>) = visitor.visitAnyOfSchema(this)
-    override fun subschemas(): Collection<Schema> = subschemas
-}
-
-data class OneOfSchema(
-    val subschemas: List<Schema>,
-    override val location: SourceLocation
-) : Schema(location) {
-    override fun <P> accept(visitor: SchemaVisitor<P>) = visitor.visitOneOfSchema(this)
-    override fun subschemas(): Collection<Schema> = subschemas
-}
-
 data class ReferenceSchema(var referredSchema: Schema?, val ref: String, override val location: SourceLocation) :
     Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>) = visitor.visitReferenceSchema(this)
@@ -150,73 +126,4 @@ data class MultipleOfSchema(val denominator: Number, override val location: Sour
 
 data class UniqueItemsSchema(val unique: Boolean, override val location: SourceLocation) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitUniqueItemsSchema(this)
-}
-
-data class PatternSchema(
-    val pattern: Regexp,
-    override val location: SourceLocation
-) : Schema(location) {
-    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitPatternSchema(this)
-}
-
-data class PropertyNamesSchema(
-    val propertyNamesSchema: Schema,
-    override val location: SourceLocation
-) : Schema(location) {
-    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitPropertyNamesSchema(this)
-    override fun subschemas(): Collection<Schema> = setOf(propertyNamesSchema)
-}
-
-data class ItemsSchema(val itemsSchema: Schema, val prefixItemCount: Int, override val location: SourceLocation) : Schema(location) {
-    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitItemsSchema(this)
-    override fun subschemas(): Collection<Schema> = listOf(itemsSchema)
-}
-
-data class PrefixItemsSchema(val prefixSchemas: List<Schema>, override val location: SourceLocation) : Schema(location) {
-    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitPrefixItemsSchema(this)
-    override fun subschemas(): Collection<Schema> = prefixSchemas
-}
-
-data class ContainsSchema(
-    val containedSchema: Schema,
-    val minContains: Number = 1,
-    val maxContains: Number?,
-    override val location: SourceLocation
-) : Schema(location) {
-    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitContainsSchema(this)
-    override fun subschemas(): Collection<Schema> = listOf(containedSchema)
-}
-
-data class IfThenElseSchema(
-    val ifSchema: Schema,
-    val thenSchema: Schema?,
-    val elseSchema: Schema?,
-    override val location: SourceLocation
-) : Schema(location) {
-    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitIfThenElseSchema(this)
-    override fun subschemas() = listOfNotNull(ifSchema, thenSchema, elseSchema)
-}
-
-data class DependentSchemasSchema(
-    val dependentSchemas: Map<String, Schema>,
-    override val location: SourceLocation
-) : Schema(location) {
-    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitDependentSchemas(this)
-}
-
-data class UnevaluatedItemsSchema(
-    val unevaluatedItemsSchema: Schema,
-    override val location: SourceLocation
-) : Schema(location) {
-    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitUnevaluatedItemsSchema(this)
-    override fun subschemas() = listOf(unevaluatedItemsSchema)
-}
-
-data class UnevaluatedPropertiesSchema(
-    val unevaluatedPropertiesSchema: Schema,
-    override val location: SourceLocation
-) : Schema(location) {
-    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitUnevaluatedPropertiesSchema(this)
-
-    override fun subschemas() = listOf(unevaluatedPropertiesSchema)
 }

@@ -126,12 +126,6 @@ internal val durationFormatValidator: FormatValidator = {inst, schema -> inst.ma
         return@maybeString FormatValidationFailure(schema, str)
     }
     return@maybeString null
-//    try {
-//        Duration.parse(str.value)
-//        null
-//    } catch (e: DateTimeParseException) {
-//        FormatValidationFailure(schema, str)
-//    }
 }}
 
 data class FormatSchema(
@@ -141,8 +135,8 @@ data class FormatSchema(
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitFormatSchema(this)
 }
 
-internal val formatLoader: KeywordLoader = { _, keywordValue, location ->
-    FormatSchema(keywordValue.requireString().value, location)
+internal val formatLoader: KeywordLoader = { ctx ->
+    FormatSchema(ctx.keywordValue.requireString().value, ctx.location)
 }
 data class FormatValidationFailure(
     override val schema: FormatSchema,

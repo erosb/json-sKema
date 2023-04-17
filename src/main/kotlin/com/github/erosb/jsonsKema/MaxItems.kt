@@ -3,8 +3,8 @@ package com.github.erosb.jsonsKema
 data class MaxItemsSchema(val maxItems: Number, override val location: SourceLocation) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitMaxItemsSchema(this)
 }
-internal val maxItemsLoader: KeywordLoader = { containingObject: IJsonObj, keywordValue: IJsonValue, location: SourceLocation ->
-    MaxItemsSchema(keywordValue.requireNumber().value, location)
+internal val maxItemsLoader: KeywordLoader = { ctx ->
+    MaxItemsSchema(ctx.keywordValue.requireNumber().value, ctx.location)
 }
 
 data class MaxItemsValidationFailure(

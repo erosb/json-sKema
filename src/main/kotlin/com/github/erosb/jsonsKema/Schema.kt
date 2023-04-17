@@ -56,7 +56,3 @@ data class DynamicRefSchema(var referredSchema: Schema?, val dynamicRef: String,
 }
 
 data class DynamicReference(val ref: String, var fallbackReferredSchema: ReferenceSchema? = null)
-
-data class TrueSchema(override val location: SourceLocation) : Schema(location) {
-    override fun <P> accept(visitor: SchemaVisitor<P>) = visitor.visitTrueSchema(this)
-}

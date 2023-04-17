@@ -103,7 +103,9 @@ internal data class LoadingContext(
     val location: SourceLocation,
     val subschemaLoader: (IJsonValue) -> Schema,
     val regexpFactory: RegexpFactory
-);
+) {
+    fun loadSubschema() = subschemaLoader(keywordValue)
+}
 
 internal typealias KeywordLoader = (context: LoadingContext) -> Schema
 
@@ -117,10 +119,21 @@ class SchemaLoader(
     private val regexpFactory: RegexpFactory = JavaUtilRegexpFactory()
 
     private val keywordLoaders: Map<String, KeywordLoader> = mapOf(
+            Keyword.ADDITIONAL_PROPERTIES.value to additionalPropertiesLoader,
+            Keyword.TYPE.value to typeLoader,
+            Keyword.REQUIRED.value to requiredLoader,
+            Keyword.NOT.value to notSchemaLoader,
+            Keyword.MIN_LENGTH.value to minLengthLoader,
+            Keyword.MAX_LENGTH.value to maxLengthLoader,
             Keyword.MIN_ITEMS.value to minItemsLoader,
             Keyword.MAX_ITEMS.value to maxItemsLoader,
             Keyword.MIN_PROPERTIES.value to minPropertiesLoader,
             Keyword.MAX_PROPERTIES.value to maxPropertiesLoader,
+            Keyword.MINIMUM.value to minimumLoader,
+            Keyword.MAXIMUM.value to maximumLoader,
+            Keyword.EXCLUSIVE_MINIMUM.value to exclusiveMinimumLoader,
+            Keyword.EXCLUSIVE_MAXIMUM.value to exclusiveMaximumLoader,
+            Keyword.MULTIPLE_OF.value to multipleOfLoader,
             Keyword.ENUM.value to enumLoader,
             Keyword.DEPENDENT_REQUIRED.value to dependentRequiredLoader,
             Keyword.FORMAT.value to formatLoader,
@@ -133,7 +146,9 @@ class SchemaLoader(
             Keyword.ITEMS.value to itemsSchemaLoader,
             Keyword.ONE_OF.value to oneOfLoader,
             Keyword.ANY_OF.value to anyOfLoader,
-            Keyword.ALL_OF.value to allOfLoader
+            Keyword.ALL_OF.value to allOfLoader,
+            Keyword.UNIQUE_ITEMS.value to uniqueItemsLoader,
+            Keyword.CONST.value to constLoader
     )
 
     private constructor(
@@ -421,7 +436,6 @@ class SchemaLoader(
         var default: IJsonValue? = null
         var dynamicRef: DynamicReference? = null
         var dynamicAnchor: URI? = null
-        // adjustBaseURI(schemaJson)
         var propertySchemas: Map<String, Schema> = emptyMap()
         var patternPropertySchemas: Map<Regexp, Schema> = emptyMap()
         var unevaluatedItemsSchema: Schema? = null
@@ -435,9 +449,6 @@ class SchemaLoader(
                     regexpFactory
                 )
                 when (name.value) {
-                    Keyword.MIN_LENGTH.value -> subschema = MinLengthSchema(value.requireInt(), name.location)
-                    Keyword.MAX_LENGTH.value -> subschema = MaxLengthSchema(value.requireInt(), name.location)
-                    Keyword.ADDITIONAL_PROPERTIES.value -> subschema = buildAdditionalPropertiesSchema(schemaJson, value, name)
                     Keyword.PROPERTIES.value -> propertySchemas = loadPropertySchemas(value.requireObject())
                     Keyword.PATTERN_PROPERTIES.value -> patternPropertySchemas = loadPatternPropertySchemas(value.requireObject())
                     Keyword.REF.value -> subschema = createReferenceSchema(name.location, value.requireString().value)
@@ -452,29 +463,10 @@ class SchemaLoader(
                     Keyword.WRITE_ONLY.value -> writeOnly = value.requireBoolean()
                     Keyword.DEPRECATED.value -> deprecated = value.requireBoolean()
                     Keyword.DEFAULT.value -> default = value
-                    Keyword.CONST.value -> subschema = ConstSchema(value, name.location)
-                    Keyword.TYPE.value -> {
-                        subschema = value.maybeString { TypeSchema(it, name.location) }
-                                ?: value.maybeArray { MultiTypeSchema(it, name.location) }
-                    }
-
-                    Keyword.NOT.value -> subschema = NotSchema(loadChild(value), name.location)
-                    Keyword.REQUIRED.value -> subschema = RequiredSchema(
-                            value.requireArray().elements.map { it.requireString().value },
-                            name.location
-                    )
-
-                    Keyword.MAXIMUM.value -> subschema = MaximumSchema(value.requireNumber().value, name.location)
-                    Keyword.MINIMUM.value -> subschema = MinimumSchema(value.requireNumber().value, name.location)
-                    Keyword.EXCLUSIVE_MAXIMUM.value -> subschema = ExclusiveMaximumSchema(value.requireNumber().value, name.location)
-                    Keyword.EXCLUSIVE_MINIMUM.value -> subschema = ExclusiveMinimumSchema(value.requireNumber().value, name.location)
-                    Keyword.MULTIPLE_OF.value -> subschema = MultipleOfSchema(value.requireNumber().value, name.location)
-                    Keyword.UNIQUE_ITEMS.value -> subschema = UniqueItemsSchema(value.requireBoolean().value, name.location)
                     Keyword.UNEVALUATED_ITEMS.value -> unevaluatedItemsSchema = UnevaluatedItemsSchema(loadChild(value), name.location)
                     Keyword.UNEVALUATED_PROPERTIES.value -> unevaluatedPropertiesSchema = UnevaluatedPropertiesSchema(loadChild(value), name.location)
-//                else -> TODO("unhandled property ${name.value}")
                 }
-                val loader = keywordLoaders.get(name.value)
+                val loader = keywordLoaders[name.value]
                 if (subschema === null && loader != null) {
                     subschema = loader(ctx)
                 }
@@ -483,7 +475,6 @@ class SchemaLoader(
             return@enterScope CompositeSchema(
                     subschemas = subschemas,
                     location = schemaJson.location,
-//            id = id,
                     title = title,
                     description = description,
                     readOnly = readOnly,
@@ -500,29 +491,12 @@ class SchemaLoader(
         }
     }
 
-    private fun arrayToSubschemaList(arr: IJsonArray<*>): List<Schema>
-        = arrayToSubschemaList(arr, { loadChild(it) })
-
     private fun loadPatternPropertySchemas(obj: IJsonObject<*, *>): Map<Regexp, Schema> {
         val rval = mutableMapOf<Regexp, Schema>()
         obj.properties.forEach { (name, value) ->
             rval[regexpFactory.createHandler(name.value)] = loadChild(value)
         }
         return rval.toMap()
-    }
-
-    private fun buildAdditionalPropertiesSchema(
-            containingObject: IJsonObject<*, *>,
-            value: IJsonValue,
-            name: IJsonString
-    ): AdditionalPropertiesSchema {
-        val keysInProperties = containingObject["properties"]?.requireObject()
-                ?.properties?.keys?.map { it.value } ?: listOf()
-        val patternPropertyKeys = containingObject["patternProperties"]
-                ?.requireObject()?.properties?.keys
-                ?.map { regexpFactory.createHandler(it.value) }
-                ?: emptyList()
-        return AdditionalPropertiesSchema(loadChild(value), keysInProperties, patternPropertyKeys, name.location)
     }
 
     private fun loadPropertySchemas(schemasMap: IJsonObject<*, *>): Map<String, Schema> {

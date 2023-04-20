@@ -2,6 +2,8 @@
 
 _json-Skema is a [Json Schema](https://json-schema.org/) validator library for the Java Virtual Machine. It implements the [draft 2020-12](https://json-schema.org/draft/2020-12/json-schema-validation.html) specification._
 
+Are you new to JSON Schema? Get started with [Understanding JSON Schema](https://json-schema.org/understanding-json-schema/)!
+
 ## Installation
 
 ### Maven
@@ -45,7 +47,7 @@ JsonValue  schemaJson = new JsonParser("""
 // map the raw json to a reusable Schema instance
 Schema schema = new SchemaLoader(schemaJson).load();
 
-// create a reusable validator instance for each validation (one-time use object) 
+// create a validator instance for each validation (one-time use object) 
 Validator validator = Validator.forSchema(schema);
 
 // parse the input instance to validate against the schema

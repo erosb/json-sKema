@@ -307,7 +307,7 @@ class JsonParser {
         if (!reachedClosingQuote) {
             throw JsonParseException("Unexpected EOF", sourceLocation())
         }
-        val literal = sb.toString() // walker.readUntil('"').intern()
+        val literal = sb.toString().intern() // walker.readUntil('"').intern()
         if (putReadLiteralToNestingPath) {
             nestingPath.add(literal)
             loc = SourceLocation(loc.lineNumber, loc.position, JsonPointer(nestingPath.toList()))

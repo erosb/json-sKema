@@ -127,7 +127,7 @@ class TestSuiteTest {
     companion object {
         @JvmStatic
         fun params(): Stream<Arguments> = loadParamsFromPackage(
-            "com.github.erosb.jsonsKema.tests.draft2020-12",
+            "test-suite.tests.draft2020-12",
 //            , "unevaluatedProperties.json"
 //            "dynamicRef.json",
 //            "anchor.json",

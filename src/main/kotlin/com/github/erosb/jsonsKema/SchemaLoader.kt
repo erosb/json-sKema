@@ -4,17 +4,20 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.URI
 import java.net.URISyntaxException
+import java.net.URL
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.stream.Collectors.toList
 
-class SchemaLoaderConfig(val schemaClient: SchemaClient)
+data class SchemaLoaderConfig(val schemaClient: SchemaClient, val initialBaseURI: String = DEFAULT_BASE_URI)
 
 class SchemaLoadingException(msg: String, cause: Throwable) : RuntimeException(msg, cause)
 
 internal fun createDefaultConfig() = SchemaLoaderConfig(
-        schemaClient = MemoizingSchemaClient(DefaultSchemaClient())
+        schemaClient = MemoizingSchemaClient(
+            ClassPathAwareSchemaClient(DefaultSchemaClient())
+        )
 )
 
 /**
@@ -50,18 +53,10 @@ internal data class Knot(
 
 internal data class LoadingState(
         val documentRoot: IJsonValue,
-
         private val anchors: MutableMap<String, Knot> = mutableMapOf(),
-        private val dynamicAnchors: MutableMap<String, Knot> = mutableMapOf()
+        private val dynamicAnchors: MutableMap<String, Knot> = mutableMapOf(),
+        var baseURI: URI
 ) {
-
-    var _baseURI: URI = URI(DEFAULT_BASE_URI)
-    var baseURI: URI
-        get() = this._baseURI
-        set(value) {
-            _baseURI = value
-//            println("baseURI := $value")
-        }
 
     fun registerRawSchemaByAnchor(id: String, json: IJsonValue): Knot {
         val anchor = getAnchorByURI(id)
@@ -113,6 +108,30 @@ class SchemaLoader(
         val schemaJson: IJsonValue,
         val config: SchemaLoaderConfig = createDefaultConfig()
 ) {
+
+    companion object {
+
+        fun forURL(url: String): SchemaLoader {
+            val schemaJson = createDefaultConfig().schemaClient.getParsed(URI(url))
+            return SchemaLoader(
+                schemaJson = schemaJson,
+                config = createDefaultConfig().copy(
+                    initialBaseURI = url.toString()
+                )
+            )
+        }
+
+        fun forURL(url: URL): SchemaLoader {
+            val schemaJson = createDefaultConfig().schemaClient.getParsed(url.toURI())
+            return SchemaLoader(
+                schemaJson = schemaJson,
+                config = createDefaultConfig().copy(
+                    initialBaseURI = url.toString()
+                )
+            )
+        }
+
+    }
 
     constructor(schemaJson: IJsonValue) : this(schemaJson, createDefaultConfig()) {}
 
@@ -169,7 +188,7 @@ class SchemaLoader(
         }
     }
 
-    private var loadingState: LoadingState = LoadingState(schemaJson)
+    private var loadingState: LoadingState = LoadingState(schemaJson, baseURI = URI(config.initialBaseURI))
 
     operator fun invoke(): Schema = loadRootSchema()
     fun load(): Schema = loadRootSchema()
@@ -321,13 +340,7 @@ class SchemaLoader(
         if (byURI !== null && byURI.json !== null) {
             continingRoot = byURI.json!!
         } else {
-            val reader = BufferedReader(InputStreamReader(config.schemaClient.get(uri.toBeQueried)))
-            val string = reader.readText()
-            try {
-                continingRoot = JsonParser(string, uri.toBeQueried)()
-            } catch (ex: JsonParseException) {
-                throw SchemaLoadingException("failed to parse json content returned from ${uri.toBeQueried}", ex)
-            }
+            continingRoot = config.schemaClient.getParsed(uri.toBeQueried)
             loadingState.registerRawSchemaByAnchor(uri.toBeQueried.toString(), continingRoot)
 
             runWithChangedBaseURI(URI(ref)) {

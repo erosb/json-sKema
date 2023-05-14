@@ -1,0 +1,8 @@
+{
+  "$defs": {
+    "Subschema1": {
+      "$id": "#Subschema1",
+      "type": "number"
+    }
+  }
+}

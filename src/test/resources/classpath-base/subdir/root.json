@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "properties": {
+    "prop1" : {
+      "$ref": "subschema1.json#/$defs/Subschema1"
+    },
+    "prop2": {
+      "$ref": "subschema1.json#Subschema1"
+    }
+  }
+}

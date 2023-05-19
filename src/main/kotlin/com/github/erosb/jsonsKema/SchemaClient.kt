@@ -56,7 +56,7 @@ internal class ClassPathAwareSchemaClient(private val fallbackClient: SchemaClie
         }
     }
 
-    private fun loadFromClasspath(str: String): InputStream {
+    private fun loadFromClasspath(str: String): InputStream? {
         return javaClass.getResourceAsStream(str)
     }
 

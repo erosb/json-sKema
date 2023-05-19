@@ -111,22 +111,13 @@ class SchemaLoader(
 
     companion object {
 
+        @JvmStatic
         fun forURL(url: String): SchemaLoader {
             val schemaJson = createDefaultConfig().schemaClient.getParsed(URI(url))
             return SchemaLoader(
                 schemaJson = schemaJson,
                 config = createDefaultConfig().copy(
-                    initialBaseURI = url.toString()
-                )
-            )
-        }
-
-        fun forURL(url: URL): SchemaLoader {
-            val schemaJson = createDefaultConfig().schemaClient.getParsed(url.toURI())
-            return SchemaLoader(
-                schemaJson = schemaJson,
-                config = createDefaultConfig().copy(
-                    initialBaseURI = url.toString()
+                    initialBaseURI = url
                 )
             )
         }

@@ -28,6 +28,8 @@ dependencies {
 
 ## Usage
 
+### Hello-world
+
 ```java
 // parse the schema JSON as string
 JsonValue  schemaJson = new JsonParser("""
@@ -63,6 +65,17 @@ ValidationFailure failure = validator.validate(instance);
 
 // print the validation failures (if any)
 System.out.println(failure);
+```
+
+### Loading a schema file from URL
+
+```java
+// HTTP protocol is also supported
+Schema schema = SchemaLoader.forURL("classpath:///path/to/your/schema.json").load();
+
+// create a validator instance for each validation (one-time use object) 
+Validator validator = Validator.forSchema(schema);
+// ...
 ```
 
 ## Compatibility notes

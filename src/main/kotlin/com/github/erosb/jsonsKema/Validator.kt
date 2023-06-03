@@ -166,7 +166,7 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
         }
     }
 
-    public lateinit var instance: IJsonValue
+    lateinit var instance: IJsonValue
 
     override fun validate(instance: IJsonValue): ValidationFailure? {
         this.instance = instance

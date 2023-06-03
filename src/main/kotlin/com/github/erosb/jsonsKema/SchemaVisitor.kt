@@ -1,39 +1,58 @@
 package com.github.erosb.jsonsKema
 
+import java.lang.IllegalStateException
 import java.lang.RuntimeException
+import java.util.Objects
 
 abstract class SchemaVisitor<P> {
 
     private val anchors: MutableMap<String, CompositeSchema> = mutableMapOf()
 
+    private val dynamicScope = mutableListOf<CompositeSchema>()
+
+    private fun findSubschemaByDynamicAnchor(scope: CompositeSchema, lookupValue: String): Schema? {
+        if (scope.dynamicAnchor == lookupValue) {
+            return scope
+        }
+        return scope.subschemas().stream()
+            .filter { it is CompositeSchema}
+            .map { it as CompositeSchema }
+            .map  { scope -> findSubschemaByDynamicAnchor(scope, lookupValue) }
+            .filter (Objects::nonNull)
+            .findAny()
+            .orElse(null)
+    }
+
     internal fun internallyVisitCompositeSchema(schema: CompositeSchema): P? {
-        val wasDynamicAnchorChange: Boolean = schema.dynamicAnchor?.let {
-            if (!anchors.containsKey(it)) {
-                anchors[it] = schema
-                true
-            }
-            false
-        } ?: false
-        var product: P?
-        if (schema.dynamicRef != null) {
-            var referred: Schema? = anchors[schema.dynamicRef.ref]
-            if (referred === null) {
-                if (schema.dynamicRef.fallbackReferredSchema == null) {
-                    TODO("not implemented (no matching dynamicAnchor for dynamicRef ${schema.dynamicRef}")
-                } else {
-                    referred = schema.dynamicRef.fallbackReferredSchema!!.referredSchema
+        dynamicScope.add(schema)
+        try {
+            val dynamicRef = schema.dynamicRef
+            if (dynamicRef != null) {
+                val anchorName = dynamicRef.ref.substring(dynamicRef.ref.indexOf("#") + 1)
+                var referred = dynamicScope.stream()
+                    .map  { scope -> findSubschemaByDynamicAnchor(scope, anchorName) }
+                    .filter (Objects::nonNull)
+                    .findAny()
+                    .orElse(null)
+                if (referred === null) {
+                    if (dynamicRef.fallbackReferredSchema == null) {
+                        TODO("not implemented (no matching dynamicAnchor for dynamicRef $dynamicRef")
+                    } else {
+                        referred = dynamicRef.fallbackReferredSchema!!.referredSchema
+                    }
                 }
+                val referredProduct = referred?.accept(this)
+                val selfProduct = visitCompositeSchema(schema)
+                return accumulate(schema, referredProduct, selfProduct)
+            } else {
+                return visitCompositeSchema(schema)
             }
-            val referredProduct = referred?.accept(this)
-            val selfProduct = visitCompositeSchema(schema)
-            product = accumulate(schema, referredProduct, selfProduct)
-        } else {
-            product = visitCompositeSchema(schema)
+        } finally {
+            val popped = dynamicScope.removeLast()
+            if (popped !== schema) {
+                throw IllegalStateException()
+            }
         }
-        if (wasDynamicAnchorChange) {
-            anchors.remove(schema.dynamicAnchor)
-        }
-        return product
     }
 
     open fun visitCompositeSchema(schema: CompositeSchema): P? {

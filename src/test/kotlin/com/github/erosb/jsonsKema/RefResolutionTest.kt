@@ -474,4 +474,23 @@ class RefResolutionTest {
         val actual = root.accept(TraversingSchemaVisitor<String>("$ref", "title"))!!
         assertThat(actual).isEqualTo("my title")
     }
+
+    @Test
+    fun `ref definitions`() {
+        val root: CompositeSchema = createSchemaLoaderForString(
+            """
+            {
+                "$ref": "#/$defs/ddd",
+                "$defs": {
+                   "ddd": {
+                        "title": "my title",
+                        "$anchor": "myAnchor"
+                   }
+                }
+            }
+            """.trimIndent()
+        )() as CompositeSchema
+        val actual = root.accept(TraversingSchemaVisitor<String>("$ref", "title"))!!
+        assertThat(actual).isEqualTo("my title")
+    }
 }

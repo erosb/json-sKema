@@ -165,9 +165,19 @@ git submodule init
 git submodule update
 ```
 
-Building the project:
+### Building the project:
 
 `mvn clean package`
 
-Building the project without running the official test suite:
+### Building the project and running the official test suite:
+
+Test annotated with `@Tag("acceptance")` require the test suite to be pulled using:
+
+`git submodule update --init --recursive`
+
+Then run the tests:
+
+`mvn clean verify`
+
+### Building the project without running the official test suite:
 `mvn clean package -Dgroups='!acceptance'`

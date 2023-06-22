@@ -493,4 +493,31 @@ class RefResolutionTest {
         val actual = root.accept(TraversingSchemaVisitor<String>("$ref", "title"))!!
         assertThat(actual).isEqualTo("my title")
     }
+
+    @Test
+    fun `ref definitions child self ref`() {
+        val actual = createSchemaLoaderForString(
+            """
+                {
+                    "$ref": "http://subschema.json#/$defs/ddd"
+                }
+            """,
+            mapOf(
+                Pair(
+                    "http://subschema.json",
+                    """
+                                    {
+                                        "$ref": "#/$defs/ddd",
+                                        "$defs": {
+                                           "ddd": {
+                                                "title": "my title",
+                                                "$anchor": "myAnchor"
+                                           }
+                                        }
+                                    }
+                                """
+                )
+            )
+        )() as CompositeSchema
+    }
 }

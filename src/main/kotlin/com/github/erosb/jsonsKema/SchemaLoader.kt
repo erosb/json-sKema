@@ -368,6 +368,7 @@ class SchemaLoader(
                     return@enterScope Pair(root, loadingState.baseURI)
                 }
                 val segment = unescape(segments.poll())
+                println("lookupNext in $root $segment")
                 when (root) {
                     is IJsonObject<*, *> -> {
                         val child = root[segment]

@@ -349,7 +349,7 @@ class SchemaLoader(
         if ("#" != segments.poll()) {
             throw Error("invalid json pointer: $pointer")
         }
-        fun unescape(s: String) = URLDecoder.decode(s, StandardCharsets.UTF_8)
+        fun unescape(s: String) = URLDecoder.decode(s, StandardCharsets.UTF_8.name())
                 .replace("~1", "/")
                 .replace("~0", "~")
 

@@ -1,14 +1,17 @@
 package com.github.erosb.jsonsKema
 
-import java.lang.IllegalArgumentException
 import java.math.BigDecimal
 import java.net.URI
 import java.util.stream.Collectors.joining
 
 data class JsonParseException(override val message: String, val location: TextLocation) : RuntimeException()
 
-data class JsonTypingException(val expectedType: String, val actualType: String, val location: SourceLocation) : RuntimeException() {
-    override fun toString() = "${location.pointer}: expected $expectedType, found $actualType (line ${location.lineNumber}, position ${location.position})"
+data class JsonTypingException(
+    val expectedType: String,
+    val actualType: String,
+    val location: SourceLocation
+) : RuntimeException("${location.pointer}: expected $expectedType, found $actualType (line ${location.lineNumber}, position ${location.position})") {
+    override fun toString() = message ?: ""
 }
 
 data class JsonPointer(val segments: List<String>) {
@@ -103,7 +106,9 @@ object UnknownSource : SourceLocation(0, 0, JsonPointer(emptyList())) {
 
 interface IJsonValue {
     val location: SourceLocation
-    private fun unexpectedType(expected: String): JsonTypingException = JsonTypingException(expected, jsonTypeAsString(), location)
+    private fun unexpectedType(expected: String): JsonTypingException =
+        JsonTypingException(expected, jsonTypeAsString(), location)
+
     fun requireBoolean(): IJsonBoolean = throw unexpectedType("boolean")
     fun requireString(): IJsonString = throw unexpectedType("string")
     fun requireNumber(): IJsonNumber = throw unexpectedType("number")
@@ -233,7 +238,8 @@ data class JsonNumber(
     }
 }
 
-data class JsonString(override val value: String, override val location: SourceLocation = UnknownSource) : JsonValue(location), IJsonString {
+data class JsonString(override val value: String, override val location: SourceLocation = UnknownSource) :
+    JsonValue(location), IJsonString {
 
     override fun equals(other: Any?) = super.equals(other)
 
@@ -248,6 +254,7 @@ data class JsonArray(
     override fun markEvaluated(idx: Int): IJsonValue = get(idx)
     override fun markAllEvaluated() {
     }
+
     override fun equals(other: Any?) = super.equals(other)
 }
 

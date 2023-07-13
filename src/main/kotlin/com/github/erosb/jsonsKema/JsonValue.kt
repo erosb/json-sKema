@@ -10,9 +10,8 @@ data class JsonTypingException(
     val expectedType: String,
     val actualType: String,
     val location: SourceLocation
-) : RuntimeException() {
-    override fun toString() =
-        "${location.pointer}: expected $expectedType, found $actualType (line ${location.lineNumber}, position ${location.position})"
+) : RuntimeException("${location.pointer}: expected $expectedType, found $actualType (line ${location.lineNumber}, position ${location.position})") {
+    override fun toString() = message ?: ""
 }
 
 data class JsonPointer(val segments: List<String>) {

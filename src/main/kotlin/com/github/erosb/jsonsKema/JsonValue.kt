@@ -1,6 +1,5 @@
 package com.github.erosb.jsonsKema
 
-import java.lang.IllegalArgumentException
 import java.math.BigDecimal
 import java.net.URI
 import java.util.stream.Collectors.joining

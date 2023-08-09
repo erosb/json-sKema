@@ -456,7 +456,8 @@ class RefResolutionTest {
         assertThat(actual).isEqualTo("my title")
     }
 
-    @Test @Disabled
+    @Test
+    @Disabled
     fun `$dynamicAnchor can be referred by $ref`() {
         val root = createSchemaLoaderForString(
             """
@@ -515,6 +516,36 @@ class RefResolutionTest {
                                            }
                                         }
                                     }
+                                """
+                )
+            )
+        )() as CompositeSchema
+    }
+
+    @Test
+    fun `maybe simpler reproducer`() {
+        val actual = createSchemaLoaderForString(
+            """
+                {
+                    "$ref": "http://subschema.json#/$defs/A"
+                }
+            """,
+            mapOf(
+                Pair(
+                    "http://subschema.json",
+                    """
+                    {
+                        "$defs": {
+                           "A": {
+                                "title": "A",
+                                "$ref": "#/$defs/B"
+                           },
+                           "B": {
+                                "title": "B",
+                                "type": "integer"
+                           }
+                        }
+                    }
                                 """
                 )
             )

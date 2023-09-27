@@ -444,7 +444,6 @@ class SchemaLoader(
                     { loadChild(it) },
                     regexpFactory
                 )
-                var processed = true
                 when (name.value) {
                     Keyword.PROPERTIES.value -> propertySchemas = loadPropertySchemas(value.requireObject())
                     Keyword.PATTERN_PROPERTIES.value -> patternPropertySchemas = loadPatternPropertySchemas(value.requireObject())
@@ -459,14 +458,13 @@ class SchemaLoader(
                     Keyword.DEFAULT.value -> default = value
                     Keyword.UNEVALUATED_ITEMS.value -> unevaluatedItemsSchema = UnevaluatedItemsSchema(loadChild(value), name.location)
                     Keyword.UNEVALUATED_PROPERTIES.value -> unevaluatedPropertiesSchema = UnevaluatedPropertiesSchema(loadChild(value), name.location)
-                    else -> processed = false
                 }
                 val loader = keywordLoaders[name.value]
                 if (subschema === null && loader != null) {
                     subschema = loader(ctx)
                 }
                 if (subschema != null) subschemas.add(subschema)
-                if (!processed && loader == null) {
+                if (!isKnownKeyword(name.value)) {
                     unprocessedProperties[name] = value
                 }
             }

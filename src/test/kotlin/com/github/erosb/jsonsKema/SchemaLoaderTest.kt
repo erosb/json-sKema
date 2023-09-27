@@ -91,12 +91,19 @@ class SchemaLoaderTest {
                 "readOnly": true,
                 "deprecated": false,
                 "default": null,
+                "if": false,
+                "then": true,
                 "dummy": "hi"
             }
             """.trimIndent()
         )()
         val expected = CompositeSchema(
-            subschemas = emptySet(),
+            subschemas = setOf(
+                IfThenElseSchema(
+                    FalseSchema(SourceLocation(8, 11, pointer("#/if"))),
+                    TrueSchema(SourceLocation(9, 13, pointer("#/then"))),
+                    null,
+                    SourceLocation(8, 5, pointer("#/if")))),
             location = UnknownSource,
             title = JsonString("My title"),
             description = JsonString("My description"),

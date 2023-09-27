@@ -90,7 +90,8 @@ class SchemaLoaderTest {
                 "writeOnly": false,
                 "readOnly": true,
                 "deprecated": false,
-                "default": null
+                "default": null,
+                "dummy": "hi"
             }
             """.trimIndent()
         )()
@@ -102,7 +103,8 @@ class SchemaLoaderTest {
             readOnly = JsonBoolean(true),
             writeOnly = JsonBoolean(false),
             deprecated = JsonBoolean(false),
-            default = JsonNull()
+            default = JsonNull(),
+            unprocessedProperties = mutableMapOf(JsonString("dummy") to JsonString("hi"))
         )
         assertThat(actual).usingRecursiveComparison()
             .ignoringFieldsOfTypes(SourceLocation::class.java)

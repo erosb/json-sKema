@@ -113,7 +113,8 @@ abstract class SchemaVisitor<P> {
     open fun visitUnevaluatedPropertiesSchema(schema: UnevaluatedPropertiesSchema): P? = visitChildren(schema)
     open fun visitFormatSchema(schema: FormatSchema): P? = visitChildren(schema)
 
-    open fun identity(parent: Schema): P? = null
+    open fun identity(): P? = null
+    open fun identity(parent: Schema): P? = identity()
     open fun accumulate(parent: Schema, previous: P?, current: P?): P? = current ?: previous
     open fun visitChildren(parent: Schema): P? {
         var product: P? = identity(parent)

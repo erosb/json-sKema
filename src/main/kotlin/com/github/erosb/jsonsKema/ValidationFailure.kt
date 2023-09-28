@@ -67,7 +67,7 @@ internal class AggregatingValidationFailure(
             TODO("something went wrong: $instance vs ${this.instance}")
         }
         if (parent != schema) {
-            return AggregatingValidationFailure(parent, instance, setOf(this, other))
+            return super.join(parent, instance, other);
         }
         _causes.add(other)
         return this

@@ -90,19 +90,28 @@ class SchemaLoaderTest {
                 "writeOnly": false,
                 "readOnly": true,
                 "deprecated": false,
-                "default": null
+                "default": null,
+                "if": false,
+                "then": true,
+                "dummy": "hi"
             }
             """.trimIndent()
         )()
         val expected = CompositeSchema(
-            subschemas = emptySet(),
+            subschemas = setOf(
+                IfThenElseSchema(
+                    FalseSchema(SourceLocation(8, 11, pointer("#/if"))),
+                    TrueSchema(SourceLocation(9, 13, pointer("#/then"))),
+                    null,
+                    SourceLocation(8, 5, pointer("#/if")))),
             location = UnknownSource,
             title = JsonString("My title"),
             description = JsonString("My description"),
             readOnly = JsonBoolean(true),
             writeOnly = JsonBoolean(false),
             deprecated = JsonBoolean(false),
-            default = JsonNull()
+            default = JsonNull(),
+            unprocessedProperties = mutableMapOf(JsonString("dummy") to JsonString("hi"))
         )
         assertThat(actual).usingRecursiveComparison()
             .ignoringFieldsOfTypes(SourceLocation::class.java)

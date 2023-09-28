@@ -77,7 +77,9 @@ internal data class LoadingState(
             println("create anchor $uri")
             println()
         }
-        return anchors.getOrPut(normalizeUri(uri)) { Knot(lexicalContextBaseURI = URI(uri)) }
+        return anchors.getOrPut(normalizeUri(uri)) { Knot(
+            lexicalContextBaseURI = URI(uri)
+        ) }
     }
 
     fun anchorByURI(ref: String): Knot? = anchors[normalizeUri(ref)]

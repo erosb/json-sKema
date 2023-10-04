@@ -1,10 +1,7 @@
 package com.github.erosb.jsonsKema
 
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.net.URI
 import java.net.URISyntaxException
-import java.net.URL
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -30,7 +27,8 @@ internal data class Knot(
         var lexicalContextBaseURI: URI? = null,
         var schema: Schema? = null,
         var underLoading: Boolean = false,
-        val referenceSchemas: MutableList<ReferenceSchema> = mutableListOf()
+        val referenceSchemas: MutableList<ReferenceSchema> = mutableListOf(),
+        val dynamic: Boolean = false
 ) {
     fun createReference(location: SourceLocation, refText: String): ReferenceSchema {
         val rval = ReferenceSchema(schema, refText, location)
@@ -54,7 +52,6 @@ internal data class Knot(
 internal data class LoadingState(
         val documentRoot: IJsonValue,
         private val anchors: MutableMap<String, Knot> = mutableMapOf(),
-        private val dynamicAnchors: MutableMap<String, Knot> = mutableMapOf(),
         var baseURI: URI
 ) {
 
@@ -73,8 +70,6 @@ internal data class LoadingState(
 
     fun getAnchorByURI(uri: String): Knot = anchors.getOrPut(normalizeUri(uri)) { Knot() }
 
-    fun getDynAnchorByURI(uri: String): Knot = dynamicAnchors.getOrPut(normalizeUri(uri)) { Knot() }
-
     fun anchorByURI(ref: String): Knot? = anchors[normalizeUri(ref)]
 
     private fun normalizeUri(uri: String): String {
@@ -88,7 +83,7 @@ internal data class LoadingState(
     }
 
     fun registerRawSchemaByDynAnchor(dynAnchor: String, json: IJsonObject<*, *>) {
-        getDynAnchorByURI(dynAnchor).json = json
+        anchors.getOrPut(normalizeUri(dynAnchor)) {Knot(dynamic = true)}.json = json
     }
 }
 
@@ -346,10 +341,6 @@ class SchemaLoader(
         if (byURIWithAnchor?.json !== null) {
             return Pair(byURIWithAnchor.json!!, URI(ref))
         }
-        val byURIWithDynAnchor = loadingState.getDynAnchorByURI(ref)
-        if (byURIWithDynAnchor.json != null) {
-            return Pair(byURIWithDynAnchor.json!!, URI(ref))
-        }
         return evaluateJsonPointer(continingRoot, uri.fragment)
     }
 
@@ -439,11 +430,12 @@ class SchemaLoader(
         var deprecated: IJsonBoolean? = null
         var default: IJsonValue? = null
         var dynamicRef: DynamicReference? = null
-        var dynamicAnchor: URI? = null
+        var dynamicAnchor: String? = null
         var propertySchemas: Map<String, Schema> = emptyMap()
         var patternPropertySchemas: Map<Regexp, Schema> = emptyMap()
         var unevaluatedItemsSchema: Schema? = null
         var unevaluatedPropertiesSchema: Schema? = null
+        var unprocessedProperties: MutableMap<IJsonString, IJsonValue> = mutableMapOf()
         return enterScope(schemaJson) {
             schemaJson.properties.forEach { (name, value) ->
                 var subschema: Schema? = null
@@ -457,10 +449,7 @@ class SchemaLoader(
                     Keyword.PATTERN_PROPERTIES.value -> patternPropertySchemas = loadPatternPropertySchemas(value.requireObject())
                     Keyword.REF.value -> subschema = createReferenceSchema(name.location, value.requireString().value)
                     Keyword.DYNAMIC_REF.value -> dynamicRef = DynamicReference(ref = value.requireString().value, fallbackReferredSchema = createReferenceSchema(ref = value.requireString().value, location = schemaJson.location))
-                    Keyword.DYNAMIC_ANCHOR.value ->
-                        dynamicAnchor =
-                                loadingState.baseURI.resolve("#" + value.requireString().value)
-
+                    Keyword.DYNAMIC_ANCHOR.value -> dynamicAnchor = value.requireString().value
                     Keyword.TITLE.value -> title = value.requireString()
                     Keyword.DESCRIPTION.value -> description = value.requireString()
                     Keyword.READ_ONLY.value -> readOnly = value.requireBoolean()
@@ -475,6 +464,9 @@ class SchemaLoader(
                     subschema = loader(ctx)
                 }
                 if (subschema != null) subschemas.add(subschema)
+                if (!isKnownKeyword(name.value)) {
+                    unprocessedProperties[name] = value
+                }
             }
             return@enterScope CompositeSchema(
                     subschemas = subschemas,
@@ -488,9 +480,10 @@ class SchemaLoader(
                     propertySchemas = propertySchemas,
                     patternPropertySchemas = patternPropertySchemas,
                     dynamicRef = dynamicRef,
-                    dynamicAnchor = dynamicAnchor?.toString(),
+                    dynamicAnchor = dynamicAnchor,
                     unevaluatedItemsSchema = unevaluatedItemsSchema,
-                    unevaluatedPropertiesSchema = unevaluatedPropertiesSchema
+                    unevaluatedPropertiesSchema = unevaluatedPropertiesSchema,
+                    unprocessedProperties = unprocessedProperties
             )
         }
     }

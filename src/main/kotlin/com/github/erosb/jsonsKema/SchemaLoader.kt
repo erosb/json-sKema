@@ -435,6 +435,7 @@ class SchemaLoader(
         var patternPropertySchemas: Map<Regexp, Schema> = emptyMap()
         var unevaluatedItemsSchema: Schema? = null
         var unevaluatedPropertiesSchema: Schema? = null
+        var unprocessedProperties: MutableMap<IJsonString, IJsonValue> = mutableMapOf()
         return enterScope(schemaJson) {
             schemaJson.properties.forEach { (name, value) ->
                 var subschema: Schema? = null
@@ -463,6 +464,9 @@ class SchemaLoader(
                     subschema = loader(ctx)
                 }
                 if (subschema != null) subschemas.add(subschema)
+                if (!isKnownKeyword(name.value)) {
+                    unprocessedProperties[name] = value
+                }
             }
             return@enterScope CompositeSchema(
                     subschemas = subschemas,
@@ -478,7 +482,8 @@ class SchemaLoader(
                     dynamicRef = dynamicRef,
                     dynamicAnchor = dynamicAnchor,
                     unevaluatedItemsSchema = unevaluatedItemsSchema,
-                    unevaluatedPropertiesSchema = unevaluatedPropertiesSchema
+                    unevaluatedPropertiesSchema = unevaluatedPropertiesSchema,
+                    unprocessedProperties = unprocessedProperties
             )
         }
     }

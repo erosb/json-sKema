@@ -63,9 +63,6 @@ internal class AggregatingValidationFailure(
         }
 
     override fun join(parent: Schema, instance: IJsonValue, other: ValidationFailure): ValidationFailure {
-        if (parent != schema) {
-            TODO("something went wrong")
-        }
         if (instance != this.instance) {
             TODO("something went wrong: $instance vs ${this.instance}")
         }

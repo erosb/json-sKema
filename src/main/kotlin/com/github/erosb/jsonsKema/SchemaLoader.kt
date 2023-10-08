@@ -198,6 +198,7 @@ class SchemaLoader(
                 enterScope(json) {
                     when (val id = json[Keyword.ID.value]) {
                         is IJsonString -> {
+                            println("found \$id = $id (baseURI in scope: ${loadingState.baseURI})")
                             // baseURI is already resolved to child ID
                             loadingState.registerRawSchemaByAnchor(loadingState.baseURI.toString(), json)
                         }
@@ -286,7 +287,9 @@ class SchemaLoader(
             is IJsonObj -> {
                 when (val id = json[Keyword.ID.value]) {
                     is IJsonString -> {
-                        loadingState.baseURI = loadingState.baseURI.resolve(id.value)
+                        if (!loadingState.baseURI.toString().endsWith(id.value)) {
+                            loadingState.baseURI = loadingState.baseURI.resolve(id.value)
+                        }
                     }
                 }
             }
@@ -329,7 +332,7 @@ class SchemaLoader(
                 println("baseURI  == ${loadingState.baseURI}")
                 val schema = doLoadSchema(knot.json!!)
                 loadingState.baseURI = origBaseURI
-                println("baseURI  := ${loadingState.baseURI}")
+                println("RESET baseURI  := ${loadingState.baseURI}")
                 knot.resolveWith(schema)
                 knot.underLoading = false
             }

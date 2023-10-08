@@ -114,9 +114,10 @@ abstract class SchemaVisitor<P> {
     open fun visitFormatSchema(schema: FormatSchema): P? = visitChildren(schema)
 
     open fun identity(): P? = null
+    open fun identity(parent: Schema): P? = identity()
     open fun accumulate(parent: Schema, previous: P?, current: P?): P? = current ?: previous
     open fun visitChildren(parent: Schema): P? {
-        var product: P? = identity()
+        var product: P? = identity(parent)
         for (subschema in parent.subschemas()) {
             val current = subschema.accept(this)
             product = accumulate(parent, product, current)

@@ -3,6 +3,8 @@ package com.github.erosb.jsonsKema
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.net.URI
+import org.skyscreamer.jsonassert.JSONAssert
+
 
 class ValidationFailureTest {
 
@@ -67,5 +69,63 @@ class ValidationFailureTest {
                 Instance pointer: #/numProp
                 Instance location: http://example.com/my-json: Line 70, character 66
         """.trimIndent())
+    }
+
+    @Test
+    fun issue26Test() {
+        val doc = """{
+              "customerName": "acme",
+              "acquireDate": "2020-12-12"
+            }"""
+        val jsonValue = JsonParser(doc).parse()
+        val userSchema = """{
+              "type": "object",
+              "properties": {
+                "age": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "age"
+              ]
+            }
+            """
+
+        val schemaJson = JsonParser(userSchema).parse()
+        val loadedSchema = SchemaLoader(schemaJson).load()
+        val validator = Validator.forSchema(loadedSchema)
+        JSONAssert.assertEquals(
+            """
+                {
+                  "instanceRef": "#",
+                  "schemaRef": "#/additionalProperties",
+                  "message": "multiple validation failures",
+                  "causes": [
+                    {
+                      "instanceRef": "#/customerName",
+                      "schemaRef": "#/additionalProperties",
+                      "message": "false schema always fails",
+                      "keyword": "false"
+                    },
+                    {
+                      "instanceRef": "#/acquireDate",
+                      "schemaRef": "#/additionalProperties",
+                      "message": "false schema always fails",
+                      "keyword": "false"
+                    },
+                    {
+                      "instanceRef": "#",
+                      "schemaRef": "#/required",
+                      "message": "required properties are missing: age",
+                      "keyword": "required"
+                    }
+                  ]
+                }
+            """.trimIndent(),
+            validator.validate(jsonValue)?.toJSON().toString(),
+            false
+        )
     }
 }

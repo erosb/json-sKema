@@ -551,4 +551,50 @@ class RefResolutionTest {
             )
         )() as CompositeSchema
     }
+
+    @Test
+    fun `more references within a non-root document`() {
+        val actual = createSchemaLoaderForString(
+            """
+                {
+                    "$ref": "mem://main.json#/$defs/A"
+                }
+            """,
+            mapOf(
+                Pair(
+                    "mem://main.json",
+                    """
+                    {
+                        "$defs": {
+                           "A": {
+                                "title": "A",
+                                "$ref": "#/$defs/B"
+                           },
+                           "B": {
+                                "title": "B",
+                                "type": "object",
+                                "properties": {
+                                    "count": {
+                                        "$ref": "primitives.json#/$defs/count"
+                                    }
+                                }
+                           }
+                        }
+                    }
+                                """
+                ),
+                Pair("mem://primitives.json",
+                    """
+                        {
+                            "$defs": {
+                                "count": {
+                                    "type": "integer",
+                                    "minimum": 0
+                                }
+                            }
+                        }
+                    """.trimIndent())
+            )
+        )() as CompositeSchema
+    }
 }

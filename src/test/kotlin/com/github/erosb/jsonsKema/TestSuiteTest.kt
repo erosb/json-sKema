@@ -133,7 +133,7 @@ class TestSuiteTest {
 //            "anchor.json",
 //            "ref.json",
 //            "id.json",
-//            "refRemote.json",
+            "refRemote.json",
         ).stream()
 
         private val server = JettyWrapper("/test-suite/remotes")

@@ -205,13 +205,13 @@ class SchemaLoader(
                     }
                     when (val anchor = json[Keyword.ANCHOR.value]) {
                         is IJsonString -> {
-                            val resolvedAnchor = loadingState.baseURI.resolve("#" + anchor.value)
+                            val resolvedAnchor = resolveAgainstBaseURI("#" + anchor.value)
                             loadingState.registerRawSchemaByAnchor(resolvedAnchor.toString(), json)
                         }
                     }
                     when (val anchor = json[Keyword.DYNAMIC_ANCHOR.value]) {
                         is IJsonString -> {
-                            val resolvedAnchor = loadingState.baseURI.resolve("#" + anchor.value)
+                            val resolvedAnchor = resolveAgainstBaseURI("#" + anchor.value)
                             loadingState.registerRawSchemaByDynAnchor(resolvedAnchor.toString(), json)
                         }
                     }
@@ -230,14 +230,15 @@ class SchemaLoader(
     }
 
     private fun resolveRelativeURI(ref: String): URI {
-        try {
-            if (URI(ref).isAbsolute) {
-                return URI(ref)
+        return try {
+            val uri = URI(ref)
+            if (uri.isAbsolute) {
+                uri
             } else{
-                return resolveAgainstBaseURI(ref)
+                resolveAgainstBaseURI(ref)
             }
         } catch (e: URISyntaxException) {
-            return resolveAgainstBaseURI(ref)
+            resolveAgainstBaseURI(ref)
         }
     }
 
@@ -288,7 +289,7 @@ class SchemaLoader(
                 when (val id = json[Keyword.ID.value]) {
                     is IJsonString -> {
                         if (!loadingState.baseURI.toString().endsWith(id.value)) {
-                            loadingState.baseURI = loadingState.baseURI.resolve(id.value)
+                            loadingState.baseURI = resolveAgainstBaseURI(id.value)
                         }
                     }
                 }

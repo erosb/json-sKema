@@ -1,0 +1,14 @@
+{
+  "$defs": {
+    "count": {
+      "$id": "#count",
+      "type": "integer",
+      "minimum": 0
+    },
+    "identifier": {
+      "$id": "#identifier",
+      "type": "string",
+      "minLength": 3
+    }
+  }
+}

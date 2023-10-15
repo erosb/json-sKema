@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "properties": {
+    "name": {
+      "$ref": "primitives.json#identifier"
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "$ref": "Issue.json"
+      }
+    },
+    "issueCount": {
+      "$ref": "primitives.json#count"
+    }
+  }
+}

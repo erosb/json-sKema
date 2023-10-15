@@ -18,4 +18,16 @@ class ClasspathTest {
 
         assertEquals(2, actual!!.causes.size)
     }
+
+    @Test
+    fun `an other test with subschemas referring to each other`() {
+        val loader = SchemaLoader.forURL("classpath://classpath-base/subdir/Project.json")
+        val sch = loader.load()
+        val actual = Validator.forSchema(sch).validate(JsonParser("""
+            {
+                "prop1": "bogus",
+                "prop2": "values"
+            }
+        """.trimIndent())())
+    }
 }

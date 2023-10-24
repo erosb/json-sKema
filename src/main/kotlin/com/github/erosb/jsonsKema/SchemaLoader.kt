@@ -56,7 +56,6 @@ internal data class LoadingState(
 ) {
 
     fun registerRawSchemaByAnchor(id: String, json: IJsonValue): Knot {
-        println("register raw schema: id=$id , baseURI=${baseURI}, json=$json")
         val anchor = getAnchorByURI(id)
         if (anchor.json !== null && anchor.json !== json) {
             throw IllegalStateException("raw schema already registered by URI $id")
@@ -70,13 +69,6 @@ internal data class LoadingState(
     fun nextUnresolvedAnchor(): Knot? = anchors.values.find { it.json === null }
 
     fun getAnchorByURI(uri: String): Knot {
-        if (anchors.get(normalizeUri(uri)) === null) {
-            if (uri.equals("mem://input#/\$defs/ddd")) {
-                println("errorka")
-            }
-            println("create anchor $uri")
-            println()
-        }
         return anchors.getOrPut(normalizeUri(uri)) { Knot(
             lexicalContextBaseURI = URI(uri)
         ) }
@@ -198,7 +190,6 @@ class SchemaLoader(
                 enterScope(json) {
                     when (val id = json[Keyword.ID.value]) {
                         is IJsonString -> {
-                            println("found \$id = $id (baseURI in scope: ${loadingState.baseURI})")
                             // baseURI is already resolved to child ID
                             loadingState.registerRawSchemaByAnchor(loadingState.baseURI.toString(), json)
                         }
@@ -256,7 +247,6 @@ class SchemaLoader(
         } catch (e: java.lang.IllegalArgumentException) {
             s = loadingState.baseURI.toString() + ref
         }
-        println("createReferenceSchema baseURI=${loadingState.baseURI} ref=$ref")
         val anchor = loadingState.getAnchorByURI(s)
         return anchor.createReference(location, s)
     }
@@ -310,30 +300,23 @@ class SchemaLoader(
         do {
             val knot: Knot? = loadingState.nextLoadableAnchor()
             if (knot === null) {
-                println("no loadable anchor found; trying with next unresolved anchor")
                 val unresolved: Knot? = loadingState.nextUnresolvedAnchor()
                 if (unresolved === null) {
                     break
                 }
-                println("start resolving $unresolved")
                 val pair = resolve(unresolved.referenceSchemas[0])
                 unresolved.json = pair.first
                 unresolved.lexicalContextBaseURI = pair.second
-                println("\tbaseURI = ${unresolved.lexicalContextBaseURI}")
-                println("\tjson = ${unresolved.json}")
             } else {
                 knot.underLoading = true
 
                 val origBaseURI = loadingState.baseURI
 
                 knot.lexicalContextBaseURI?.let {
-                    println("SET baseURI := $it")
                     loadingState.baseURI = it
                 }
-                println("baseURI  == ${loadingState.baseURI}")
                 val schema = doLoadSchema(knot.json!!)
                 loadingState.baseURI = origBaseURI
-                println("RESET baseURI  := ${loadingState.baseURI}")
                 knot.resolveWith(schema)
                 knot.underLoading = false
             }
@@ -342,7 +325,6 @@ class SchemaLoader(
     }
 
     private fun resolve(referenceSchema: ReferenceSchema): Pair<IJsonValue, URI> {
-        println("RESOLVE ${referenceSchema.ref}")
         val ref = referenceSchema.ref
         val uri = parseUri(ref)
         val continingRoot: IJsonValue?
@@ -383,7 +365,6 @@ class SchemaLoader(
                     return@enterScope Pair(root, loadingState.baseURI)
                 }
                 val segment = unescape(segments.poll())
-                println("lookupNext segment $segment in $root ")
                 when (root) {
                     is IJsonObject<*, *> -> {
                         val child = root[segment]
@@ -417,7 +398,6 @@ class SchemaLoader(
                 ?: DEFAULT_BASE_URI
 
         return runWithChangedBaseURI(URI(baseURIofRoot)) {
-            println("START lookupNext baseURI: $baseURIofRoot , $pointer")
             lookupNext(root, segments)
         }
     }
@@ -448,7 +428,6 @@ class SchemaLoader(
     }
 
     private fun createCompositeSchema(schemaJson: IJsonObject<*, *>): Schema {
-        println("createCompositeSchema for ${loadingState.baseURI} $schemaJson")
         val subschemas = mutableSetOf<Schema>()
         var title: IJsonString? = null
         var description: IJsonString? = null

@@ -10,19 +10,23 @@ class DynamicRefTest {
         val schema = createSchemaLoaderForString(
             """
             {
-                "type": "object",
-                "properties": {
-                    "intList": {
-                        "$ref": "#/$defs/List",
-                        "$defs": {
-                            "elemType": {
-                                "$dynamicAnchor": "elemType",
-                                "type": "integer"
+                "$id": "https://test.json-schema.org/typical-dynamic-resolution/root",
+                "$ref": "#/$defs/root",
+                "$defs": {
+                    "root": {
+                        "type": "object",
+                        "properties": {
+                            "intList": {
+                                "$ref": "#/$defs/List",
+                                "$defs": {
+                                    "elemType": {
+                                        "$dynamicAnchor": "elemType",
+                                        "type": "integer"
+                                    }
+                                }
                             }
                         }
-                    }
-                }
-                "$defs": {
+                    },
                     "List": {
                         "type": "array",
                         "items": {

@@ -456,7 +456,8 @@ class RefResolutionTest {
         assertThat(actual).isEqualTo("my title")
     }
 
-    @Test @Disabled
+    @Test
+    @Disabled
     fun `$dynamicAnchor can be referred by $ref`() {
         val root = createSchemaLoaderForString(
             """
@@ -492,5 +493,62 @@ class RefResolutionTest {
         )() as CompositeSchema
         val actual = root.accept(TraversingSchemaVisitor<String>("$ref", "title"))!!
         assertThat(actual).isEqualTo("my title")
+    }
+
+    @Test
+    fun `ref definitions child self ref`() {
+        val actual = createSchemaLoaderForString(
+            """
+                {
+                    "$ref": "http://subschema.json#/$defs/ddd"
+                }
+            """,
+            mapOf(
+                Pair(
+                    "http://subschema.json",
+                    """
+                                    {
+                                        "$ref": "#/$defs/ddd",
+                                        "$defs": {
+                                           "ddd": {
+                                                "title": "my title",
+                                                "$anchor": "myAnchor"
+                                           }
+                                        }
+                                    }
+                                """
+                )
+            )
+        )() as CompositeSchema
+    }
+
+    @Test
+    fun `maybe simpler reproducer`() {
+        val actual = createSchemaLoaderForString(
+            """
+                {
+                    "$ref": "http://subschema.json#/$defs/A"
+                }
+            """,
+            mapOf(
+                Pair(
+                    "http://subschema.json",
+                    """
+                    {
+                        "$defs": {
+                           "A": {
+                                "title": "A",
+                                "$ref": "#/$defs/B"
+                           },
+                           "B": {
+                                "title": "B",
+                                "type": "integer"
+                           }
+                        }
+                    }
+                                """
+                )
+            )
+        )() as CompositeSchema
     }
 }

@@ -128,7 +128,7 @@ class TestSuiteTest {
         @JvmStatic
         fun params(): Stream<Arguments> = loadParamsFromPackage(
             "test-suite.tests.draft2020-12",
-//            , "unevaluatedProperties.json"
+//            "unevaluatedProperties.json",
 //            "dynamicRef.json",
 //            "anchor.json",
 //            "ref.json",

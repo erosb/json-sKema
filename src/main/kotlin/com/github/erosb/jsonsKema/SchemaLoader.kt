@@ -68,7 +68,11 @@ internal data class LoadingState(
 
     fun nextUnresolvedAnchor(): Knot? = anchors.values.find { it.json === null }
 
-    fun getAnchorByURI(uri: String): Knot = anchors.getOrPut(normalizeUri(uri)) { Knot() }
+    fun getAnchorByURI(uri: String): Knot {
+        return anchors.getOrPut(normalizeUri(uri)) { Knot(
+            lexicalContextBaseURI = URI(uri)
+        ) }
+    }
 
     fun anchorByURI(ref: String): Knot? = anchors[normalizeUri(ref)]
 
@@ -192,13 +196,13 @@ class SchemaLoader(
                     }
                     when (val anchor = json[Keyword.ANCHOR.value]) {
                         is IJsonString -> {
-                            val resolvedAnchor = loadingState.baseURI.resolve("#" + anchor.value)
+                            val resolvedAnchor = resolveAgainstBaseURI("#" + anchor.value)
                             loadingState.registerRawSchemaByAnchor(resolvedAnchor.toString(), json)
                         }
                     }
                     when (val anchor = json[Keyword.DYNAMIC_ANCHOR.value]) {
                         is IJsonString -> {
-                            val resolvedAnchor = loadingState.baseURI.resolve("#" + anchor.value)
+                            val resolvedAnchor = resolveAgainstBaseURI("#" + anchor.value)
                             loadingState.registerRawSchemaByDynAnchor(resolvedAnchor.toString(), json)
                         }
                     }
@@ -217,14 +221,15 @@ class SchemaLoader(
     }
 
     private fun resolveRelativeURI(ref: String): URI {
-        try {
-            if (URI(ref).isAbsolute) {
-                return URI(ref)
+        return try {
+            val uri = URI(ref)
+            if (uri.isAbsolute) {
+                uri
             } else{
-                return resolveAgainstBaseURI(ref)
+                resolveAgainstBaseURI(ref)
             }
         } catch (e: URISyntaxException) {
-            return resolveAgainstBaseURI(ref)
+            resolveAgainstBaseURI(ref)
         }
     }
 
@@ -273,7 +278,9 @@ class SchemaLoader(
             is IJsonObj -> {
                 when (val id = json[Keyword.ID.value]) {
                     is IJsonString -> {
-                        loadingState.baseURI = loadingState.baseURI.resolve(id.value)
+                        if (!loadingState.baseURI.toString().endsWith(id.value)) {
+                            loadingState.baseURI = resolveAgainstBaseURI(id.value)
+                        }
                     }
                 }
             }
@@ -310,7 +317,6 @@ class SchemaLoader(
                 }
                 val schema = doLoadSchema(knot.json!!)
                 loadingState.baseURI = origBaseURI
-
                 knot.resolveWith(schema)
                 knot.underLoading = false
             }

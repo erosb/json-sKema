@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "title": {
+      "$ref": "primitives.json#identifier"
+    },
+    "labels": {
+      "$ref": "#/$defs/Labels"
+    }
+  },
+  "$defs": {
+    "Labels": {
+      "additionalProperties": {
+        "$ref": "primitives.json#identifier"
+      }
+    }
+  }
+}

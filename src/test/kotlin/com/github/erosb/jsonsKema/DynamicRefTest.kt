@@ -46,4 +46,42 @@ class DynamicRefTest {
         println(actual)
         assertThat(actual).isNotNull()
     }
+
+    @Test
+    fun dynamicRef_json_Line_113() {
+        val schema = createSchemaLoaderForString(
+            """
+            {
+            "$id": "https://test.json-schema.org/typical-dynamic-resolution/root",
+            "$ref": "list",
+            "$defs": {
+                "foo": {
+                    "$dynamicAnchor": "items",
+                    "type": "string"
+                },
+                "list": {
+                    "$id": "list",
+                    "type": "array",
+                    "items": { "$dynamicRef": "#items" },
+                    "$defs": {
+                      "items": {
+                          "$dynamicAnchor": "items"
+                      }
+                    }
+                }
+            }
+        }
+            """.trimIndent()
+        )()
+        val actual = Validator.forSchema(schema).validate(
+            JsonParser(
+                """
+                    ["foo", 42]
+        """
+            )()
+        )
+
+        println(actual)
+        assertThat(actual).isNotNull()
+    }
 }

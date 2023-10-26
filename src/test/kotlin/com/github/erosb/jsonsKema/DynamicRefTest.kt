@@ -11,26 +11,21 @@ class DynamicRefTest {
             """
             {
                 "$id": "https://test.json-schema.org/typical-dynamic-resolution/root",
-                "$ref": "#/$defs/root",
+                "$ref": "#/$defs/List",
                 "$defs": {
-                    "root": {
-                        "type": "object",
-                        "properties": {
-                            "intList": {
-                                "$ref": "#/$defs/List",
-                                "$defs": {
-                                    "elemType": {
-                                        "$dynamicAnchor": "elemType",
-                                        "type": "integer"
-                                    }
-                                }
-                            }
-                        }
+                    "elemType": {
+                        "$dynamicAnchor": "elemType",
+                        "type": "integer"
                     },
                     "List": {
                         "type": "array",
                         "items": {
                             "$dynamicRef": "#elemType"
+                        },
+                        "$defs": {
+                          "items": {
+                              "$dynamicAnchor": "elemType"
+                          }
                         }
                     }
                 }
@@ -40,9 +35,7 @@ class DynamicRefTest {
         val actual = Validator.forSchema(schema).validate(
             JsonParser(
                 """
-            {
-                "intList": [false]
-            }
+            [false]
         """
             )()
         )

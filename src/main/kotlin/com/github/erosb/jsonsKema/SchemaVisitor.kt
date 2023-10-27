@@ -11,14 +11,22 @@ abstract class SchemaVisitor<P> {
     private val dynamicScope = mutableListOf<CompositeSchema>()
 
     private fun findSubschemaByDynamicAnchor(scope: CompositeSchema, lookupValue: String): Schema? {
-        if (scope.dynamicAnchor == lookupValue) {
+        println("lookup: ${scope.dynamicAnchor()} == $lookupValue ? " + (scope.dynamicAnchor() == lookupValue))
+        println("\t ${scope.location.pointer}")
+        if (scope.dynamicAnchor() == lookupValue) {
             return scope
         }
         return scope.subschemas().stream()
-            .filter { it is CompositeSchema}
+            .map {
+                when (it) {
+                    is ReferenceSchema -> it.referredSchema
+                    else -> it
+                }
+            }
+            .filter { it is CompositeSchema }
             .map { it as CompositeSchema }
-            .map  { scope -> findSubschemaByDynamicAnchor(scope, lookupValue) }
-            .filter (Objects::nonNull)
+            .map { scope -> findSubschemaByDynamicAnchor(scope, lookupValue) }
+            .filter(Objects::nonNull)
             .findAny()
             .orElse(null)
     }
@@ -30,10 +38,11 @@ abstract class SchemaVisitor<P> {
             if (dynamicRef != null) {
                 val anchorName = dynamicRef.ref.substring(dynamicRef.ref.indexOf("#") + 1)
                 var referred = dynamicScope.stream()
-                    .map  { scope -> findSubschemaByDynamicAnchor(scope, anchorName) }
-                    .filter (Objects::nonNull)
+                    .map { scope -> findSubschemaByDynamicAnchor(scope, anchorName) }
+                    .filter(Objects::nonNull)
                     .findAny()
                     .orElse(null)
+                println("dynamicRef $dynamicRef refers to $referred")
                 if (referred === null) {
                     if (dynamicRef.fallbackReferredSchema == null) {
                         TODO("not implemented (no matching dynamicAnchor for dynamicRef $dynamicRef")
@@ -70,7 +79,7 @@ abstract class SchemaVisitor<P> {
             .reduce { a, b -> accumulate(schema, a, b) }
         result = accumulate(schema, result, patternSchemaProduct)
             ?: schema.unevaluatedItemsSchema?.accept(this)?.let { accumulate(schema, result, it) }
-            ?: schema.unevaluatedPropertiesSchema?.accept(this)?.let { accumulate(schema, result, it) }
+                    ?: schema.unevaluatedPropertiesSchema?.accept(this)?.let { accumulate(schema, result, it) }
         return result
     }
 

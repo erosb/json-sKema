@@ -87,6 +87,7 @@ internal data class LoadingState(
     }
 
     fun registerRawSchemaByDynAnchor(dynAnchor: String, json: IJsonObject<*, *>) {
+        println("registering $dynAnchor -> $json")
         anchors.getOrPut(normalizeUri(dynAnchor)) {Knot(dynamic = true)}.json = json
     }
 }
@@ -442,6 +443,7 @@ class SchemaLoader(
         var unevaluatedItemsSchema: Schema? = null
         var unevaluatedPropertiesSchema: Schema? = null
         var unprocessedProperties: MutableMap<IJsonString, IJsonValue> = mutableMapOf()
+        var subschemasByDynamicAnchors: MutableMap<String, ReferenceSchema> = mutableMapOf();
         return enterScope(schemaJson) {
             schemaJson.properties.forEach { (name, value) ->
                 var subschema: Schema? = null
@@ -464,16 +466,21 @@ class SchemaLoader(
                     Keyword.DEFAULT.value -> default = value
                     Keyword.UNEVALUATED_ITEMS.value -> unevaluatedItemsSchema = UnevaluatedItemsSchema(loadChild(value), name.location)
                     Keyword.UNEVALUATED_PROPERTIES.value -> unevaluatedPropertiesSchema = UnevaluatedPropertiesSchema(loadChild(value), name.location)
+                    Keyword.DEFS.value -> subschemasByDynamicAnchors = findSubschemasByDynAnchors(value)
                 }
                 val loader = keywordLoaders[name.value]
                 if (subschema === null && loader != null) {
                     subschema = loader(ctx)
                 }
+                subschemas += subschemasByDynamicAnchors.values
                 if (subschema != null) subschemas.add(subschema)
                 if (!isKnownKeyword(name.value)) {
                     unprocessedProperties[name] = value
                 }
             }
+            println("------------------")
+            println(subschemasByDynamicAnchors)
+            println("------------------")
             return@enterScope CompositeSchema(
                     subschemas = subschemas,
                     location = schemaJson.location,
@@ -491,6 +498,26 @@ class SchemaLoader(
                     unevaluatedPropertiesSchema = unevaluatedPropertiesSchema,
                     unprocessedProperties = unprocessedProperties
             )
+        }
+    }
+
+    private fun findSubschemasByDynAnchors(subschemasJson: IJsonValue): MutableMap<String, ReferenceSchema> {
+        return when(subschemasJson) {
+            is IJsonObj -> run {
+                val rval = mutableMapOf<String, ReferenceSchema>()
+                subschemasJson.properties.forEach { key, value ->
+                    if (key.value == Keyword.DYNAMIC_ANCHOR.value) {
+                        val pointer = subschemasJson.location.pointer.toString()
+                        val anchor = loadingState.getAnchorByURI(pointer)
+                        val ref = anchor.createReference(value.location, pointer)
+                        anchor.json = subschemasJson
+                        rval[value.requireString().value] = ref
+                    }
+                    rval += findSubschemasByDynAnchors(value)
+                }
+                return rval
+            }
+            else -> mutableMapOf()
         }
     }
 

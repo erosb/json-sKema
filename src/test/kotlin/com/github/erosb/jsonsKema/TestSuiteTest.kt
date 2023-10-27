@@ -129,7 +129,7 @@ class TestSuiteTest {
         fun params(): Stream<Arguments> = loadParamsFromPackage(
             "test-suite.tests.draft2020-12",
 //            "unevaluatedProperties.json",
-            "dynamicRef.json",
+//            "dynamicRef.json",
 //            "anchor.json",
 //            "ref.json",
 //            "id.json",

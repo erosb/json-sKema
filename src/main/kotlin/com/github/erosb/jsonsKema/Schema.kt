@@ -3,6 +3,7 @@ package com.github.erosb.jsonsKema
 abstract class Schema(open val location: SourceLocation) {
     abstract fun <P> accept(visitor: SchemaVisitor<P>): P?
     open fun subschemas(): Collection<Schema> = emptyList()
+    open fun dynamicAnchor(): String? = null
 }
 
 data class CompositeSchema(
@@ -25,6 +26,7 @@ data class CompositeSchema(
 ) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>) = visitor.internallyVisitCompositeSchema(this)
     override fun subschemas() = subschemas
+    override fun dynamicAnchor(): String? = dynamicAnchor
 }
 
 data class ReferenceSchema(var referredSchema: Schema?, val ref: String, override val location: SourceLocation) :
@@ -41,6 +43,10 @@ data class ReferenceSchema(var referredSchema: Schema?, val ref: String, overrid
         return referredSchema === other.referredSchema
     }
 
+    override fun dynamicAnchor(): String? {
+       return referredSchema?.dynamicAnchor()
+    }
+
     override fun hashCode(): Int {
         return location.hashCode()
     }
@@ -54,6 +60,9 @@ data class DynamicRefSchema(var referredSchema: Schema?, val dynamicRef: String,
     Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitDynamicRefSchema(this)
     override fun subschemas() = referredSchema?.let { listOf(it) } ?: emptyList()
+    override fun dynamicAnchor(): String? {
+        TODO("Not yet implemented")
+    }
 }
 
 data class DynamicReference(val ref: String, var fallbackReferredSchema: ReferenceSchema? = null)

@@ -6,6 +6,62 @@ import org.junit.jupiter.api.Test
 class DynamicRefTest {
 
     @Test
+    fun testObjectGenerics() {
+        val schema = createSchemaLoaderForString(
+            """
+            {
+                "$id": "https://test.json-schema.org/typical-dynamic-resolution/root",
+                "$ref": "#/$defs/Obj",
+                "$defs": {
+                    "Obj": {
+                        "type": "object",
+                        "properties": {
+                            "intList": {
+                                "$ref": "#/$defs/List",
+                                "$defs": {
+                                    "elemType": {
+                                        "$dynamicAnchor": "elemType",
+                                        "type": "integer"
+                                    }
+                                }
+                            },
+                            "stringList": {
+                                "$ref": "#/$defs/List",
+                                "$defs": {
+                                    "elemType": {
+                                        "$dynamicAnchor": "elemType",
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "List": {
+                        "type": "array",
+                        "items": {
+                            "$dynamicRef": "#elemType"
+                        }
+                    }
+                }
+            }
+            """.trimIndent()
+        )()
+        val actual = Validator.forSchema(schema).validate(
+            JsonParser(
+                """
+            {
+                "intList": [1, null],
+                "stringList": ["str", null]
+            }
+        """
+            )()
+        )
+
+        println(actual!!.toJSON())
+        assertThat(actual).isNotNull()
+    }
+
+    @Test
     fun testArrayGenerics() {
         val schema = createSchemaLoaderForString(
             """
@@ -21,11 +77,6 @@ class DynamicRefTest {
                         "type": "array",
                         "items": {
                             "$dynamicRef": "#elemType"
-                        },
-                        "$defs": {
-                          "items": {
-                              "$dynamicAnchor": "elemType"
-                          }
                         }
                     }
                 }

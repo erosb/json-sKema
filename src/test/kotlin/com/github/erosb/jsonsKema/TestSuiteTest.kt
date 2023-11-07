@@ -86,7 +86,7 @@ internal fun loadParamsFromPackage(packageName: String, vararg fileFilters: Stri
             val testcaseInputs: IJsonArray<*> = schemaTest["tests"]!!.requireArray()
             for (j in 0 until testcaseInputs.length()) {
                 val input: JsonObject = testcaseInputs[j].requireObject() as JsonObject
-                val testcase = TestCase(input, schemaTest, fileName)
+                val testcase = TestCase(input, schemaTest, fileName, path.contains("optional/format/"))
                 rval.add(Arguments.of(testcase, testcase.schemaDescription))
             }
         }
@@ -94,7 +94,7 @@ internal fun loadParamsFromPackage(packageName: String, vararg fileFilters: Stri
     return rval
 }
 
-class TestCase(input: JsonObject, schemaTest: JsonObject, fileName: String) {
+class TestCase(input: JsonObject, schemaTest: JsonObject, fileName: String, val isFormatTest: Boolean) {
     val schemaDescription = "[" + fileName + ":" + input.location.lineNumber + "]/" + schemaTest["description"]!!.requireString().value
     val schemaJson: IJsonValue = trimLeadingPointer(schemaTest["schema"]!!, 2)
     val inputDescription = schemaDescription + "/" + input["description"]!!.requireString().value
@@ -108,7 +108,7 @@ class TestCase(input: JsonObject, schemaTest: JsonObject, fileName: String) {
     }
 
     fun run() {
-        val validator = Validator.forSchema(schema)
+        val validator = Validator.create(schema, ValidatorConfig(validateFormat = isFormatTest))
         val failure = validator.validate(inputData)
         val isValid = failure === null
         if (isValid != expectedToBeValid) {

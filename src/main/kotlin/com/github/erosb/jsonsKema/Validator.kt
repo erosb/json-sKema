@@ -18,13 +18,21 @@ internal fun getAsBigDecimal(number: Any): BigDecimal {
     }
 }
 
+data class ValidatorConfig(val validateFormat: Boolean = false) {
+
+}
 interface Validator {
 
     companion object {
 
         @JvmStatic
+        fun create(schema: Schema, config: ValidatorConfig): Validator {
+            return DefaultValidator(schema, config)
+        }
+
+        @JvmStatic
         fun forSchema(schema: Schema): Validator {
-            return DefaultValidator(schema)
+            return create(schema, ValidatorConfig(false))
         }
     }
 
@@ -92,7 +100,10 @@ private class MarkableJsonObject<P : IJsonString, V : IJsonValue>(
     override fun <P> maybeObject(fn: (IJsonObject<*, *>) -> P?): P? = fn(this)
 }
 
-private class DefaultValidator(private val rootSchema: Schema) : Validator, SchemaVisitor<ValidationFailure>() {
+private class DefaultValidator(
+    private val rootSchema: Schema,
+    private val config: ValidatorConfig
+) : Validator, SchemaVisitor<ValidationFailure>() {
 
     abstract inner class AbstractTypeValidatingVisitor : JsonVisitor<ValidationFailure> {
         override fun visitString(str: IJsonString): ValidationFailure? = checkType("string")
@@ -588,7 +599,11 @@ private class DefaultValidator(private val rootSchema: Schema) : Validator, Sche
     )
 
     override fun visitFormatSchema(schema: FormatSchema): ValidationFailure? =
-        formatValidators[schema.format]?.let { it(instance, schema) }
+        if (config.validateFormat) {
+            formatValidators[schema.format]?.let { it(instance, schema) }
+        } else {
+            null
+        }
 
     override fun visitUnevaluatedPropertiesSchema(schema: UnevaluatedPropertiesSchema): ValidationFailure? {
         val instance = this.instance

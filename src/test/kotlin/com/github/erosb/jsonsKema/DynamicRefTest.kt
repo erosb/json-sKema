@@ -46,6 +46,7 @@ class DynamicRefTest {
             }
             """.trimIndent()
         )()
+        println(schema.subschemas())
         val actual = Validator.forSchema(schema).validate(
             JsonParser(
                 """

@@ -37,7 +37,8 @@ abstract class SchemaVisitor<P> {
             val dynamicRef = schema.dynamicRef
             if (dynamicRef != null) {
                 val anchorName = dynamicRef.ref.substring(dynamicRef.ref.indexOf("#") + 1)
-                var referred = dynamicScope.stream()
+                var referred = dynamicScope
+                    .stream()
                     .map { scope -> findSubschemaByDynamicAnchor(scope, anchorName) }
                     .filter(Objects::nonNull)
                     .findAny()

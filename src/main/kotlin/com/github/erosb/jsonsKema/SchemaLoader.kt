@@ -333,6 +333,7 @@ class SchemaLoader(
         if (byURI !== null && byURI.json !== null) {
             continingRoot = byURI.json!!
         } else {
+            println(uri)
             continingRoot = config.schemaClient.getParsed(uri.toBeQueried)
             loadingState.registerRawSchemaByAnchor(uri.toBeQueried.toString(), continingRoot)
 
@@ -472,7 +473,9 @@ class SchemaLoader(
                 if (subschema === null && loader != null) {
                     subschema = loader(ctx)
                 }
+                println("subschema count before: " + subschemas.size)
                 subschemas += subschemasByDynamicAnchors.values
+                println("subschema count after: " + subschemas.size)
                 if (subschema != null) subschemas.add(subschema)
                 if (!isKnownKeyword(name.value)) {
                     unprocessedProperties[name] = value
@@ -511,7 +514,8 @@ class SchemaLoader(
                         val anchor = loadingState.getAnchorByURI(pointer)
                         val ref = anchor.createReference(value.location, pointer)
                         anchor.json = subschemasJson
-                        rval[value.requireString().value] = ref
+                        println(resolveAgainstBaseURI(value.requireString().value).toString())
+                        rval[resolveAgainstBaseURI(value.requireString().value).toString()] = ref
                     }
                     rval += findSubschemasByDynAnchors(value)
                 }

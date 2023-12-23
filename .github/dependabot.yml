@@ -4,15 +4,14 @@
 # https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 
 version: 2
-registries:
-  updates:
-    - package-ecosystem: github-actions
-      directory: /
-      open-pull-requests-limit: 50
-      schedule:
-        interval: monthly
-    - package-ecosystem: maven
-      directory: /
-      open-pull-requests-limit: 50
-      schedule:
-        interval: monthly
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    open-pull-requests-limit: 50
+    schedule:
+      interval: monthly
+  - package-ecosystem: maven
+    directory: /
+    open-pull-requests-limit: 50
+    schedule:
+      interval: monthly

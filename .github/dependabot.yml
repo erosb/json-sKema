@@ -5,14 +5,14 @@
 
 version: 2
 registries:
-updates:
-  - package-ecosystem: github-actions
-    directory: /
-    open-pull-requests-limit: 50
-    schedule:
-      interval: monthly
-  - package-ecosystem: maven
-    directory: /
-    open-pull-requests-limit: 50
-    schedule:
-      interval: monthly
+  updates:
+    - package-ecosystem: github-actions
+      directory: /
+      open-pull-requests-limit: 50
+      schedule:
+        interval: monthly
+    - package-ecosystem: maven
+      directory: /
+      open-pull-requests-limit: 50
+      schedule:
+        interval: monthly

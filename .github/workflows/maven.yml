@@ -24,7 +24,7 @@ jobs:
           cache: 'maven'
 
       - name: Test with Maven
-        run: mvn -B verify -Dgroups='!acceptance'
+        run: mvn -B verify
   build-unittest:
     name: Unit Test with Java ${{ matrix.jdk }}
     runs-on: ubuntu-latest
@@ -34,5 +34,15 @@ jobs:
         jdk: ['8', '11', '17', '21' ]
 
     steps:
+      - uses: actions/checkout@v4
+      - name: Checkout submodules
+        run: git submodule update --init --recursive
+
+      - name: Set up JDK ${{ matrix.jdk }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: ${{ matrix.jdk }}
+          cache: 'maven'
       - name: Test with Maven
-        run: mvn -B verify
+        run: mvn -B verify -Dgroups='!acceptance'

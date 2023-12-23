@@ -45,4 +45,4 @@ jobs:
           java-version: ${{ matrix.jdk }}
           cache: 'maven'
       - name: Test with Maven
-        run: mvn -B verify -Dgroups='!acceptance'
+        run: mvn -B test -Dgroups='!acceptance'

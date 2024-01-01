@@ -3,6 +3,7 @@ package com.github.erosb.jsonsKema
 import java.io.*
 import java.net.URI
 import java.net.URL
+import java.nio.charset.StandardCharsets
 import java.util.*
 
 
@@ -91,4 +92,30 @@ internal class MemoizingSchemaClient(private val delegate: SchemaClient) : Schem
             return@computeIfAbsent out.toByteArray()
         }
     )
+}
+
+internal fun readFromClassPath(path: String): String =
+    String(PrepopulatedSchemaClient::class.java.getResourceAsStream(path)!!.readAllBytes())
+
+internal class PrepopulatedSchemaClient(
+    private val fallbackClient: SchemaClient,
+    private val mapping: Map<URI, String> = mapOf(
+        URI("https://json-schema.org/draft/2020-12/schema") to readFromClassPath("/json-meta-schemas/draft2020-12/schema.json"),
+        URI("https://json-schema.org/draft/2020-12/meta/core") to readFromClassPath("/json-meta-schemas/draft2020-12/core.json"),
+        URI("https://json-schema.org/draft/2020-12/meta/validation") to readFromClassPath("/json-meta-schemas/draft2020-12/validation.json"),
+        URI("https://json-schema.org/draft/2020-12/meta/applicator") to readFromClassPath("/json-meta-schemas/draft2020-12/applicator.json"),
+        URI("https://json-schema.org/draft/2020-12/meta/unevaluated") to readFromClassPath("/json-meta-schemas/draft2020-12/unevaluated.json"),
+        URI("https://json-schema.org/draft/2020-12/meta/meta-data") to readFromClassPath("/json-meta-schemas/draft2020-12/meta-data.json"),
+        URI("https://json-schema.org/draft/2020-12/meta/format-annotation") to readFromClassPath("/json-meta-schemas/draft2020-12/format-annotation.json"),
+        URI("https://json-schema.org/draft/2020-12/meta/content") to readFromClassPath("/json-meta-schemas/draft2020-12/content.json")
+    )
+    ) : SchemaClient {
+
+    override fun get(uri: URI): InputStream {
+        return mapping[uri]
+            ?.toByteArray(StandardCharsets.UTF_8)
+            ?.let { ByteArrayInputStream(it) }
+            ?: fallbackClient.get(uri)
+    }
+
 }

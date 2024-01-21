@@ -7,18 +7,23 @@ import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.stream.Collectors.toList
 
-data class SchemaLoaderConfig(val schemaClient: SchemaClient, val initialBaseURI: String = DEFAULT_BASE_URI)
+data class SchemaLoaderConfig(val schemaClient: SchemaClient, val initialBaseURI: String = DEFAULT_BASE_URI) {
+    companion object {
+        @JvmStatic
+        fun createDefaultConfig(additionalMappings: Map<URI, String> = mapOf()) = SchemaLoaderConfig(
+            schemaClient = MemoizingSchemaClient(
+                PrepopulatedSchemaClient(
+                    ClassPathAwareSchemaClient(DefaultSchemaClient()),
+                    additionalMappings
+                )
+            )
+        )
+    }
+}
 
 class SchemaLoadingException(msg: String, cause: Throwable) : RuntimeException(msg, cause)
 
-internal fun createDefaultConfig(additionalMappings: Map<URI, String> = mapOf()) = SchemaLoaderConfig(
-        schemaClient = MemoizingSchemaClient(
-            PrepopulatedSchemaClient(
-                ClassPathAwareSchemaClient(DefaultSchemaClient()),
-                additionalMappings
-            )
-        )
-)
+internal fun createDefaultConfig(additionalMappings: Map<URI, String> = mapOf()) = SchemaLoaderConfig.createDefaultConfig(additionalMappings)
 
 /**
  * http://json-schema.org/draft/2020-12/json-schema-core.html#initial-base

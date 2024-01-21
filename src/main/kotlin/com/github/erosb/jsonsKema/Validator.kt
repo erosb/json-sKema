@@ -2,8 +2,6 @@ package com.github.erosb.jsonsKema
 
 import java.math.BigDecimal
 import java.math.BigInteger
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
 
 internal fun getAsBigDecimal(number: Any): BigDecimal {
     return if (number is BigDecimal) {
@@ -18,9 +16,35 @@ internal fun getAsBigDecimal(number: Any): BigDecimal {
     }
 }
 
-data class ValidatorConfig(val validateFormat: Boolean = false) {
+enum class FormatValidationPolicy {
+    /**
+     * Validation against the "format" keyword is always enabled, irrespective of
+     * the meta-schema contents.
+     */
+    ALWAYS,
+
+    /**
+     * Validation against the "format" keyword is never done, irrespective of
+     * the meta-schema contents.
+     */
+    NEVER,
+
+    /**
+     * Validation against the "format" keyword is enabled only if the meta-schema
+     * declares @{code https://json-schema.org/draft/2020-12/vocab/format-assertion}
+     * in its @{code $vocabularies} object.
+     *
+     * Be aware that this is the default behavior, and the draft2020-12 meta-schema
+     * does NOT declare the format-assertion vocabulary, hence format validation will be
+     * disabled.
+     */
+    DEPENDS_ON_VOCABULARY
+}
+
+data class ValidatorConfig(val validateFormat: FormatValidationPolicy = FormatValidationPolicy.DEPENDS_ON_VOCABULARY) {
 
 }
+
 interface Validator {
 
     companion object {
@@ -32,7 +56,7 @@ interface Validator {
 
         @JvmStatic
         fun forSchema(schema: Schema): Validator {
-            return create(schema, ValidatorConfig(false))
+            return create(schema, ValidatorConfig(FormatValidationPolicy.DEPENDS_ON_VOCABULARY))
         }
     }
 
@@ -104,6 +128,18 @@ private class DefaultValidator(
     private val rootSchema: Schema,
     private val config: ValidatorConfig
 ) : Validator, SchemaVisitor<ValidationFailure>() {
+
+    val validateFormat: Boolean = if (config.validateFormat == FormatValidationPolicy.ALWAYS)
+        true
+    else if (config.validateFormat == FormatValidationPolicy.NEVER)
+        false
+    else
+        when (rootSchema) {
+        is CompositeSchema -> rootSchema.vocabulary.isEmpty() || rootSchema.vocabulary.contains(
+            "https://json-schema.org/draft/2020-12/vocab/format-assertion"
+        )
+        else -> false
+    }
 
     abstract inner class AbstractTypeValidatingVisitor : JsonVisitor<ValidationFailure> {
         override fun visitString(str: IJsonString): ValidationFailure? = checkType("string")
@@ -599,7 +635,7 @@ private class DefaultValidator(
     )
 
     override fun visitFormatSchema(schema: FormatSchema): ValidationFailure? =
-        if (config.validateFormat) {
+        if (validateFormat) {
             formatValidators[schema.format]?.let { it(instance, schema) }
         } else {
             null

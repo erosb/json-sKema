@@ -12,7 +12,7 @@ class FormatTest {
     fun invalidDate() {
         val schema = FormatSchema("date", UnknownSource)
         val instance = JsonString("asdasd")
-        val actual = Validator.create(schema, ValidatorConfig(validateFormat = true))
+        val actual = Validator.create(schema, ValidatorConfig(validateFormat = FormatValidationPolicy.ALWAYS))
             .validate(instance)!!
 
         assertThat(actual).isEqualTo(FormatValidationFailure(schema, instance))
@@ -23,7 +23,7 @@ class FormatTest {
     fun date_time_invalidDayOfMonth() {
         val instance = JsonString("1990-02-31T15:59:59.123-08:00")
 
-        val actual = Validator.create(DATE_TIME_SCHEMA, ValidatorConfig(validateFormat = true))
+        val actual = Validator.create(DATE_TIME_SCHEMA, ValidatorConfig(validateFormat = FormatValidationPolicy.ALWAYS))
             .validate(instance)!!
 
         assertThat(actual).isNotNull()
@@ -34,7 +34,7 @@ class FormatTest {
     fun `date-time valid leap second at UTC`() {
         val instance = JsonString("1990-02-31T15:59:59.123-08:00")
 
-        val actual = Validator.create(DATE_TIME_SCHEMA, ValidatorConfig(validateFormat = true))
+        val actual = Validator.create(DATE_TIME_SCHEMA, ValidatorConfig(validateFormat =  FormatValidationPolicy.ALWAYS))
             .validate(instance)
 
         assertThat(actual).isNull()

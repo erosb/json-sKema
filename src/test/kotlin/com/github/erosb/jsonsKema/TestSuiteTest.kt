@@ -108,7 +108,12 @@ class TestCase(input: JsonObject, schemaTest: JsonObject, fileName: String, val 
     }
 
     fun run() {
-        val validator = Validator.create(schema, ValidatorConfig(validateFormat = isFormatTest))
+        val validator = Validator.create(schema, ValidatorConfig(
+            validateFormat = if (isFormatTest)
+                FormatValidationPolicy.ALWAYS
+            else
+                FormatValidationPolicy.NEVER
+        ))
         val failure = validator.validate(inputData)
         val isValid = failure === null
         if (isValid != expectedToBeValid) {

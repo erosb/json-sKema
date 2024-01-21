@@ -15,6 +15,8 @@ enum class Keyword(
     DYNAMIC_ANCHOR("\$dynamicAnchor"),
     REF("\$ref"),
     DEFS("\$defs", true),
+    SCHEMA("\$schema"),
+    VOCABULARY("\$vocabulary"),
     MIN_LENGTH("minLength"),
     MAX_LENGTH("maxLength"),
     ALL_OF("allOf", true),

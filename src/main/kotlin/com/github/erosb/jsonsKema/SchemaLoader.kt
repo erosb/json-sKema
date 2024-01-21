@@ -11,9 +11,12 @@ data class SchemaLoaderConfig(val schemaClient: SchemaClient, val initialBaseURI
 
 class SchemaLoadingException(msg: String, cause: Throwable) : RuntimeException(msg, cause)
 
-internal fun createDefaultConfig() = SchemaLoaderConfig(
+internal fun createDefaultConfig(additionalMappings: Map<URI, String> = mapOf()) = SchemaLoaderConfig(
         schemaClient = MemoizingSchemaClient(
-            ClassPathAwareSchemaClient(DefaultSchemaClient())
+            PrepopulatedSchemaClient(
+                ClassPathAwareSchemaClient(DefaultSchemaClient()),
+                additionalMappings
+            )
         )
 )
 
@@ -50,9 +53,10 @@ internal data class Knot(
 }
 
 internal data class LoadingState(
-        val documentRoot: IJsonValue,
-        private val anchors: MutableMap<String, Knot> = mutableMapOf(),
-        var baseURI: URI
+    val documentRoot: IJsonValue,
+    var vocabulary: List<String>,
+    private val anchors: MutableMap<String, Knot> = mutableMapOf(),
+    var baseURI: URI
 ) {
 
     fun registerRawSchemaByAnchor(id: String, json: IJsonValue): Knot {
@@ -178,7 +182,26 @@ class SchemaLoader(
         }
     }
 
-    private var loadingState: LoadingState = LoadingState(schemaJson, baseURI = URI(config.initialBaseURI))
+    private var loadingState: LoadingState = LoadingState(schemaJson, baseURI = URI(config.initialBaseURI), vocabulary = findVocabulariesInMetaSchema(schemaJson))
+
+    private fun findVocabulariesInMetaSchema(schemaJson: IJsonValue): List<String> {
+        return when (schemaJson) {
+            is IJsonBoolean -> emptyList()
+            is IJsonObj -> {
+                return schemaJson[Keyword.SCHEMA.value]
+                    ?.requireString()
+                    ?.let { config.schemaClient.getParsed(URI(it.value))
+                        .requireObject()[Keyword.VOCABULARY.value]
+                        ?.requireObject()?.properties
+                        ?.filter { it.value.requireBoolean().value }
+                        ?.keys
+                        ?.map { it.requireString().value }
+                        ?.toList()
+                    } ?: emptyList()
+            }
+            else -> TODO()
+        }
+    }
 
     operator fun invoke(): Schema = loadRootSchema()
     fun load(): Schema = loadRootSchema()
@@ -489,7 +512,8 @@ class SchemaLoader(
                     dynamicAnchor = dynamicAnchor,
                     unevaluatedItemsSchema = unevaluatedItemsSchema,
                     unevaluatedPropertiesSchema = unevaluatedPropertiesSchema,
-                    unprocessedProperties = unprocessedProperties
+                    unprocessedProperties = unprocessedProperties,
+                    vocabulary = loadingState.vocabulary
             )
         }
     }

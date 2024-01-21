@@ -21,7 +21,8 @@ data class CompositeSchema(
     val patternPropertySchemas: Map<Regexp, Schema> = emptyMap(),
     val unevaluatedItemsSchema: Schema? = null,
     val unevaluatedPropertiesSchema: Schema? = null,
-    val unprocessedProperties: Map<IJsonString, IJsonValue> = emptyMap()
+    val unprocessedProperties: Map<IJsonString, IJsonValue> = emptyMap(),
+    val vocabulary: List<String> = emptyList()
 ) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>) = visitor.internallyVisitCompositeSchema(this)
     override fun subschemas() = subschemas

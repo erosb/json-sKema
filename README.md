@@ -1,6 +1,6 @@
 # json-sKema
 
-_json-Skema is a [Json Schema](https://json-schema.org/) validator library for the Java Virtual Machine. It implements the [draft 2020-12](https://json-schema.org/draft/2020-12/json-schema-validation.html) specification._
+_json-sKema is a [Json Schema](https://json-schema.org/) validator library for the Java Virtual Machine. It implements the [draft 2020-12](https://json-schema.org/draft/2020-12/json-schema-validation.html) specification._
 
 Are you new to JSON Schema? Get started with [Understanding JSON Schema](https://json-schema.org/understanding-json-schema/)!
 
@@ -22,7 +22,7 @@ Add the following dependency to the `<dependencies>` section of your project:
 
 ```groovy
 dependencies {
-    implementation("com.github.erosb:json-sKema:0.10.0")
+    implementation("com.github.erosb:json-sKema:0.11.0")
 }
 ```
 
@@ -76,6 +76,43 @@ Schema schema = SchemaLoader.forURL("classpath:///path/to/your/schema.json").loa
 // create a validator instance for each validation (one-time use object) 
 Validator validator = Validator.forSchema(schema);
 // ...
+```
+
+### Pre-registering schemas by URI before schema loading
+
+```java
+// Creating a SchemaLoader config with a pre-registered schema by URI
+SchemaLoaderConfig config = createDefaultConfig(Map.of(
+			// When the loader sees this URI,
+			new URI("urn:uuid:d652a438-9897-4160-959c-bbdb690c3e0d"),
+
+			// then it will resolve it to this schema json
+			"""
+			{
+				"$defs": {
+					"ItemType": {
+						"type": "integer",
+						"minimum": 0
+					}
+				}
+			}
+			"""
+	));
+// parsing the schema json, with a $ref to the above pre-configured URI
+JsonValue schemaJson = new JsonParser("""
+		{
+			"type": "array",
+			"items": {
+				"$ref": "urn:uuid:d652a438-9897-4160-959c-bbdb690c3e0d#/$defs/ItemType"
+			}
+		}
+		""").parse();
+// loading the schema json into a Schema object
+Schema schema = new SchemaLoader(schemaJson, config).load();
+
+// running the validation
+ValidationFailure result = Validator.forSchema(schema).validate(new JsonParser("[null]").parse());
+System.out.println(result.toJSON());
 ```
 
 ## Compatibility notes

@@ -21,7 +21,9 @@ data class SchemaLoaderConfig(val schemaClient: SchemaClient, val initialBaseURI
     }
 }
 
-class SchemaLoadingException(msg: String, cause: Throwable) : RuntimeException(msg, cause)
+class SchemaLoadingException(msg: String, cause: Throwable?) : RuntimeException(msg, cause) {
+    constructor(msg: String): this(msg, null)
+}
 
 internal fun createDefaultConfig(additionalMappings: Map<URI, String> = mapOf()) = SchemaLoaderConfig.createDefaultConfig(additionalMappings)
 
@@ -204,7 +206,7 @@ class SchemaLoader(
                         ?.toList()
                     } ?: emptyList()
             }
-            else -> TODO()
+            else -> throw SchemaLoadingException("unexpected schema : $schemaJson")
         }
     }
 
@@ -450,7 +452,7 @@ class SchemaLoader(
                     }
 
                     is IJsonObject<*, *> -> createCompositeSchema(schemaJson)
-                    else -> TODO()
+                    else -> throw SchemaLoadingException("unexpected schema : $schemaJson")
                 }
         return retval
     }

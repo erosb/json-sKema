@@ -1,6 +1,7 @@
 package com.github.erosb.jsonsKema
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
 import java.io.IOException
@@ -116,5 +117,21 @@ class SchemaLoaderTest {
         assertThat(actual).usingRecursiveComparison()
             .ignoringFieldsOfTypes(SourceLocation::class.java)
             .isEqualTo(expected)
+    }
+
+    @Test
+    fun `obsolete use of items`() {
+        val exception = assertThrows(JsonTypingException::class.java) {
+            createSchemaLoaderForString(
+                """
+                { 
+                    "type": "array", 
+                    "title": "array desc", 
+                    "items": [ {"type": "object", "title": "some obj"} ] 
+                }
+                """.trimIndent()
+            )()
+        }
+        assertThat(exception.message).contains("boolean or object")
     }
 }

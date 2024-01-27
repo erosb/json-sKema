@@ -204,7 +204,8 @@ class SchemaLoader(
                         ?.toList()
                     } ?: emptyList()
             }
-            else -> TODO()
+            else -> throw JsonTypingException("boolean or object",
+                schemaJson.jsonTypeAsString(), schemaJson.location)
         }
     }
 
@@ -450,7 +451,8 @@ class SchemaLoader(
                     }
 
                     is IJsonObject<*, *> -> createCompositeSchema(schemaJson)
-                    else -> TODO()
+                    else -> throw JsonTypingException("boolean or object",
+                        schemaJson.jsonTypeAsString(), schemaJson.location)
                 }
         return retval
     }

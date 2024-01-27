@@ -121,7 +121,7 @@ class SchemaLoaderTest {
 
     @Test
     fun `obsolete use of items`() {
-        val exception = assertThrows(SchemaLoadingException::class.java) {
+        val exception = assertThrows(JsonTypingException::class.java) {
             createSchemaLoaderForString(
                 """
                 { 
@@ -132,6 +132,6 @@ class SchemaLoaderTest {
                 """.trimIndent()
             )()
         }
-        assertThat(exception.message).startsWith("unexpected schema")
+        assertThat(exception.message).contains("boolean or object")
     }
 }

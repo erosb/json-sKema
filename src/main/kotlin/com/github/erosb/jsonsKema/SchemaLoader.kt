@@ -10,6 +10,7 @@ import java.util.stream.Collectors.toList
 data class SchemaLoaderConfig(val schemaClient: SchemaClient, val initialBaseURI: String = DEFAULT_BASE_URI) {
     companion object {
         @JvmStatic
+        @JvmOverloads
         fun createDefaultConfig(additionalMappings: Map<URI, String> = mapOf()) = SchemaLoaderConfig(
             schemaClient = MemoizingSchemaClient(
                 PrepopulatedSchemaClient(

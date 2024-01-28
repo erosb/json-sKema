@@ -45,7 +45,7 @@ enum class ReadWriteContext {
     READ, WRITE, NONE
 }
 
-data class ValidatorConfig(
+data class ValidatorConfig @JvmOverloads constructor(
     val validateFormat: FormatValidationPolicy = FormatValidationPolicy.DEPENDS_ON_VOCABULARY,
     val readWriteContext: ReadWriteContext = ReadWriteContext.NONE) {
 

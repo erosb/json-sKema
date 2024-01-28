@@ -41,7 +41,13 @@ enum class FormatValidationPolicy {
     DEPENDS_ON_VOCABULARY
 }
 
-data class ValidatorConfig(val validateFormat: FormatValidationPolicy = FormatValidationPolicy.DEPENDS_ON_VOCABULARY) {
+enum class ReadWriteContext {
+    READ, WRITE, NONE
+}
+
+data class ValidatorConfig(
+    val validateFormat: FormatValidationPolicy = FormatValidationPolicy.DEPENDS_ON_VOCABULARY,
+    val readWriteContext: ReadWriteContext = ReadWriteContext.NONE) {
 
 }
 
@@ -230,6 +236,9 @@ private class DefaultValidator(
                 return@withOtherInstance super.visitCompositeSchema(schema)
             }
         } else {
+//            if (schema.writeOnly?.value == true && config.readWriteContext == ReadWriteContext.READ) {
+//                return WriteOnlyValidationFailure(schema, instance)
+//            }
             return super.visitCompositeSchema(schema)
         }
     }
@@ -656,6 +665,20 @@ private class DefaultValidator(
             } else null
         }
         return null
+    }
+
+    override fun visitReadOnlySchema(readOnlySchema: ReadOnlySchema): ValidationFailure? {
+        return if (config.readWriteContext != ReadWriteContext.WRITE)
+            null
+        else
+            ReadOnlyValidationFailure(readOnlySchema, instance)
+    }
+
+    override fun visitWriteOnlySchema(writeOnlySchema: WriteOnlySchema): ValidationFailure? {
+        return if (config.readWriteContext != ReadWriteContext.READ)
+            null
+        else
+            WriteOnlyValidationFailure(writeOnlySchema, instance)
     }
 
     override fun accumulate(parent: Schema, previous: ValidationFailure?, current: ValidationFailure?): ValidationFailure? {

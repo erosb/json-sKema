@@ -112,10 +112,14 @@ abstract class SchemaVisitor<P> {
     open fun visitUnevaluatedItemsSchema(schema: UnevaluatedItemsSchema): P? = visitChildren(schema)
     open fun visitUnevaluatedPropertiesSchema(schema: UnevaluatedPropertiesSchema): P? = visitChildren(schema)
     open fun visitFormatSchema(schema: FormatSchema): P? = visitChildren(schema)
+    open fun visitReadOnlySchema(readOnlySchema: ReadOnlySchema): P? = visitChildren(readOnlySchema)
+    open fun visitWriteOnlySchema(writeOnlySchema: WriteOnlySchema): P? = visitChildren(writeOnlySchema)
+    open fun visitPropertyNamesSchema(propertyNamesSchema: PropertyNamesSchema): P? = visitChildren(propertyNamesSchema)
 
     open fun identity(): P? = null
     open fun identity(parent: Schema): P? = identity()
     open fun accumulate(parent: Schema, previous: P?, current: P?): P? = current ?: previous
+
     open fun visitChildren(parent: Schema): P? {
         var product: P? = identity(parent)
         for (subschema in parent.subschemas()) {
@@ -124,8 +128,6 @@ abstract class SchemaVisitor<P> {
         }
         return product
     }
-
-    open fun visitPropertyNamesSchema(propertyNamesSchema: PropertyNamesSchema): P? = visitChildren(propertyNamesSchema)
 }
 
 internal class SchemaNotFoundException(expectedKey: String, actualKey: String) :

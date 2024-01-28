@@ -110,7 +110,7 @@ internal data class LoadingContext(
     fun loadSubschema() = subschemaLoader(keywordValue)
 }
 
-internal typealias KeywordLoader = (context: LoadingContext) -> Schema
+internal typealias KeywordLoader = (context: LoadingContext) -> Schema?
 
 class SchemaLoader(
         val schemaJson: IJsonValue,
@@ -166,7 +166,9 @@ class SchemaLoader(
             Keyword.ANY_OF.value to anyOfLoader,
             Keyword.ALL_OF.value to allOfLoader,
             Keyword.UNIQUE_ITEMS.value to uniqueItemsLoader,
-            Keyword.CONST.value to constLoader
+            Keyword.CONST.value to constLoader,
+            Keyword.READ_ONLY.value to readOnlyLoader,
+            Keyword.WRITE_ONLY.value to writeOnlyLoader
     )
 
     private constructor(
@@ -488,8 +490,6 @@ class SchemaLoader(
                     Keyword.DYNAMIC_ANCHOR.value -> dynamicAnchor = value.requireString().value
                     Keyword.TITLE.value -> title = value.requireString()
                     Keyword.DESCRIPTION.value -> description = value.requireString()
-                    Keyword.READ_ONLY.value -> readOnly = value.requireBoolean()
-                    Keyword.WRITE_ONLY.value -> writeOnly = value.requireBoolean()
                     Keyword.DEPRECATED.value -> deprecated = value.requireBoolean()
                     Keyword.DEFAULT.value -> default = value
                     Keyword.UNEVALUATED_ITEMS.value -> unevaluatedItemsSchema = UnevaluatedItemsSchema(loadChild(value), name.location)
@@ -509,8 +509,6 @@ class SchemaLoader(
                     location = schemaJson.location,
                     title = title,
                     description = description,
-                    readOnly = readOnly,
-                    writeOnly = writeOnly,
                     deprecated = deprecated,
                     default = default,
                     propertySchemas = propertySchemas,

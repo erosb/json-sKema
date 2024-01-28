@@ -88,8 +88,6 @@ class SchemaLoaderTest {
             {
                 "title": "My title",
                 "description": "My description",
-                "writeOnly": false,
-                "readOnly": true,
                 "deprecated": false,
                 "default": null,
                 "if": false,
@@ -104,12 +102,11 @@ class SchemaLoaderTest {
                     FalseSchema(SourceLocation(8, 11, pointer("#/if"))),
                     TrueSchema(SourceLocation(9, 13, pointer("#/then"))),
                     null,
-                    SourceLocation(8, 5, pointer("#/if")))),
+                    SourceLocation(8, 5, pointer("#/if")))
+            ),
             location = UnknownSource,
             title = JsonString("My title"),
             description = JsonString("My description"),
-            readOnly = JsonBoolean(true),
-            writeOnly = JsonBoolean(false),
             deprecated = JsonBoolean(false),
             default = JsonNull(),
             unprocessedProperties = mutableMapOf(JsonString("dummy") to JsonString("hi"))

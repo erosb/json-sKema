@@ -553,7 +553,7 @@ class RefResolutionTest {
     }
 
     @Test
-    fun `additional mappings with no scheme`() {
+    fun `additional mappings with non-absolute uris`() {
         val schema =
             SchemaLoader(
                 JsonParser("""

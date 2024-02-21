@@ -7,7 +7,11 @@ import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.stream.Collectors.toList
 
-data class SchemaLoaderConfig(val schemaClient: SchemaClient, val initialBaseURI: String = DEFAULT_BASE_URI) {
+data class SchemaLoaderConfig @JvmOverloads constructor(
+    val schemaClient: SchemaClient,
+    val initialBaseURI: String = DEFAULT_BASE_URI,
+    val additionalMappings: Map<URI, String> = mapOf()
+) {
     companion object {
         @JvmStatic
         fun createDefaultConfig(additionalMappings: Map<URI, String> = mapOf()) = SchemaLoaderConfig(
@@ -16,7 +20,8 @@ data class SchemaLoaderConfig(val schemaClient: SchemaClient, val initialBaseURI
                     ClassPathAwareSchemaClient(DefaultSchemaClient()),
                     additionalMappings
                 )
-            )
+            ),
+            additionalMappings = additionalMappings
         )
     }
 }
@@ -254,7 +259,7 @@ class SchemaLoader(
     private fun resolveRelativeURI(ref: String): URI {
         return try {
             val uri = URI(ref)
-            if (uri.isAbsolute) {
+            if (uri.isAbsolute || config.additionalMappings.containsKey(parseUri(ref).toBeQueried)) {
                 uri
             } else{
                 resolveAgainstBaseURI(ref)

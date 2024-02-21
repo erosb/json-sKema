@@ -551,4 +551,106 @@ class RefResolutionTest {
             )
         )() as CompositeSchema
     }
+
+    @Test
+    fun `additional mappings with no scheme`() {
+        val schema =
+            SchemaLoader(
+                JsonParser("""
+                    {
+                      "$schema" : "https://json-schema.org/draft/2020-12/schema",
+                      "type" : "object",
+                      "properties" : {
+                        "applicationSchema" : {
+                          "$ref" : "#/$defs/ApplicationSchema"
+                        },
+                        "additionalProperties" : false
+                      },
+                      "$defs" : {
+                        "ApplicationSchema" : {
+                          "type" : "object",
+                          "properties" : {
+                            "protocolVersion" : {
+                              "type" : "array",
+                              "minItems" : 0,
+                              "items" : {
+                                "$ref" : "child.schema.json#/$defs/ProtocolVersionName"
+                              }
+                            }
+                          },
+                          "additionalProperties" : false
+                        }
+                      },
+                      "additionalProperties" : false
+                    }
+                """)(), config =
+                createDefaultConfig(
+                    mapOf(
+                        URI("child.schema.json") to
+                                """
+                                    {
+                                        "$schema": "https://json-schema.org/draft/2020-12/schema",
+                                        "type": "object",
+                                        "properties": {
+                                            "message": {
+                                                "$ref": "#/$defs/Message"
+                                            },
+                                            "additionalProperties": false
+                                        },
+                                        "$defs": {
+                                            "Message": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "messageId": {
+                                                        "$ref": "grandchild.schema.json#/$defs/MessageId"
+                                                    }
+                                                },
+                                                "additionalProperties": false
+                                            },
+                                            "ProtocolVersionName": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "version": {
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "name",
+                                                    "version"
+                                                ],
+                                                "additionalProperties": false
+                                            }
+                                        },
+                                        "additionalProperties": false
+                                    }
+                                """.trimIndent(),
+                        URI("grandchild.schema.json") to
+                                """
+                                    {
+                                        "$schema": "https://json-schema.org/draft/2020-12/schema",
+                                        "type": "object",
+                                        "properties": {
+                                            "additionalProperties": false
+                                        },
+                                        "$defs": {
+                                            "MessageId": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                                "additionalProperties": false
+                                            }
+                                        },
+                                        "additionalProperties": false
+                                    }
+                                """.trimIndent()
+                    )
+                )
+            )() as CompositeSchema
+    }
 }

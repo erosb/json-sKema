@@ -4,6 +4,8 @@ _json-sKema is a [Json Schema](https://json-schema.org/) validator library for t
 
 Are you new to JSON Schema? Get started with [Understanding JSON Schema](https://json-schema.org/understanding-json-schema/)!
 
+
+
 ## Installation
 
 ### Maven
@@ -14,7 +16,7 @@ Add the following dependency to the `<dependencies>` section of your project:
 <dependency>
     <groupId>com.github.erosb</groupId>
     <artifactId>json-sKema</artifactId>
-    <version>0.11.0</version>
+    <version>0.12.0</version>
 </dependency>
 ```
 
@@ -22,13 +24,15 @@ Add the following dependency to the `<dependencies>` section of your project:
 
 ```groovy
 dependencies {
-    implementation("com.github.erosb:json-sKema:0.11.0")
+    implementation("com.github.erosb:json-sKema:0.12.0")
 }
 ```
 
 ## Usage
 
 ### Hello-world
+
+[Complete source](https://github.com/erosb/json-sKema-examples/blob/master/src/main/java/com/github/erosb/jsonsKema/examples/HelloWorld.java)
 
 ```java
 // parse the schema JSON as string
@@ -76,7 +80,7 @@ System.out.println(failure);
 ### Loading a schema file from URL
 
 ```java
-// HTTP protocol is also supported
+// HTTP(s) protocol is also supported
 Schema schema = SchemaLoader.forURL("classpath:///path/to/your/schema.json").load();
 
 // create a validator instance for each validation (one-time use object) 
@@ -85,6 +89,8 @@ Validator validator = Validator.forSchema(schema);
 ```
 
 ### Pre-registering schemas by URI before schema loading
+
+[Complete source](https://github.com/erosb/json-sKema-examples/blob/master/src/main/java/com/github/erosb/jsonsKema/examples/PreRegisteredSchemas.java)
 
 ```java
 // Creating a SchemaLoader config with a pre-registered schema by URI
@@ -119,6 +125,68 @@ Schema schema = new SchemaLoader(schemaJson, config).load();
 // running the validation
 ValidationFailure result = Validator.forSchema(schema).validate(new JsonParser("[null]").parse());
 System.out.println(result.toJSON());
+```
+
+### Validating in Read or Write context
+
+[Complete source](https://github.com/erosb/json-sKema-examples/blob/master/src/main/java/com/github/erosb/jsonsKema/examples/ReadWriteContextValidation.java)
+
+If you want to take advantage of the [`"readOnly"` and `"writeOnly"`](https://json-schema.org/draft/2020-12/draft-bhutton-json-schema-validation-00#rfc.section.9.4)
+keywords of json schema, you can tell the `Validator` instance  if the validation happens in read or write context:
+
+```java
+JsonValue schemaJson = new JsonParser("""
+{
+    "type": "object",
+    "properties": {
+        "id": {
+            "readOnly": true,
+            "type": "number"
+        },
+        "name": {
+            "type": "string"
+        },
+        "password": {
+            "type": "string",
+            "writeOnly": true
+        }
+    }
+}
+""").parse();
+// map the raw json to a reusable Schema instance
+Schema schema = new SchemaLoader(schemaJson).load();
+
+// creating write-context validator, it will report validation failures
+// for read-only properties that are included in the instance
+var writeContextValidator = Validator.create(schema, ValidatorConfig.builder()
+        .readWriteContext(ReadWriteContext.WRITE)
+        .build()
+);
+
+// creating the json document which will be validated (first in write context, then in read context)
+JsonValue instance = new JsonParser("""
+        {
+            "id": 1,
+            "name": "John Doe",
+            "password": "v3ry_s3cur3"
+        }
+        """).parse();
+var writeContextFailure = writeContextValidator.validate(instance);
+
+// prints failure because the read-only property "id" is present in write context
+System.out.println(writeContextFailure);
+
+// creating read-context validator, it will report validation failures
+// for write-only properties that are included in the instance
+var readContextValidator = Validator.create(schema, ValidatorConfig.builder()
+        .readWriteContext(ReadWriteContext.READ)
+        .build()
+);
+
+var readContextFailure = readContextValidator.validate(instance);
+
+// prints failure because the write-only property "password" is present in read context
+System.out.println(readContextFailure);
 ```
 
 ## Compatibility notes

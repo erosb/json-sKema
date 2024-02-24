@@ -48,7 +48,30 @@ enum class ReadWriteContext {
 data class ValidatorConfig(
     val validateFormat: FormatValidationPolicy = FormatValidationPolicy.DEPENDS_ON_VOCABULARY,
     val readWriteContext: ReadWriteContext = ReadWriteContext.NONE) {
+    companion object {
 
+        class ValidatorConfigBuilder {
+
+            var readWriteContext: ReadWriteContext = ReadWriteContext.NONE
+            var validateFormat: FormatValidationPolicy = FormatValidationPolicy.DEPENDS_ON_VOCABULARY;
+
+            fun readWriteContext(readWriteContext: ReadWriteContext): ValidatorConfigBuilder {
+                this.readWriteContext = readWriteContext
+                return this
+            }
+
+            fun validateFormat(validateFormat: FormatValidationPolicy): ValidatorConfigBuilder {
+                this.validateFormat = validateFormat;
+                return this
+            }
+
+            fun build() = ValidatorConfig(validateFormat, readWriteContext)
+
+        }
+
+        @JvmStatic
+        fun builder(): ValidatorConfigBuilder = ValidatorConfigBuilder()
+    }
 }
 
 interface Validator {

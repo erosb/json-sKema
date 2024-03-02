@@ -82,7 +82,6 @@ abstract class SchemaVisitor<P> {
     open fun visitAnyOfSchema(schema: AnyOfSchema): P? = visitChildren(schema)
     open fun visitOneOfSchema(schema: OneOfSchema): P? = visitChildren(schema)
     open fun visitReferenceSchema(schema: ReferenceSchema): P? = visitChildren(schema)
-    open fun visitDynamicRefSchema(schema: DynamicRefSchema): P? = visitChildren(schema)
     open fun visitAdditionalPropertiesSchema(schema: AdditionalPropertiesSchema): P? = visitChildren(schema)
     open fun visitConstSchema(schema: ConstSchema): P? = visitChildren(schema)
     open fun visitEnumSchema(schema: EnumSchema): P? = visitChildren(schema)
@@ -164,10 +163,6 @@ internal class TraversingSchemaVisitor<P>(vararg keys: String) : SchemaVisitor<P
             return schema.propertySchemas[propName]?.accept(this)
         }
         return super.visitCompositeSchema(schema)
-    }
-
-    override fun visitDynamicRefSchema(schema: DynamicRefSchema): P? = consume(schema, "\$dynamicRef") {
-        schema.referredSchema?.accept(this)
     }
 
     override fun visitAdditionalPropertiesSchema(schema: AdditionalPropertiesSchema): P? =

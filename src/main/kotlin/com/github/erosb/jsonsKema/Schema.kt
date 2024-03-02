@@ -49,10 +49,10 @@ data class ReferenceSchema(var referredSchema: Schema?, val ref: String, overrid
     }
 }
 
-data class DynamicRefSchema(var referredSchema: Schema?, val dynamicRef: String, override val location: SourceLocation) :
-    Schema(location) {
-    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitDynamicRefSchema(this)
-    override fun subschemas() = referredSchema?.let { listOf(it) } ?: emptyList()
-}
+//data class DynamicRefSchema(var referredSchema: Schema?, val dynamicRef: String, override val location: SourceLocation) :
+//    Schema(location) {
+//    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitDynamicRefSchema(this)
+//    override fun subschemas() = referredSchema?.let { listOf(it) } ?: emptyList()
+//}
 
 data class DynamicReference(val ref: String, var fallbackReferredSchema: ReferenceSchema? = null)

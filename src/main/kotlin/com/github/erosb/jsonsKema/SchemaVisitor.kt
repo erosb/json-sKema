@@ -14,6 +14,13 @@ abstract class SchemaVisitor<P> {
         if (scope.dynamicAnchor == lookupValue) {
             return scope
         }
+        val definedSubschema = scope.definedSubschemas.values
+            .filterIsInstance<CompositeSchema>()
+            .map { scope -> findSubschemaByDynamicAnchor(scope, lookupValue) }
+            .firstOrNull()
+        if (definedSubschema != null) {
+            return definedSubschema
+        }
         return scope.subschemas().stream()
             .filter { it is CompositeSchema}
             .map { it as CompositeSchema }

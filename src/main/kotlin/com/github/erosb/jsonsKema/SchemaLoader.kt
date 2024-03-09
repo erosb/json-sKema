@@ -479,6 +479,7 @@ class SchemaLoader(
         var unevaluatedItemsSchema: Schema? = null
         var unevaluatedPropertiesSchema: Schema? = null
         var unprocessedProperties: MutableMap<IJsonString, IJsonValue> = mutableMapOf()
+        var definedSubschemas: Map<IJsonString, Schema> = emptyMap()
         return enterScope(schemaJson) {
             schemaJson.properties.forEach { (name, value) ->
                 var subschema: Schema? = null
@@ -499,6 +500,7 @@ class SchemaLoader(
                     Keyword.DEFAULT.value -> default = value
                     Keyword.UNEVALUATED_ITEMS.value -> unevaluatedItemsSchema = UnevaluatedItemsSchema(loadChild(value), name.location)
                     Keyword.UNEVALUATED_PROPERTIES.value -> unevaluatedPropertiesSchema = UnevaluatedPropertiesSchema(loadChild(value), name.location)
+                    Keyword.DEFS.value -> definedSubschemas = value.requireObject().properties.mapValues { loadChild(it.value) }
                 }
                 val loader = keywordLoaders[name.value]
                 if (subschema === null && loader != null) {
@@ -523,7 +525,8 @@ class SchemaLoader(
                     unevaluatedItemsSchema = unevaluatedItemsSchema,
                     unevaluatedPropertiesSchema = unevaluatedPropertiesSchema,
                     unprocessedProperties = unprocessedProperties,
-                    vocabulary = loadingState.vocabulary
+                    vocabulary = loadingState.vocabulary,
+                    definedSubschemas = definedSubschemas.mapKeys { it.key.value }
             )
         }
     }

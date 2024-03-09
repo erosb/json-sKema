@@ -20,10 +20,11 @@ data class CompositeSchema(
     val unevaluatedItemsSchema: Schema? = null,
     val unevaluatedPropertiesSchema: Schema? = null,
     val unprocessedProperties: Map<IJsonString, IJsonValue> = emptyMap(),
-    val vocabulary: List<String> = emptyList()
+    val vocabulary: List<String> = emptyList(),
+    val definedSubschemas: Map<String, Schema> = emptyMap()
 ) : Schema(location) {
     override fun <P> accept(visitor: SchemaVisitor<P>) = visitor.internallyVisitCompositeSchema(this)
-    override fun subschemas() = subschemas
+    override fun subschemas() = subschemas// + definedSubschemas.values
 }
 
 data class ReferenceSchema(var referredSchema: Schema?, val ref: String, override val location: SourceLocation) :
@@ -48,11 +49,5 @@ data class ReferenceSchema(var referredSchema: Schema?, val ref: String, overrid
         return "{\"\$ref\": \"${ref}\", \"resolved\":\"${referredSchema !== null}\"}"
     }
 }
-
-//data class DynamicRefSchema(var referredSchema: Schema?, val dynamicRef: String, override val location: SourceLocation) :
-//    Schema(location) {
-//    override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitDynamicRefSchema(this)
-//    override fun subschemas() = referredSchema?.let { listOf(it) } ?: emptyList()
-//}
 
 data class DynamicReference(val ref: String, var fallbackReferredSchema: ReferenceSchema? = null)

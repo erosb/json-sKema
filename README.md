@@ -220,7 +220,7 @@ The library currently has built-in support for the following `"format"` values d
     <tr>
         <td>time</td>
         <td>Yes</td>
-        <td>Leap seconds not supported</td>
+        <td></td>
     </tr>
     <tr>
         <td>duration</td>

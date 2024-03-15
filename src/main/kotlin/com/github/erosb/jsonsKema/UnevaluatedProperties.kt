@@ -17,6 +17,6 @@ data class UnevaluatedPropertiesValidationFailure(
     "object properties ${propertyFailures.keys.joinToString(", ")} failed to validate against \"unevaluatedProperties\" subschema",
     schema,
     instance,
-    Keyword.UNEVALUATED_ITEMS,
+    Keyword.UNEVALUATED_PROPERTIES,
     propertyFailures.values.toSet()
 )

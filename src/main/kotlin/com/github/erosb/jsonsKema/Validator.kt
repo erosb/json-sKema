@@ -47,13 +47,16 @@ enum class ReadWriteContext {
 
 data class ValidatorConfig @JvmOverloads constructor(
     val validateFormat: FormatValidationPolicy = FormatValidationPolicy.DEPENDS_ON_VOCABULARY,
-    val readWriteContext: ReadWriteContext = ReadWriteContext.NONE) {
+    val readWriteContext: ReadWriteContext = ReadWriteContext.NONE,
+    val additionalFormatValidators: Map<String, FormatValidator> = emptyMap()
+) {
     companion object {
 
         class ValidatorConfigBuilder {
 
             var readWriteContext: ReadWriteContext = ReadWriteContext.NONE
             var validateFormat: FormatValidationPolicy = FormatValidationPolicy.DEPENDS_ON_VOCABULARY;
+            val additionalFormatValidators: MutableMap<String, FormatValidator> = mutableMapOf()
 
             fun readWriteContext(readWriteContext: ReadWriteContext): ValidatorConfigBuilder {
                 this.readWriteContext = readWriteContext
@@ -65,8 +68,12 @@ data class ValidatorConfig @JvmOverloads constructor(
                 return this
             }
 
-            fun build() = ValidatorConfig(validateFormat, readWriteContext)
+            fun additionalFormatValidator(formatName: String, formatValidator: FormatValidator): ValidatorConfigBuilder {
+                additionalFormatValidators[formatName] = formatValidator
+                return this;
+            }
 
+            fun build() = ValidatorConfig(validateFormat, readWriteContext, additionalFormatValidators)
         }
 
         @JvmStatic
@@ -661,7 +668,7 @@ private class DefaultValidator(
         "ipv4" to ipv4FormatValidator,
         "ipv6" to ipv6FormatValidator,
         "uuid" to uuidFormatValidator
-    )
+    ) + config.additionalFormatValidators
 
     override fun visitFormatSchema(schema: FormatSchema): ValidationFailure? =
         if (validateFormat) {

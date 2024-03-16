@@ -139,6 +139,8 @@ class SchemaLoader(
 
     constructor(schemaJson: IJsonValue) : this(schemaJson, createDefaultConfig()) {}
 
+    constructor(schemaJson: String) : this(JsonParser(schemaJson)(), createDefaultConfig()) {}
+
     private val regexpFactory: RegexpFactory = JavaUtilRegexpFactory()
 
     private val keywordLoaders: Map<String, KeywordLoader> = mapOf(
@@ -468,8 +470,6 @@ class SchemaLoader(
         val subschemas = mutableSetOf<Schema>()
         var title: IJsonString? = null
         var description: IJsonString? = null
-        var readOnly: IJsonBoolean? = null
-        var writeOnly: IJsonBoolean? = null
         var deprecated: IJsonBoolean? = null
         var default: IJsonValue? = null
         var dynamicRef: DynamicReference? = null
@@ -478,7 +478,7 @@ class SchemaLoader(
         var patternPropertySchemas: Map<Regexp, Schema> = emptyMap()
         var unevaluatedItemsSchema: Schema? = null
         var unevaluatedPropertiesSchema: Schema? = null
-        var unprocessedProperties: MutableMap<IJsonString, IJsonValue> = mutableMapOf()
+        val unprocessedProperties: MutableMap<IJsonString, IJsonValue> = mutableMapOf()
         var definedSubschemas: Map<IJsonString, Schema> = emptyMap()
         return enterScope(schemaJson) {
             schemaJson.properties.forEach { (name, value) ->

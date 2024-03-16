@@ -39,4 +39,58 @@ class FormatTest {
 
         assertThat(actual).isNull()
     }
+
+    @Test
+    fun `custom format`() {
+        val validator = Validator.create(SchemaLoader("""
+            {
+                "format": "parens"
+            }
+        """)(), config = ValidatorConfig.builder()
+            .additionalFormatValidator("parens") { instance, schema ->
+                instance.maybeString { str ->
+                    var openCount = 0
+                    for (ch in str.value) {
+                        if (ch == '(') {
+                            ++openCount
+                        } else if (ch == ')') {
+                            --openCount
+                            if (openCount < 0) {
+                                return@maybeString FormatValidationFailure(schema, instance)
+                            }
+                        }
+                    }
+                    return@maybeString if (openCount != 0) FormatValidationFailure(schema, instance) else null
+                }
+            }
+            .build()
+        )
+
+        val noFailure = validator.validate(JsonString("asd((asd))"))
+        assertThat(noFailure).isNull()
+
+        val failure = validator.validate(JsonString("asd(((asd))"))
+        assertThat(failure).isInstanceOf(FormatValidationFailure::class.java)
+    }
+
+    @Test
+    fun `format override`() {
+        val validator = Validator.create(SchemaLoader("""
+            {
+                "format": "email"
+            }
+        """)(), config = ValidatorConfig.builder()
+            .additionalFormatValidator("email") { instance, schema ->
+                instance.maybeString { if (it.value.endsWith(".com")) null else FormatValidationFailure(schema, instance) }
+            }
+            .build()
+        )
+
+        val noFailure = validator.validate(JsonString("asdasd.com"))
+        assertThat(noFailure).isNull()
+
+        val failure = validator.validate(JsonString("erosb@github.io"))
+        assertThat(failure).isNotNull()
+        assertThat(failure!!.message).isEqualTo("instance does not match format 'email'")
+    }
 }

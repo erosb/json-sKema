@@ -1,6 +1,8 @@
 package com.github.erosb.jsonsKema
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.assertj.core.api.Condition
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.net.URI
@@ -652,5 +654,24 @@ class RefResolutionTest {
                     )
                 )
             )() as CompositeSchema
+    }
+
+    @Test
+    fun `intra-doc failure on object prop`() {
+        val subject = SchemaLoader(
+            JsonParser(
+                """
+            {
+                "$ref": "#/$defs/missing"
+            }
+        """.trimIndent()).parse())
+
+        val expected = RefResolutionException(
+            ref = JsonPointer(listOf("$defs", "missing")),
+            location = SourceLocation(2, 4, JsonPointer(listOf("$defs", "missing")))
+        )
+
+        assertThatThrownBy {  subject.load() }
+            .isEqualTo(expected)
     }
 }

@@ -28,6 +28,8 @@ data class SchemaLoaderConfig @JvmOverloads constructor(
 
 class SchemaLoadingException(msg: String, cause: Throwable) : RuntimeException(msg, cause)
 
+data class RefResolutionException(val ref: JsonPointer, val location: SourceLocation) : RuntimeException()
+
 internal fun createDefaultConfig(additionalMappings: Map<URI, String> = mapOf()) = SchemaLoaderConfig.createDefaultConfig(additionalMappings)
 
 /**
@@ -385,10 +387,10 @@ class SchemaLoader(
         if (byURIWithAnchor?.json !== null) {
             return Pair(byURIWithAnchor.json!!, URI(ref))
         }
-        return evaluateJsonPointer(continingRoot, uri.fragment)
+        return evaluateJsonPointer(continingRoot, uri.fragment, referenceSchema.ref)
     }
 
-    private fun evaluateJsonPointer(root: IJsonValue, pointer: String): Pair<IJsonValue, URI> {
+    private fun evaluateJsonPointer(root: IJsonValue, pointer: String, refLocation: SourceLocation): Pair<IJsonValue, URI> {
         val segments = LinkedList(pointer.split("/"))
         if ("#" != segments.poll()) {
             throw Error("invalid json pointer: $pointer")
@@ -407,7 +409,7 @@ class SchemaLoader(
                     is IJsonObject<*, *> -> {
                         val child = root[segment]
                         if (child === null) {
-                            throw Error("json pointer evaluation error: could not resolve property $segment in $root")
+                            throw RefResolutionException(JsonPointer(pointer.split("/")), refLocation)
                         }
                         return@enterScope lookupNext(child, segments)
                     }
@@ -547,7 +549,7 @@ class SchemaLoader(
         return rval.toMap()
     }
 
-    internal fun loadChild(schemaJson: IJsonValue): Schema {
+    private fun loadChild(schemaJson: IJsonValue): Schema {
         return SchemaLoader(schemaJson, config, loadingState).doLoadSchema(schemaJson)
     }
 }

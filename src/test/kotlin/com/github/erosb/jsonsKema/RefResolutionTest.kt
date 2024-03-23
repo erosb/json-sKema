@@ -1,7 +1,6 @@
 package com.github.erosb.jsonsKema
 
-import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.assertj.core.api.Assertions.*
 import org.assertj.core.api.Condition
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -667,8 +666,8 @@ class RefResolutionTest {
         """.trimIndent()).parse())
 
         val expected = RefResolutionException(
-            ref = JsonPointer(listOf("$defs", "missing")),
-            location = SourceLocation(2, 4, JsonPointer(listOf("$defs", "missing")))
+            ref = ReferenceSchema(null, "mem://input#/$defs/missing", SourceLocation(2, 5, JsonPointer(listOf("$ref")))),
+            resolutionFailureLocation = SourceLocation(1, 1, JsonPointer(listOf()))
         )
 
         assertThatThrownBy {  subject.load() }

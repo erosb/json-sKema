@@ -84,7 +84,7 @@ open class SourceLocation(
     }
 
     override fun toString(): String {
-        return "line $lineNumber, character $position, pointer: $pointer"
+        return getLocation(); //"line $lineNumber, character $position, pointer: $pointer"
     }
 
     internal fun trimPointerSegments(leadingSegmentsToBeRemoved: Int): SourceLocation {

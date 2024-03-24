@@ -11,10 +11,12 @@ fun interface SchemaClient {
     fun get(uri: URI): InputStream
 
     fun getParsed(uri: URI): IJsonValue {
-        val reader = BufferedReader(InputStreamReader(get(uri)))
-        val string = reader.readText()
         try {
+            val reader = BufferedReader(InputStreamReader(get(uri)))
+            val string = reader.readText()
             return JsonParser(string, uri)()
+        } catch (ex: UncheckedIOException) {
+            throw SchemaLoadingException("could not read schema from URI \"$uri\"")
         } catch (ex: JsonParseException) {
             throw SchemaLoadingException("failed to parse json content returned from $uri", ex)
         }

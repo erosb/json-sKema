@@ -2,6 +2,7 @@ package com.github.erosb.jsonsKema
 
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
+import java.net.URI
 
 class SchemaLoadingFailureTest {
 
@@ -52,7 +53,54 @@ class SchemaLoadingFailureTest {
         );
         Assertions.assertThatThrownBy { subject.load() }
             .isEqualTo(expected)
-
     }
 
+    @Test
+    fun `lookup failure in remote schema`() {
+        val subject = SchemaLoader(schemaJson = JsonParser("""
+            {
+                "additionalProperties": {
+                    "$ref": "urn:asdasd#/$defs/Hello"
+                }
+            }            
+        """.trimIndent())(), config = createDefaultConfig(mapOf(
+            URI("urn:asdasd") to """
+                {
+                    "$defs": {
+                        "World": true
+                    }
+                }
+            """.trimIndent()
+        ))
+        )
+
+        val expected = RefResolutionException(
+            ref = ReferenceSchema(
+                null,
+                "urn:asdasd#/$defs/Hello",
+                SourceLocation(3, 9, JsonPointer(listOf("additionalProperties", "$ref")))
+            ),
+            missingProperty = "Hello",
+            resolutionFailureLocation = SourceLocation(2, 14, JsonPointer(listOf("$defs")), URI("urn:asdasd"))
+        )
+
+        Assertions.assertThatThrownBy { subject.load() }
+            .usingRecursiveComparison()
+            .isEqualTo(expected)
+    }
+
+    @Test
+    fun `remote failure`() {
+        val subject = SchemaLoader(
+            JsonParser(
+                """
+            {
+               "$ref": "classpath://.non-existent.file"
+            }
+        """.trimIndent()).parse())
+
+        Assertions.assertThatThrownBy { subject.load() }
+            .isInstanceOf(SchemaLoadingException::class.java)
+            .hasMessage("could not read schema from URI \"classpath://.non-existent.file\"")
+    }
 }

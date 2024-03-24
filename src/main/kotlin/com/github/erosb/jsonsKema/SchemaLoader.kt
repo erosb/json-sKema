@@ -26,9 +26,15 @@ data class SchemaLoaderConfig @JvmOverloads constructor(
     }
 }
 
-class SchemaLoadingException(msg: String, cause: Throwable) : RuntimeException(msg, cause)
+open class SchemaLoadingException(msg: String, cause: Throwable? = null) : RuntimeException(msg, cause)
 
-data class RefResolutionException(val ref: ReferenceSchema, val resolutionFailureLocation: SourceLocation) : RuntimeException()
+data class RefResolutionException(
+    val ref: ReferenceSchema,
+    val missingProperty: String,
+    val resolutionFailureLocation: SourceLocation)
+    : SchemaLoadingException(
+        "\$ref resolution failure: could not evaluate pointer \"${ref.ref}\", property \"$missingProperty\" not found at ${resolutionFailureLocation.getLocation()}"
+    )
 
 internal fun createDefaultConfig(additionalMappings: Map<URI, String> = mapOf()) = SchemaLoaderConfig.createDefaultConfig(additionalMappings)
 
@@ -411,9 +417,8 @@ class SchemaLoader(
                         if (child === null) {
                             throw RefResolutionException(
                                 ref = ref,
+                                missingProperty = segment,
                                 resolutionFailureLocation = root.location
-//                                JsonPointer(pointer.split("/").drop(1)),
-//                                ref.location
                             )
                         }
                         return@enterScope lookupNext(child, segments)

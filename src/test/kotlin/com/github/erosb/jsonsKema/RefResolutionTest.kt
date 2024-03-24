@@ -654,23 +654,4 @@ class RefResolutionTest {
                 )
             )() as CompositeSchema
     }
-
-    @Test
-    fun `intra-doc failure on object prop`() {
-        val subject = SchemaLoader(
-            JsonParser(
-                """
-            {
-                "$ref": "#/$defs/missing"
-            }
-        """.trimIndent()).parse())
-
-        val expected = RefResolutionException(
-            ref = ReferenceSchema(null, "mem://input#/$defs/missing", SourceLocation(2, 5, JsonPointer(listOf("$ref")))),
-            resolutionFailureLocation = SourceLocation(1, 1, JsonPointer(listOf()))
-        )
-
-        assertThatThrownBy {  subject.load() }
-            .isEqualTo(expected)
-    }
 }

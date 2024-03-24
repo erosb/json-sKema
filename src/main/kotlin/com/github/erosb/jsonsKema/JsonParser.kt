@@ -175,7 +175,7 @@ class JsonParser {
         }
 
         if (jsonValue == null) {
-            TODO()
+            throw JsonParseException("unexpected character $curr", sourceLocation())
         }
         walker.skipWhitespaces()
         return jsonValue

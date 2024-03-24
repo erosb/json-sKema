@@ -36,6 +36,8 @@ data class RefResolutionException(
         "\$ref resolution failure: could not evaluate pointer \"${ref.ref}\", property \"$missingProperty\" not found at ${resolutionFailureLocation.getLocation()}"
     )
 
+data class AggregateSchemaLoadingException(val causes: List<Exception>) : SchemaLoadingException("multiple problems found during schema loading")
+
 internal fun createDefaultConfig(additionalMappings: Map<URI, String> = mapOf()) = SchemaLoaderConfig.createDefaultConfig(additionalMappings)
 
 /**
@@ -110,6 +112,13 @@ internal data class LoadingState(
 
     fun registerRawSchemaByDynAnchor(dynAnchor: String, json: IJsonObject<*, *>) {
         anchors.getOrPut(normalizeUri(dynAnchor)) {Knot(dynamic = true)}.json = json
+    }
+
+    fun markUnreachable(unresolved: Knot) {
+        anchors.entries.find { entry -> entry.value === unresolved }
+            ?. key
+            ?. let { anchors.remove(it) }
+
     }
 }
 
@@ -335,7 +344,13 @@ class SchemaLoader(
 
     private fun loadRootSchema(): Schema {
         lookupAnchors(schemaJson, loadingState.baseURI)
-        return loadSchema()
+        val root = loadSchema()
+        when (collectedExceptions.size) {
+            0 ->  root;
+            1 -> throw collectedExceptions[0]
+            else -> throw AggregateSchemaLoadingException(collectedExceptions)
+        }
+        return root
     }
 
     private fun loadSchema(): Schema {
@@ -350,9 +365,14 @@ class SchemaLoader(
                 if (unresolved === null) {
                     break
                 }
-                val pair = resolve(unresolved.referenceSchemas[0])
-                unresolved.json = pair.first
-                unresolved.lexicalContextBaseURI = pair.second
+                try {
+                    val pair = resolve(unresolved.referenceSchemas[0])
+                    unresolved.json = pair.first
+                    unresolved.lexicalContextBaseURI = pair.second
+                } catch (ex: SchemaLoadingException) {
+                    loadingState.markUnreachable(unresolved)
+                    collectedExceptions.add(ex)
+                }
             } else {
                 knot.underLoading = true
 
@@ -483,6 +503,8 @@ class SchemaLoader(
         return retval
     }
 
+    private val collectedExceptions = mutableListOf<Exception>()
+
     private fun createCompositeSchema(schemaJson: IJsonObject<*, *>): Schema {
         val subschemas = mutableSetOf<Schema>()
         var title: IJsonString? = null
@@ -499,33 +521,47 @@ class SchemaLoader(
         var definedSubschemas: Map<IJsonString, Schema> = emptyMap()
         return enterScope(schemaJson) {
             schemaJson.properties.forEach { (name, value) ->
-                var subschema: Schema? = null
-                val ctx = LoadingContext(
-                    schemaJson, value, name.location,
-                    { loadChild(it) },
-                    regexpFactory
-                )
-                when (name.value) {
-                    Keyword.PROPERTIES.value -> propertySchemas = loadPropertySchemas(value.requireObject())
-                    Keyword.PATTERN_PROPERTIES.value -> patternPropertySchemas = loadPatternPropertySchemas(value.requireObject())
-                    Keyword.REF.value -> subschema = createReferenceSchema(name.location, value.requireString().value)
-                    Keyword.DYNAMIC_REF.value -> dynamicRef = DynamicReference(ref = value.requireString().value, fallbackReferredSchema = createReferenceSchema(ref = value.requireString().value, location = schemaJson.location))
-                    Keyword.DYNAMIC_ANCHOR.value -> dynamicAnchor = value.requireString().value
-                    Keyword.TITLE.value -> title = value.requireString()
-                    Keyword.DESCRIPTION.value -> description = value.requireString()
-                    Keyword.DEPRECATED.value -> deprecated = value.requireBoolean()
-                    Keyword.DEFAULT.value -> default = value
-                    Keyword.UNEVALUATED_ITEMS.value -> unevaluatedItemsSchema = UnevaluatedItemsSchema(loadChild(value), name.location)
-                    Keyword.UNEVALUATED_PROPERTIES.value -> unevaluatedPropertiesSchema = UnevaluatedPropertiesSchema(loadChild(value), name.location)
-                    Keyword.DEFS.value -> definedSubschemas = value.requireObject().properties.mapValues { loadChild(it.value) }
-                }
-                val loader = keywordLoaders[name.value]
-                if (subschema === null && loader != null) {
-                    subschema = loader(ctx)
-                }
-                if (subschema != null) subschemas.add(subschema)
-                if (!isKnownKeyword(name.value)) {
-                    unprocessedProperties[name] = value
+                try {
+                    var subschema: Schema? = null
+                    val ctx = LoadingContext(
+                        schemaJson, value, name.location,
+                        { loadChild(it) },
+                        regexpFactory
+                    )
+                    when (name.value) {
+                        Keyword.PROPERTIES.value -> propertySchemas = loadPropertySchemas(value.requireObject())
+                        Keyword.PATTERN_PROPERTIES.value -> patternPropertySchemas =
+                            loadPatternPropertySchemas(value.requireObject())
+                        Keyword.REF.value -> subschema = createReferenceSchema(name.location, value.requireString().value)
+                        Keyword.DYNAMIC_REF.value -> dynamicRef = DynamicReference(
+                            ref = value.requireString().value,
+                            fallbackReferredSchema = createReferenceSchema(
+                                ref = value.requireString().value,
+                                location = schemaJson.location
+                            )
+                        )
+                        Keyword.DYNAMIC_ANCHOR.value -> dynamicAnchor = value.requireString().value
+                        Keyword.TITLE.value -> title = value.requireString()
+                        Keyword.DESCRIPTION.value -> description = value.requireString()
+                        Keyword.DEPRECATED.value -> deprecated = value.requireBoolean()
+                        Keyword.DEFAULT.value -> default = value
+                        Keyword.UNEVALUATED_ITEMS.value -> unevaluatedItemsSchema =
+                            UnevaluatedItemsSchema(loadChild(value), name.location)
+                        Keyword.UNEVALUATED_PROPERTIES.value -> unevaluatedPropertiesSchema =
+                            UnevaluatedPropertiesSchema(loadChild(value), name.location)
+                        Keyword.DEFS.value -> definedSubschemas =
+                            value.requireObject().properties.mapValues { loadChild(it.value) }
+                    }
+                    val loader = keywordLoaders[name.value]
+                    if (subschema === null && loader != null) {
+                        subschema = loader(ctx)
+                    }
+                    if (subschema != null) subschemas.add(subschema)
+                    if (!isKnownKeyword(name.value)) {
+                        unprocessedProperties[name] = value
+                    }
+                } catch (ex: Exception) {
+                    collectedExceptions.add(ex)
                 }
             }
             return@enterScope CompositeSchema(

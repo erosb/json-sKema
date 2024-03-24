@@ -103,4 +103,46 @@ class SchemaLoadingFailureTest {
             .isInstanceOf(SchemaLoadingException::class.java)
             .hasMessage("could not read schema from URI \"classpath://.non-existent.file\"")
     }
+
+    @Test
+    fun `multiple failures`() {
+        val subject = SchemaLoader(
+            schemaJson = JsonParser("""
+                {
+                    "title": null,
+                    "description": 2,
+                    "properties": {
+                        "wrongType": {
+                            "type": "float",
+                            "minimum": "maybe 2 or so"
+                        },
+                        "remoteNotFound": {
+                            "$ref": "classpath://not-found.file"
+                        },
+                        "remotePointerFailure": {
+                            "$ref": "http://example.org/schema#/$defs/X"
+                        },
+                        "remoteParsingFailure": {
+                            "$ref": "classpath://xml"
+                        }
+                    }
+                }
+            """.trimIndent())(),
+            config = createDefaultConfig(mapOf(
+                URI("http://example.org/schema") to """
+                    {
+                        "$defs": {}
+                    }
+                """.trimIndent(),
+                URI("classpath://xml") to """
+                    <?xml version="1.0">
+                    <project>
+                    </project>
+                """.trimIndent()
+            ))
+        )
+
+        Assertions.assertThatThrownBy { subject.load() }
+            .isInstanceOf(AggregateSchemaLoadingException::class.java)
+    }
 }

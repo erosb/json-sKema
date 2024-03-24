@@ -425,11 +425,16 @@ class SchemaLoader(
                     }
 
                     is IJsonArray<*> -> {
-                        val child = root[Integer.parseInt(segment)]
-                        if (child === null) {
-                            throw Error("json pointer evaluation error: could not resolve property $segment in $root")
+                        try {
+                            val child = root[Integer.parseInt(segment)]
+                            return@enterScope lookupNext(child, segments)
+                        } catch (ex: IndexOutOfBoundsException) {
+                            throw RefResolutionException(
+                                ref = ref,
+                                missingProperty = segment,
+                                resolutionFailureLocation = root.location
+                            )
                         }
-                        return@enterScope lookupNext(child, segments)
                     }
 
                     else -> {

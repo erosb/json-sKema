@@ -30,7 +30,7 @@ class SchemaLoadingFailureTest {
     }
 
     @Test
-    fun `not array`() {
+    fun `array index missing`() {
         val subject = SchemaLoader(
             JsonParser(
                 """
@@ -38,14 +38,18 @@ class SchemaLoadingFailureTest {
                 "type": "object",
                 "properties": {
                     "prop": {
-                        "$ref": "#/$defs/0/missing"                    
+                        "$ref": "#/definitions/0/missing"                    
                     }
                 },
-                "$defs": []
+                "definitions": []
             }
         """.trimIndent()).parse())
 
-        var expected = null;
+        val expected = RefResolutionException(
+            ref = ReferenceSchema(null, "mem://input#/definitions/0/missing", SourceLocation(5, 13, JsonPointer(listOf("properties", "prop", "$ref")))),
+            missingProperty = "0",
+            resolutionFailureLocation = SourceLocation(8, 20, JsonPointer(listOf("definitions")))
+        );
         Assertions.assertThatThrownBy { subject.load() }
             .isEqualTo(expected)
 

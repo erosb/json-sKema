@@ -39,11 +39,17 @@ data class RefResolutionException(
 data class AggregateSchemaLoadingException(val causes: List<Exception>) : SchemaLoadingException("multiple problems found during schema loading") {
 
     override fun toString(): String {
-        return "Multiple errors found during loading the schema:%s" +
-                causes.map { c -> "${c.message}%n" }.joinToString(
-                    separator = "\n - "
-                )
+        return String.format("Multiple errors found during loading the schema:" +
+                causes.map { c -> "${c.message}" }.joinToString(
+                    prefix = "%n - ",
+                    separator = "%n - "
+                ))
     }
+}
+
+data class JsonTypeMismatchException(override val cause: JsonTypingException)
+    : SchemaLoadingException(cause.message ?: "", cause) {
+
 }
 
 internal fun createDefaultConfig(additionalMappings: Map<URI, String> = mapOf()) = SchemaLoaderConfig.createDefaultConfig(additionalMappings)

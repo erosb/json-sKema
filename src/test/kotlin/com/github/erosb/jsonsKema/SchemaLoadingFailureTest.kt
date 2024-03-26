@@ -148,6 +148,8 @@ class SchemaLoadingFailureTest {
             subject.load()
             fail("did not throw exception")
         } catch (ex: AggregateSchemaLoadingException) {
+            ex.causes.forEach { println(it.javaClass.simpleName) }
+
             ex.printStackTrace()
         }
     }

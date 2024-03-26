@@ -36,7 +36,15 @@ data class RefResolutionException(
         "\$ref resolution failure: could not evaluate pointer \"${ref.ref}\", property \"$missingProperty\" not found at ${resolutionFailureLocation.getLocation()}"
     )
 
-data class AggregateSchemaLoadingException(val causes: List<Exception>) : SchemaLoadingException("multiple problems found during schema loading")
+data class AggregateSchemaLoadingException(val causes: List<Exception>) : SchemaLoadingException("multiple problems found during schema loading") {
+
+    override fun toString(): String {
+        return "Multiple errors found during loading the schema:%s" +
+                causes.map { c -> "${c.message}%n" }.joinToString(
+                    separator = "\n - "
+                )
+    }
+}
 
 internal fun createDefaultConfig(additionalMappings: Map<URI, String> = mapOf()) = SchemaLoaderConfig.createDefaultConfig(additionalMappings)
 

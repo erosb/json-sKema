@@ -1,6 +1,8 @@
 package com.github.erosb.jsonsKema
 
 import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.fail
+import org.assertj.core.api.Assertions.from
 import org.junit.jupiter.api.Test
 import java.net.URI
 
@@ -142,7 +144,11 @@ class SchemaLoadingFailureTest {
             ))
         )
 
-        Assertions.assertThatThrownBy { subject.load() }
-            .isInstanceOf(AggregateSchemaLoadingException::class.java)
+        try {
+            subject.load()
+            fail("did not throw exception")
+        } catch (ex: AggregateSchemaLoadingException) {
+            ex.printStackTrace()
+        }
     }
 }

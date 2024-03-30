@@ -26,7 +26,7 @@ data class SchemaLoaderConfig @JvmOverloads constructor(
     }
 }
 
-open class SchemaLoadingException(msg: String, cause: Throwable? = null) : RuntimeException(msg, cause)
+sealed class SchemaLoadingException(msg: String, cause: Throwable? = null) : RuntimeException(msg, cause)
 
 data class RefResolutionException(
     val ref: ReferenceSchema,
@@ -53,6 +53,8 @@ data class JsonTypeMismatchException(
     val actualType: String = cause.actualType,
     val location: SourceLocation = cause.location
 ) : SchemaLoadingException(cause.message ?: "", cause) {}
+
+data class JsonDocumentLoadingException(val uri: URI, override val cause: Throwable? = null): SchemaLoadingException(cause?.message ?: "", cause);
 
 internal fun createDefaultConfig(additionalMappings: Map<URI, String> = mapOf()) = SchemaLoaderConfig.createDefaultConfig(additionalMappings)
 

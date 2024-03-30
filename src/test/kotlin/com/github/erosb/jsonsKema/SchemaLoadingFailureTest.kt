@@ -150,7 +150,7 @@ class SchemaLoadingFailureTest {
         } catch (ex: AggregateSchemaLoadingException) {
             ex.causes.forEach { println(it.javaClass.simpleName) }
 
-            ex.printStackTrace()
+            ex.printStackTrace(System.out)
         }
     }
 }

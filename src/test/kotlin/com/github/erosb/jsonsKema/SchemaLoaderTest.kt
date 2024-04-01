@@ -118,7 +118,7 @@ class SchemaLoaderTest {
 
     @Test
     fun `obsolete use of items`() {
-        val exception = assertThrows(JsonTypingException::class.java) {
+        val exception = assertThrows(JsonTypeMismatchException::class.java) {
             createSchemaLoaderForString(
                 """
                 { 

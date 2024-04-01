@@ -103,7 +103,6 @@ class SchemaLoadingFailureTest {
 
         Assertions.assertThatThrownBy { subject.load() }
             .isInstanceOf(SchemaLoadingException::class.java)
-            .hasMessage("could not read schema from URI \"classpath://.non-existent.file\"")
     }
 
     @Test

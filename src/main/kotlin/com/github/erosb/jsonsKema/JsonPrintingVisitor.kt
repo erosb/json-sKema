@@ -4,7 +4,9 @@ internal class JsonPrintingVisitor(private val indentation: String = "  ") : Jso
 
     private var indentLevel: Int = 0
 
-    override fun visitString(str: IJsonString) = '"' + str.value + '"'
+    override fun visitString(str: IJsonString) = '"' + escape(str.value) + '"'
+
+    private fun escape(str: String) = str.replace("\\", "\\\\").replace("\"", "\\\"")
 
     override fun visitBoolean(bool: IJsonBoolean) = bool.value.toString()
 

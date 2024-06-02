@@ -535,8 +535,10 @@ class SchemaLoader(
                         Keyword.DEFAULT.value -> default = value
                         Keyword.UNEVALUATED_ITEMS.value -> unevaluatedItemsSchema =
                             UnevaluatedItemsSchema(loadChild(value), name.location)
-                        Keyword.UNEVALUATED_PROPERTIES.value -> unevaluatedPropertiesSchema =
-                            UnevaluatedPropertiesSchema(loadChild(value), name.location)
+                        Keyword.UNEVALUATED_PROPERTIES.value -> {
+                            unevaluatedPropertiesSchema =
+                                UnevaluatedPropertiesSchema(loadChild(value), name.location)
+                        }
                         Keyword.DEFS.value -> definedSubschemas =
                             value.requireObject().properties.mapValues { loadChild(it.value) }
                     }

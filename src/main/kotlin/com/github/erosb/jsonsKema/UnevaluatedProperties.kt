@@ -4,6 +4,7 @@ data class UnevaluatedPropertiesSchema(
     val unevaluatedPropertiesSchema: Schema,
     override val location: SourceLocation
 ) : Schema(location) {
+
     override fun <P> accept(visitor: SchemaVisitor<P>): P? = visitor.visitUnevaluatedPropertiesSchema(this)
 
     override fun subschemas() = listOf(unevaluatedPropertiesSchema)

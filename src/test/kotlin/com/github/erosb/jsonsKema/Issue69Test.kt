@@ -16,7 +16,24 @@ class Issue69Test {
             {
                 "allOf": [
                     {
-                        "properties": {"a": {"type": "string"}}
+                        "properties": {"a": {"type": "integer"}}
+                    },
+                    {
+                        "unevaluatedProperties": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "unevaluatedProperties": {
+                            "allOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "boolean"
+                                }
+                            ]
+                        }
                     }
                 ],
                 "unevaluatedProperties": { "type": "boolean" }

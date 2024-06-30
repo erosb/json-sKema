@@ -15,6 +15,9 @@ data class JsonTypingException(
 }
 
 data class JsonPointer(val segments: List<String>) {
+
+    constructor(vararg segments: String): this(listOf(*segments))
+
     override fun toString() = "#" + (if (segments.isEmpty()) "" else "/") + segments.stream().collect(joining("/"))
 }
 

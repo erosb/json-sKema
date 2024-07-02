@@ -35,27 +35,35 @@ class SchemaBuilder private constructor(
         fun typeObject(): SchemaBuilder = SchemaBuilder(listOf(type("object")))
     }
 
-    private val subschemas: MutableList<Schema> = subschemas.toMutableList()
+    private val subschemas: MutableList<SchemaSupplier> = subschemas
+        .map<Schema, SchemaSupplier> { { ptr -> it } }
+        .toMutableList()
     private val propertySchemas = mutableMapOf<String, Schema>()
     private var ptr: MutableList<String> = mutableListOf()
 
-    private fun addSubschema(schema: Schema) {
-        subschemas.add(schema)
-    }
+//    private fun addSubschema(schema: Schema) {
+//        subschemas.add(schema)
+//    }
 
     fun minLength(minLength: Int): SchemaBuilder {
-        addSubschema(MinLengthSchema(minLength, findFirstCodeOutsidePackage(JsonPointer(Keyword.MIN_LENGTH.value))))
+        subschemas.add { ptr -> MinLengthSchema(minLength, findFirstCodeOutsidePackage(
+            JsonPointer(ptr.segments + Keyword.MIN_LENGTH.value)
+        )) }
         return this
     }
 
     fun maxLength(maxLength: Int): SchemaBuilder {
-        addSubschema(MaxLengthSchema(maxLength, findFirstCodeOutsidePackage(JsonPointer(Keyword.MAX_LENGTH.value))))
+        subschemas.add { ptr -> MaxLengthSchema(maxLength, findFirstCodeOutsidePackage(
+            JsonPointer(ptr.segments + Keyword.MAX_LENGTH.value)
+        )) }
         return this
     }
 
     fun build(): Schema =
         CompositeSchema(
-            subschemas = subschemas.toSet(),
+            subschemas = subschemas
+                .map { it(JsonPointer(ptr)) }
+                .toSet(),
             location = findFirstCodeOutsidePackage(JsonPointer(ptr)),
             propertySchemas = propertySchemas,
         )

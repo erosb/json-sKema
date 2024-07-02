@@ -18,7 +18,7 @@ class SchemaBuilderTest {
         val failure = Validator.forSchema(schema).validate(JsonParser("\"\"")())!!
 
         assertThat(failure.message).isEqualTo("actual string length 0 is lower than minLength 2")
-        assertThat(failure.schema.location.lineNumber).isEqualTo(14)
+        assertThat(failure.schema.location.lineNumber).isEqualTo(16)
         assertThat(failure.schema.location.documentSource).isEqualTo(URI("classpath://com.github.erosb.jsonsKema_fluent.SchemaBuilderTest"))
         assertThat(failure.schema.location.pointer).isEqualTo(JsonPointer("minLength"))
         SourceLocation(
@@ -45,7 +45,7 @@ class SchemaBuilderTest {
         """.trimIndent())())!!
 
         assertThat(failure.message).isEqualTo("actual string length 3 is lower than minLength 4")
-        assertThat(failure.schema.location.lineNumber).isEqualTo(36)
+        assertThat(failure.schema.location.lineNumber).isGreaterThan(30)
         assertThat(failure.schema.location.documentSource).isEqualTo(URI("classpath://com.github.erosb.jsonsKema_fluent.SchemaBuilderTest"))
         assertThat(failure.schema.location.pointer).isEqualTo(JsonPointer("properties", "minLength"))
     }

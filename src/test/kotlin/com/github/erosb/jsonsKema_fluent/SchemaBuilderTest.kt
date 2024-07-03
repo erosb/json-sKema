@@ -35,8 +35,8 @@ class SchemaBuilderTest {
             .property("propA", SchemaBuilder.typeString()
                 .minLength(4)
             )
+            .property("arrayProp", SchemaBuilder.typeArray())
             .build()
-//            .property("propA") { it.typeString().build() }
 
         val failure = Validator.forSchema(schema).validate(JsonParser("""
             {
@@ -47,6 +47,15 @@ class SchemaBuilderTest {
         assertThat(failure.message).isEqualTo("actual string length 3 is lower than minLength 4")
         assertThat(failure.schema.location.lineNumber).isGreaterThan(30)
         assertThat(failure.schema.location.documentSource).isEqualTo(URI("classpath://com.github.erosb.jsonsKema_fluent.SchemaBuilderTest"))
-        assertThat(failure.schema.location.pointer).isEqualTo(JsonPointer("properties", "minLength"))
+        assertThat(failure.schema.location.pointer).isEqualTo(JsonPointer("properties", "propA", "minLength"))
+
+        val typeFailure = Validator.forSchema(schema).validate(JsonParser("""
+            {
+                "arrayProp": {}
+            }
+        """.trimIndent())())!!
+
+        assertThat(typeFailure.schema.location.pointer).isEqualTo(JsonPointer("properties", "arrayProp", "type"))
     }
+
 }

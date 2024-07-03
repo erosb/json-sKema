@@ -21,22 +21,22 @@ internal fun findFirstCodeOutsidePackage(pointer: JsonPointer): SourceLocation {
 }
 
 class SchemaBuilder private constructor(
-    subschemas: List<Schema>,
+    subschemas: List<SchemaSupplier>,
 ) {
     companion object {
-        private fun type(typeValue: String): TypeSchema =
+        private fun type(typeValue: String): SchemaSupplier = { ptr ->
             TypeSchema(
-                JsonString(typeValue, findFirstCodeOutsidePackage(JsonPointer("type"))),
-                findFirstCodeOutsidePackage(JsonPointer("type")),
+                JsonString(typeValue, findFirstCodeOutsidePackage(JsonPointer(ptr.segments + "type"))),
+                findFirstCodeOutsidePackage(JsonPointer(ptr.segments + "type")),
             )
+        }
 
         fun typeString(): SchemaBuilder = SchemaBuilder(listOf(type("string")))
-
         fun typeObject(): SchemaBuilder = SchemaBuilder(listOf(type("object")))
+        fun typeArray(): SchemaBuilder  = SchemaBuilder(listOf(type("array")))
     }
 
     private val subschemas: MutableList<SchemaSupplier> = subschemas
-        .map<Schema, SchemaSupplier> { { ptr -> it } }
         .toMutableList()
     private val propertySchemas = mutableMapOf<String, Schema>()
     private var ptr: MutableList<String> = mutableListOf()
@@ -74,6 +74,7 @@ class SchemaBuilder private constructor(
     ): SchemaBuilder {
         val newPtr = ptr.toMutableList()
         newPtr.add("properties")
+        newPtr.add(propertyName)
         schema.ptr = newPtr
         propertySchemas[propertyName] = schema.build()
         return this

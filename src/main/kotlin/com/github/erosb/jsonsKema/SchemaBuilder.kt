@@ -26,8 +26,8 @@ class SchemaBuilder private constructor(
     companion object {
         private fun type(typeValue: String): SchemaSupplier = { ptr ->
             TypeSchema(
-                JsonString(typeValue, findFirstCodeOutsidePackage(JsonPointer(ptr.segments + "type"))),
-                findFirstCodeOutsidePackage(JsonPointer(ptr.segments + "type")),
+                JsonString(typeValue, findFirstCodeOutsidePackage(ptr + "type")),
+                findFirstCodeOutsidePackage(ptr + "type"),
             )
         }
 
@@ -39,32 +39,28 @@ class SchemaBuilder private constructor(
     private val subschemas: MutableList<SchemaSupplier> = subschemas
         .toMutableList()
     private val propertySchemas = mutableMapOf<String, Schema>()
-    private var ptr: MutableList<String> = mutableListOf()
+    private var ptr: JsonPointer = JsonPointer()
 
 //    private fun addSubschema(schema: Schema) {
 //        subschemas.add(schema)
 //    }
 
     fun minLength(minLength: Int): SchemaBuilder {
-        subschemas.add { ptr -> MinLengthSchema(minLength, findFirstCodeOutsidePackage(
-            JsonPointer(ptr.segments + Keyword.MIN_LENGTH.value)
-        )) }
+        subschemas.add { ptr -> MinLengthSchema(minLength, findFirstCodeOutsidePackage(ptr + Keyword.MIN_LENGTH.value)) }
         return this
     }
 
     fun maxLength(maxLength: Int): SchemaBuilder {
-        subschemas.add { ptr -> MaxLengthSchema(maxLength, findFirstCodeOutsidePackage(
-            JsonPointer(ptr.segments + Keyword.MAX_LENGTH.value)
-        )) }
+        subschemas.add { ptr -> MaxLengthSchema(maxLength, findFirstCodeOutsidePackage(ptr + Keyword.MAX_LENGTH.value)) }
         return this
     }
 
     fun build(): Schema =
         CompositeSchema(
             subschemas = subschemas
-                .map { it(JsonPointer(ptr)) }
+                .map { it(ptr) }
                 .toSet(),
-            location = findFirstCodeOutsidePackage(JsonPointer(ptr)),
+            location = findFirstCodeOutsidePackage(ptr),
             propertySchemas = propertySchemas,
         )
 
@@ -72,10 +68,7 @@ class SchemaBuilder private constructor(
         propertyName: String,
         schema: SchemaBuilder,
     ): SchemaBuilder {
-        val newPtr = ptr.toMutableList()
-        newPtr.add("properties")
-        newPtr.add(propertyName)
-        schema.ptr = newPtr
+        schema.ptr = ptr + "properties" + propertyName
         propertySchemas[propertyName] = schema.build()
         return this
     }

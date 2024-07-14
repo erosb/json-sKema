@@ -1,7 +1,6 @@
 package com.github.erosb.jsonsKema
 
 import java.net.URI
-import java.security.Key
 
 typealias SchemaSupplier = (JsonPointer) -> Schema
 
@@ -33,18 +32,25 @@ class SchemaBuilder private constructor(
                 )
             }
 
+        @JvmStatic
         fun typeString(): SchemaBuilder = SchemaBuilder(listOf(type("string")))
 
+        @JvmStatic
         fun typeObject(): SchemaBuilder = SchemaBuilder(listOf(type("object")))
 
+        @JvmStatic
         fun typeArray(): SchemaBuilder = SchemaBuilder(listOf(type("array")))
 
+        @JvmStatic
         fun typeNumber(): SchemaBuilder = SchemaBuilder(listOf(type("number")))
 
+        @JvmStatic
         fun typeInteger(): SchemaBuilder = SchemaBuilder(listOf(type("integer")))
 
+        @JvmStatic
         fun typeBoolean(): SchemaBuilder = SchemaBuilder(listOf(type("boolean")))
 
+        @JvmStatic
         fun typeNull(): SchemaBuilder = SchemaBuilder(listOf(type("null")))
     }
 
@@ -55,13 +61,13 @@ class SchemaBuilder private constructor(
     private var ptr: JsonPointer = JsonPointer()
 
     fun minLength(minLength: Int): SchemaBuilder {
-        val callingLocation  = callingSourceLocation(JsonPointer())
+        val callingLocation = callingSourceLocation(JsonPointer())
         subschemas.add { ptr -> MinLengthSchema(minLength, callingLocation.withPointer(ptr + Keyword.MIN_LENGTH)) }
         return this
     }
 
     fun maxLength(maxLength: Int): SchemaBuilder {
-        val callingLocation  = callingSourceLocation(JsonPointer())
+        val callingLocation = callingSourceLocation(JsonPointer())
         subschemas.add { ptr -> MaxLengthSchema(maxLength, callingLocation.withPointer(ptr + Keyword.MAX_LENGTH)) }
         return this
     }
@@ -86,6 +92,8 @@ class SchemaBuilder private constructor(
         }
     }
 
+    private fun buildAt(loc: SourceLocation) = buildAt(loc.pointer)
+
     fun property(
         propertyName: String,
         schema: SchemaBuilder,
@@ -96,40 +104,42 @@ class SchemaBuilder private constructor(
         return this
     }
 
-    fun minItems(minItems: Int): SchemaBuilder {
-        val callingLocation  = callingSourceLocation(JsonPointer())
-        subschemas.add { ptr -> MinItemsSchema(minItems, callingLocation.withPointer(ptr + Keyword.MIN_ITEMS)) }
-        return this
-    }
+    fun minItems(minItems: Int): SchemaBuilder = appendSupplier(Keyword.MIN_ITEMS) { loc -> MinItemsSchema(minItems, loc) }
 
-    fun maxItems(maxItems: Int): SchemaBuilder {
-        val callingLocation  = callingSourceLocation(JsonPointer())
-        subschemas.add { ptr -> MaxItemsSchema(maxItems, callingLocation.withPointer(ptr + Keyword.MAX_ITEMS)) }
-        return this
-    }
+    fun maxItems(maxItems: Int): SchemaBuilder = appendSupplier(Keyword.MAX_ITEMS) { loc -> MaxItemsSchema(maxItems, loc) }
 
-    fun items(itemsSchema: SchemaBuilder): SchemaBuilder {
-        val callingLocation  = callingSourceLocation(JsonPointer())
-        subschemas.add { ptr ->
-            ItemsSchema(
-                itemsSchema.buildAt(ptr + Keyword.ITEMS),
-                0,
-                callingLocation.withPointer(ptr + Keyword.ITEMS),
-            )
-        }
-        return this
-    }
-
-    fun contains(containedSchema: SchemaBuilder): SchemaBuilder {
+    private fun createSupplier(
+        kw: Keyword,
+        baseSchemaFn: (SourceLocation) -> Schema,
+    ): SchemaSupplier {
         val callingLocation = callingSourceLocation(JsonPointer())
-        subschemas.add { ptr ->
-            ContainsSchema(
-                containedSchema.buildAt(ptr + Keyword.CONTAINS.value),
-                1,
-                null,
-                callingLocation.withPointer(ptr + Keyword.CONTAINS.value),
-            )
+        return { ptr ->
+            baseSchemaFn(callingLocation.withPointer(ptr + kw.value))
         }
+    }
+
+    private fun appendSupplier(kw: Keyword, baseSchemaFn: (SourceLocation) -> Schema): SchemaBuilder {
+        subschemas.add(createSupplier(kw, baseSchemaFn))
         return this
     }
+
+    fun items(itemsSchema: SchemaBuilder): SchemaBuilder =
+        appendSupplier(Keyword.ITEMS) { loc ->
+            ItemsSchema(itemsSchema.buildAt(loc), 0, loc)
+        }
+
+    fun contains(containedSchema: SchemaBuilder) =
+        appendSupplier(Keyword.CONTAINS) { loc ->
+            ContainsSchema(containedSchema.buildAt(loc), 1, null, loc)
+        }
+
+    fun minContains(minContains: Int, containedSchema: SchemaBuilder) = appendSupplier(Keyword.MIN_CONTAINS) { loc ->
+        ContainsSchema(containedSchema.buildAt(loc), minContains, null, loc)
+    }
+
+    fun maxContains(maxContains: Int, containedSchema: SchemaBuilder) = appendSupplier(Keyword.MAX_CONTAINS) { loc ->
+        ContainsSchema(containedSchema.buildAt(loc), 0, maxContains, loc)
+    }
+
+    fun uniqueItems() = appendSupplier(Keyword.UNIQUE_ITEMS) { loc -> UniqueItemsSchema(true, loc) }
 }

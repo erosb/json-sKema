@@ -109,23 +109,25 @@ class SchemaBuilder private constructor(
     }
 
     fun items(itemsSchema: SchemaBuilder): SchemaBuilder {
+        val callingLocation  = callingSourceLocation(JsonPointer())
         subschemas.add { ptr ->
             ItemsSchema(
-                itemsSchema.buildAt(ptr + Keyword.ITEMS.value),
+                itemsSchema.buildAt(ptr + Keyword.ITEMS),
                 0,
-                callingSourceLocation(ptr + Keyword.ITEMS.value),
+                callingLocation.withPointer(ptr + Keyword.ITEMS),
             )
         }
         return this
     }
 
     fun contains(containedSchema: SchemaBuilder): SchemaBuilder {
+        val callingLocation = callingSourceLocation(JsonPointer())
         subschemas.add { ptr ->
             ContainsSchema(
                 containedSchema.buildAt(ptr + Keyword.CONTAINS.value),
                 1,
                 null,
-                callingSourceLocation(ptr + Keyword.CONTAINS.value),
+                callingLocation.withPointer(ptr + Keyword.CONTAINS.value),
             )
         }
         return this

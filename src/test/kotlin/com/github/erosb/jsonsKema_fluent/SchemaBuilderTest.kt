@@ -79,18 +79,12 @@ class SchemaBuilderTest {
                 .typeArray()
                 .minItems(2)
                 .maxItems(5)
-                .items(
-                    SchemaBuilder
-                        .typeObject()
+                .items(SchemaBuilder.typeObject()
                         .property("propA", SchemaBuilder.typeString()),
-                ).contains(
-                    SchemaBuilder
-                        .typeObject()
+                ).contains(SchemaBuilder.typeObject()
                         .property(
-                            "containedProp",
-                            SchemaBuilder
-                                .typeArray()
-                                .items(SchemaBuilder.typeNumber()),
+                            "containedProp", SchemaBuilder.typeArray()
+                                .items(SchemaBuilder.typeNumber())
                         ),
                 ).minContains(2, SchemaBuilder.typeObject())
                 .maxContains(5, SchemaBuilder.typeObject())
@@ -98,13 +92,11 @@ class SchemaBuilderTest {
                 .build()
 
         val minItemsLine =
-            schema
-                .subschemas()
+            schema.subschemas()
                 .find { it is MinItemsSchema }!!
                 .location.lineNumber
         val maxItemsLine =
-            schema
-                .subschemas()
+            schema.subschemas()
                 .find { it is MaxItemsSchema }!!
                 .location.lineNumber
         assertThat(maxItemsLine).isEqualTo(minItemsLine + 1)
@@ -113,8 +105,7 @@ class SchemaBuilderTest {
         assertThat(itemsSchema.location.pointer).isEqualTo(JsonPointer("items"))
         val itemsSchemaLine = itemsSchema.location.lineNumber
         assertThat(itemsSchemaLine).isEqualTo(maxItemsLine + 1)
-        assertThat(
-            (itemsSchema.itemsSchema as CompositeSchema)
+        assertThat((itemsSchema.itemsSchema as CompositeSchema)
                 .propertySchemas["propA"]!!
                 .subschemas()
                 .find { it is TypeSchema }!!
@@ -122,9 +113,7 @@ class SchemaBuilderTest {
                 .toString(),
         ).isEqualTo("#/items/properties/propA/type")
 
-        val containsLine =
-            schema
-                .subschemas()
+        val containsLine = schema.subschemas()
                 .find { it is ContainsSchema }!!
                 .location.lineNumber
         assertThat(containsLine).isEqualTo(itemsSchemaLine + 2)

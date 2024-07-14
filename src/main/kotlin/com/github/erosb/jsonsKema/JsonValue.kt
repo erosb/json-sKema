@@ -21,6 +21,8 @@ data class JsonPointer(val segments: List<String>) {
     override fun toString() = "#" + (if (segments.isEmpty()) "" else "/") + segments.stream().collect(joining("/"))
 
     operator fun plus(additionalSegment: String): JsonPointer = JsonPointer(segments + additionalSegment)
+
+    operator fun plus(additionalSegment: Keyword): JsonPointer = plus(additionalSegment.value)
 }
 
 fun pointer(vararg segments: String) = JsonPointer(segments.toList())
@@ -103,6 +105,8 @@ open class SourceLocation(
             documentSource
         )
     }
+
+    fun withPointer(pointer: JsonPointer): SourceLocation = SourceLocation(lineNumber, position, pointer, documentSource)
 }
 
 object UnknownSource : SourceLocation(0, 0, JsonPointer(emptyList())) {

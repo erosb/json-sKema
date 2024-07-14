@@ -18,7 +18,7 @@ class SchemaBuilderTest {
         val failure = Validator.forSchema(schema).validate(JsonParser("\"\"")())!!
 
         assertThat(failure.message).isEqualTo("actual string length 0 is lower than minLength 2")
-        assertThat(failure.schema.location.lineNumber).isEqualTo(16)
+        assertThat(failure.schema.location.lineNumber).isEqualTo(14)
         assertThat(failure.schema.location.documentSource).isEqualTo(URI("classpath://com.github.erosb.jsonsKema_fluent.SchemaBuilderTest"))
         assertThat(failure.schema.location.pointer).isEqualTo(JsonPointer("minLength"))
         SourceLocation(
@@ -56,6 +56,29 @@ class SchemaBuilderTest {
         """.trimIndent())())!!
 
         assertThat(typeFailure.schema.location.pointer).isEqualTo(JsonPointer("properties", "arrayProp", "type"))
+    }
+
+    @Test
+    fun `array props`() {
+        val schema = SchemaBuilder.typeArray()
+            .minItems(2)
+            .maxItems(5)
+            .items(SchemaBuilder.typeObject()
+                .property("propA", SchemaBuilder.typeString()))
+            .contains(SchemaBuilder.typeObject()
+                .property("containedProp", SchemaBuilder.typeArray()
+                    .items(SchemaBuilder.typeNumber())
+                ))
+            .build()
+
+        val minItemsLine = schema.subschemas().find { it is MinItemsSchema}!!.location.lineNumber
+        val maxItemsLine = schema.subschemas().find { it is MaxItemsSchema}!!.location.lineNumber
+        assertThat(maxItemsLine).isEqualTo(minItemsLine + 1)
+
+        val itemsSchema = schema.subschemas().find { it is ItemsSchema }!! as ItemsSchema
+        assertThat((itemsSchema.itemsSchema as CompositeSchema).propertySchemas["propA"]!!
+            .subschemas().find { it is TypeSchema }!!
+            .location.pointer.toString()).isEqualTo("#/items/properties/propA/type")
     }
 
 }

@@ -142,4 +142,12 @@ class SchemaBuilder private constructor(
     }
 
     fun uniqueItems() = appendSupplier(Keyword.UNIQUE_ITEMS) { loc -> UniqueItemsSchema(true, loc) }
+
+    fun minProperties(minProperties: Int) = appendSupplier(Keyword.MIN_PROPERTIES) { loc -> MinPropertiesSchema(minProperties, loc) }
+
+    fun maxProperties(maxProperties: Int) = appendSupplier(Keyword.MAX_PROPERTIES) { loc -> MaxPropertiesSchema(maxProperties, loc) }
+
+    fun propertyNames(propertyNameSchema: SchemaBuilder) = appendSupplier(Keyword.PROPERTY_NAMES) { loc -> PropertyNamesSchema(
+        propertyNameSchema.buildAt(loc), loc
+    )}
 }

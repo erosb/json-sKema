@@ -118,4 +118,48 @@ class SchemaBuilderTest {
                 .location.lineNumber
         assertThat(containsLine).isEqualTo(itemsSchemaLine + 2)
     }
+
+    @Test
+    fun moreTypes() {
+        val schema = SchemaBuilder.typeObject()
+            .property("nullProp", SchemaBuilder.typeNull())
+            .property("boolProp", SchemaBuilder.typeBoolean())
+            .property("typeInteger", SchemaBuilder.typeInteger())
+            .build()
+
+        val expected = CompositeSchema(propertySchemas = mapOf(
+            "nullProp" to CompositeSchema(subschemas = setOf(
+                TypeSchema(JsonString("null"), UnknownSource)
+            )),
+            "boolProp" to CompositeSchema(subschemas = setOf(
+                TypeSchema(JsonString("boolean"), UnknownSource)
+            )),
+            "typeInteger" to CompositeSchema(subschemas = setOf(
+                TypeSchema(JsonString("integer"), UnknownSource)
+            ))
+        ), subschemas = setOf(TypeSchema(JsonString("object"), UnknownSource))
+        )
+        assertThat(schema).usingRecursiveComparison()
+            .ignoringFieldsOfTypes(SourceLocation::class.java)
+            .isEqualTo(expected)
+    }
+
+    @Test
+    fun objectProps() {
+        val schema = SchemaBuilder.typeObject()
+            .minProperties(2)
+            .maxProperties(3)
+            .propertyNames(SchemaBuilder.typeString().minLength(3))
+            .build()
+
+        val expected = CompositeSchema(subschemas = setOf(
+            TypeSchema(JsonString("object"), UnknownSource),
+            MinPropertiesSchema(2, UnknownSource),
+            MaxPropertiesSchema(3, UnknownSource)
+        ))
+
+        assertThat(schema).usingRecursiveComparison()
+            .ignoringFieldsOfTypes(SourceLocation::class.java)
+            .isEqualTo(expected)
+    }
 }

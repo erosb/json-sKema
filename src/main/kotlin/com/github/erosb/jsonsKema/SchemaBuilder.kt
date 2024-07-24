@@ -150,4 +150,9 @@ class SchemaBuilder private constructor(
     fun propertyNames(propertyNameSchema: SchemaBuilder) = appendSupplier(Keyword.PROPERTY_NAMES) { loc -> PropertyNamesSchema(
         propertyNameSchema.buildAt(loc), loc
     )}
+
+    fun required(vararg requiredProperties: String) = appendSupplier(Keyword.REQUIRED) { loc -> RequiredSchema(requiredProperties.toList(), loc) }
+
+    fun dependentRequired(dependentRequired: Map<String, List<String>>) = appendSupplier(Keyword.DEPENDENT_REQUIRED) { loc -> DependentRequiredSchema(dependentRequired, loc)}
+
 }

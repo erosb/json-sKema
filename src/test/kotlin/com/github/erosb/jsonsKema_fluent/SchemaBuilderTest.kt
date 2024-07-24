@@ -150,12 +150,21 @@ class SchemaBuilderTest {
             .minProperties(2)
             .maxProperties(3)
             .propertyNames(SchemaBuilder.typeString().minLength(3))
+            .required("prop1", "prop2")
+            .dependentRequired(mapOf(
+                "prop3" to listOf("prop4", "prop5")
+            ))
             .build()
 
         val expected = CompositeSchema(subschemas = setOf(
             TypeSchema(JsonString("object"), UnknownSource),
             MinPropertiesSchema(2, UnknownSource),
-            MaxPropertiesSchema(3, UnknownSource)
+            MaxPropertiesSchema(3, UnknownSource),
+            PropertyNamesSchema(SchemaBuilder.typeString().minLength(3).build(), UnknownSource),
+            RequiredSchema(listOf("prop1", "prop2"), UnknownSource),
+            DependentRequiredSchema(mapOf(
+                "prop3" to listOf("prop4", "prop5")
+            ), UnknownSource)
         ))
 
         assertThat(schema).usingRecursiveComparison()

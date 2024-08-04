@@ -154,6 +154,8 @@ class SchemaBuilderTest {
             .dependentRequired(mapOf(
                 "prop3" to listOf("prop4", "prop5")
             ))
+            .readOnly(true)
+            .writeOnly(true)
             .build()
 
         val expected = CompositeSchema(subschemas = setOf(
@@ -164,7 +166,9 @@ class SchemaBuilderTest {
             RequiredSchema(listOf("prop1", "prop2"), UnknownSource),
             DependentRequiredSchema(mapOf(
                 "prop3" to listOf("prop4", "prop5")
-            ), UnknownSource)
+            ), UnknownSource),
+            ReadOnlySchema(UnknownSource),
+            WriteOnlySchema(UnknownSource)
         ))
 
         assertThat(schema).usingRecursiveComparison()

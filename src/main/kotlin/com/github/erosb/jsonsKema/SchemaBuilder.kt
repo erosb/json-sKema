@@ -151,8 +151,14 @@ class SchemaBuilder private constructor(
         propertyNameSchema.buildAt(loc), loc
     )}
 
+
     fun required(vararg requiredProperties: String) = appendSupplier(Keyword.REQUIRED) { loc -> RequiredSchema(requiredProperties.toList(), loc) }
 
-    fun dependentRequired(dependentRequired: Map<String, List<String>>) = appendSupplier(Keyword.DEPENDENT_REQUIRED) { loc -> DependentRequiredSchema(dependentRequired, loc)}
+    fun dependentRequired(dependentRequired: Map<String, List<String>>) = appendSupplier(Keyword.DEPENDENT_REQUIRED) {
+            loc -> DependentRequiredSchema(dependentRequired, loc)
+    }
 
+    fun readOnly(readOnly: Boolean) = if (readOnly) appendSupplier(Keyword.READ_ONLY) { loc -> ReadOnlySchema(loc) } else this
+
+    fun writeOnly(writeOnly: Boolean) = if (writeOnly) appendSupplier(Keyword.WRITE_ONLY) { loc -> WriteOnlySchema(loc) } else this
 }

@@ -15,7 +15,7 @@ data class PatternValidationFailure(
     override val schema: PatternSchema,
     override val instance: IJsonValue,
 ) : ValidationFailure(
-    message = "some dependent subschemas did not match",
+    message = "instance value did not match pattern ${schema.pattern}",
     schema = schema,
     instance = instance,
     keyword = Keyword.PATTERN

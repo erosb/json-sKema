@@ -73,6 +73,31 @@ class SchemaBuilderTest {
     }
 
     @Test
+    fun `regex patterns`() {
+        val subject = SchemaBuilder.typeObject()
+            .property("propA", SchemaBuilder.typeString()
+                .pattern("\\d{2}.*"))
+            .property("propB", SchemaBuilder.typeObject().patternProperties(mapOf(
+                "[A-Z]{2}" to SchemaBuilder.typeString()
+            )))
+            .build()
+
+        val actual = Validator.forSchema(subject).validate(JsonParser("""
+            {
+                "propA": "1asd",
+                "propB": {
+                    "HU": 0
+                }
+            }
+        """.trimIndent())())!!
+
+        println(actual)
+
+        actual.causes.find { it.message.contains("instance value did not match pattern \\d{2}.*") }!!
+        actual.causes.find { it.message.contains("expected type: string, actual: integer") }!!
+    }
+
+    @Test
     fun `array props`() {
         val schema =
             SchemaBuilder
@@ -145,7 +170,7 @@ class SchemaBuilderTest {
     }
 
     @Test
-    fun objectProps() {
+    fun moreObjectProps() {
         val schema = SchemaBuilder.typeObject()
             .minProperties(2)
             .maxProperties(3)

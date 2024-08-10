@@ -11,7 +11,7 @@ class RegexpMatchingFailure internal constructor() {
 
 interface Regexp {
 
-    fun patternMatchingFailure(input: String?): RegexpMatchingFailure?
+    fun patternMatchingFailure(input: String): RegexpMatchingFailure?
 }
 
 internal abstract class AbstractRegexp(asString: String) : Regexp {
@@ -26,14 +26,10 @@ internal abstract class AbstractRegexp(asString: String) : Regexp {
     }
 }
 
-internal class JavaUtilRegexp(pattern: String?) : AbstractRegexp(pattern!!) {
-    private val pattern: Pattern
+internal class JavaUtilRegexp(pattern: String) : AbstractRegexp(pattern) {
+    private val pattern: Pattern = Pattern.compile(pattern)
 
-    init {
-        this.pattern = Pattern.compile(pattern)
-    }
-
-    override fun patternMatchingFailure(input: String?): RegexpMatchingFailure? {
+    override fun patternMatchingFailure(input: String): RegexpMatchingFailure? {
         return if (pattern.matcher(input).find()) {
             null
         } else {

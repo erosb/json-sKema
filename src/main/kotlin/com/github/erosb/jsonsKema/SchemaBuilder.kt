@@ -58,7 +58,9 @@ class SchemaBuilder private constructor(
         subschemas
             .toMutableList()
     private val propertySchemas = mutableMapOf<String, SchemaSupplier>()
+    private val patternPropertySchemas = mutableMapOf<String, SchemaSupplier>()
     private var ptr: JsonPointer = JsonPointer()
+    private val regexFactory = JavaUtilRegexpFactory()
 
     fun minLength(minLength: Int): SchemaBuilder {
         val callingLocation = callingSourceLocation(JsonPointer())
@@ -80,6 +82,10 @@ class SchemaBuilder private constructor(
                     .toSet(),
             location = callingSourceLocation(ptr),
             propertySchemas = propertySchemas.mapValues { it.value(ptr) },
+            patternPropertySchemas =
+                patternPropertySchemas.map {
+                    regexFactory.createHandler(it.key,) to it.value(ptr)
+                }.toMap(),
         )
 
     private fun buildAt(parentPointer: JsonPointer): Schema {
@@ -161,4 +167,16 @@ class SchemaBuilder private constructor(
     fun readOnly(readOnly: Boolean) = if (readOnly) appendSupplier(Keyword.READ_ONLY) { loc -> ReadOnlySchema(loc) } else this
 
     fun writeOnly(writeOnly: Boolean) = if (writeOnly) appendSupplier(Keyword.WRITE_ONLY) { loc -> WriteOnlySchema(loc) } else this
+
+    fun pattern(regexp: String) =
+        appendSupplier(Keyword.PATTERN) { loc ->
+            PatternSchema(regexFactory.createHandler(regexp), loc)
+        }
+
+    fun patternProperties(patternProps: Map<String, SchemaBuilder>): SchemaBuilder {
+        patternProps.forEach { (pattern, builder) ->
+            patternPropertySchemas[pattern] = { loc -> builder.buildAt(loc) }
+        }
+        return this
+    }
 }

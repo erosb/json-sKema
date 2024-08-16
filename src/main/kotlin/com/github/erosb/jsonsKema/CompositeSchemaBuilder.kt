@@ -21,32 +21,7 @@ internal fun callingSourceLocation(pointer: JsonPointer): SourceLocation {
 }
 
 abstract class SchemaBuilder {
-    protected var ptr: JsonPointer = JsonPointer()
 
-    open fun buildAt(parentPointer: JsonPointer): Schema {
-        val origPtr = this.ptr
-        this.ptr = parentPointer
-        try {
-            return build()
-        } finally {
-            this.ptr = origPtr
-        }
-    }
-
-    abstract fun build(): Schema
-
-    fun buildAt(loc: SourceLocation) = buildAt(loc.pointer)
-}
-
-class FalseSchemaBuilder(
-    private val origLocation: SourceLocation = callingSourceLocation(JsonPointer()),
-) : SchemaBuilder() {
-    override fun build(): Schema = FalseSchema(origLocation.withPointer(ptr + "false"))
-}
-
-class CompositeSchemaBuilder private constructor(
-    subschemas: List<SchemaSupplier>,
-) : SchemaBuilder() {
     companion object {
         private fun type(typeValue: String): SchemaSupplier =
             { ptr ->
@@ -84,10 +59,37 @@ class CompositeSchemaBuilder private constructor(
         fun falseSchema(): SchemaBuilder = FalseSchemaBuilder()
     }
 
+    protected var ptr: JsonPointer = JsonPointer()
+
+    open fun buildAt(parentPointer: JsonPointer): Schema {
+        val origPtr = this.ptr
+        this.ptr = parentPointer
+        try {
+            return build()
+        } finally {
+            this.ptr = origPtr
+        }
+    }
+
+    abstract fun build(): Schema
+
+    fun buildAt(loc: SourceLocation) = buildAt(loc.pointer)
+}
+
+class FalseSchemaBuilder(
+    private val origLocation: SourceLocation = callingSourceLocation(JsonPointer()),
+) : SchemaBuilder() {
+    override fun build(): Schema = FalseSchema(origLocation.withPointer(ptr + "false"))
+}
+
+class CompositeSchemaBuilder internal constructor(
+    subschemas: List<SchemaSupplier>,
+) : SchemaBuilder() {
     private val subschemas: MutableList<SchemaSupplier> = subschemas.toMutableList()
     private val propertySchemas = mutableMapOf<String, SchemaSupplier>()
     private val patternPropertySchemas = mutableMapOf<String, SchemaSupplier>()
     private var unevaluatedPropertiesSchema: SchemaSupplier? = null
+    private var unevaluatedItemsSchema: SchemaSupplier? = null
     private val regexFactory = JavaUtilRegexpFactory()
 
     fun minLength(minLength: Int): CompositeSchemaBuilder {
@@ -116,6 +118,7 @@ class CompositeSchemaBuilder private constructor(
                         regexFactory.createHandler(it.key) to it.value(ptr)
                     }.toMap(),
             unevaluatedPropertiesSchema = unevaluatedPropertiesSchema?.invoke(ptr),
+            unevaluatedItemsSchema = unevaluatedItemsSchema?.invoke(ptr)
         )
 
     fun property(
@@ -215,6 +218,13 @@ class CompositeSchemaBuilder private constructor(
     fun unevaluatedProperties(schema: SchemaBuilder): CompositeSchemaBuilder {
         unevaluatedPropertiesSchema = createSupplier(Keyword.UNEVALUATED_PROPERTIES) { loc ->
             UnevaluatedPropertiesSchema(schema.buildAt(loc), loc)
+        }
+        return this
+    }
+
+    fun unevaluatedItems(schema: SchemaBuilder): CompositeSchemaBuilder {
+        unevaluatedItemsSchema = createSupplier(Keyword.UNEVALUATED_ITEMS) { loc ->
+            UnevaluatedItemsSchema(schema.buildAt(loc), loc)
         }
         return this
     }

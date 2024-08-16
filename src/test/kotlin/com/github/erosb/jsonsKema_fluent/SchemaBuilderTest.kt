@@ -8,8 +8,7 @@ import java.net.URI
 class SchemaBuilderTest {
     @Test
     fun test() {
-        val schema =
-            CompositeSchemaBuilder
+        val schema = SchemaBuilder
                 .typeString()
                 .minLength(2)
                 .maxLength(3)
@@ -31,15 +30,14 @@ class SchemaBuilderTest {
 
     @Test
     fun `object properties`() {
-        val schema =
-            CompositeSchemaBuilder
+        val schema = SchemaBuilder
                 .typeObject()
                 .property(
                     "propA",
-                    CompositeSchemaBuilder
+                    SchemaBuilder
                         .typeString()
                         .minLength(4),
-                ).property("arrayProp", CompositeSchemaBuilder.typeArray())
+                ).property("arrayProp", SchemaBuilder.typeArray())
                 .build()
 
         val failure =
@@ -74,11 +72,11 @@ class SchemaBuilderTest {
 
     @Test
     fun `regex patterns`() {
-        val subject = CompositeSchemaBuilder.typeObject()
-            .property("propA", CompositeSchemaBuilder.typeString()
+        val subject = SchemaBuilder.typeObject()
+            .property("propA", SchemaBuilder.typeString()
                 .pattern("\\d{2}.*"))
-            .property("propB", CompositeSchemaBuilder.typeObject().patternProperties(mapOf(
-                "[A-Z]{2}" to CompositeSchemaBuilder.typeString()
+            .property("propB", SchemaBuilder.typeObject().patternProperties(mapOf(
+                "[A-Z]{2}" to SchemaBuilder.typeString()
             )))
             .build()
 
@@ -99,20 +97,19 @@ class SchemaBuilderTest {
 
     @Test
     fun `array props`() {
-        val schema =
-            CompositeSchemaBuilder
+        val schema = SchemaBuilder
                 .typeArray()
                 .minItems(2)
                 .maxItems(5)
-                .items(CompositeSchemaBuilder.typeObject()
-                        .property("propA", CompositeSchemaBuilder.typeString()),
-                ).contains(CompositeSchemaBuilder.typeObject()
+                .items(SchemaBuilder.typeObject()
+                        .property("propA", SchemaBuilder.typeString()),
+                ).contains(SchemaBuilder.typeObject()
                         .property(
-                            "containedProp", CompositeSchemaBuilder.typeArray()
-                                .items(CompositeSchemaBuilder.typeNumber())
+                            "containedProp", SchemaBuilder.typeArray()
+                                .items(SchemaBuilder.typeNumber())
                         ),
-                ).minContains(2, CompositeSchemaBuilder.typeObject())
-                .maxContains(5, CompositeSchemaBuilder.typeObject())
+                ).minContains(2, SchemaBuilder.typeObject())
+                .maxContains(5, SchemaBuilder.typeObject())
                 .uniqueItems()
                 .build()
 
@@ -146,10 +143,10 @@ class SchemaBuilderTest {
 
     @Test
     fun moreTypes() {
-        val schema = CompositeSchemaBuilder.typeObject()
-            .property("nullProp", CompositeSchemaBuilder.typeNull())
-            .property("boolProp", CompositeSchemaBuilder.typeBoolean())
-            .property("typeInteger", CompositeSchemaBuilder.typeInteger())
+        val schema = SchemaBuilder.typeObject()
+            .property("nullProp", SchemaBuilder.typeNull())
+            .property("boolProp", SchemaBuilder.typeBoolean())
+            .property("typeInteger", SchemaBuilder.typeInteger())
             .build()
 
         val expected = CompositeSchema(propertySchemas = mapOf(
@@ -171,10 +168,10 @@ class SchemaBuilderTest {
 
     @Test
     fun moreObjectProps() {
-        val schema = CompositeSchemaBuilder.typeObject()
+        val schema = SchemaBuilder.typeObject()
             .minProperties(2)
             .maxProperties(3)
-            .propertyNames(CompositeSchemaBuilder.typeString().minLength(3))
+            .propertyNames(SchemaBuilder.typeString().minLength(3))
             .required("prop1", "prop2")
             .dependentRequired(mapOf(
                 "prop3" to listOf("prop4", "prop5")
@@ -187,7 +184,7 @@ class SchemaBuilderTest {
             TypeSchema(JsonString("object"), UnknownSource),
             MinPropertiesSchema(2, UnknownSource),
             MaxPropertiesSchema(3, UnknownSource),
-            PropertyNamesSchema(CompositeSchemaBuilder.typeString().minLength(3).build(), UnknownSource),
+            PropertyNamesSchema(SchemaBuilder.typeString().minLength(3).build(), UnknownSource),
             RequiredSchema(listOf("prop1", "prop2"), UnknownSource),
             DependentRequiredSchema(mapOf(
                 "prop3" to listOf("prop4", "prop5")
@@ -202,9 +199,9 @@ class SchemaBuilderTest {
     }
 
     @Test
-    fun unevaluated() {
-        val schema = CompositeSchemaBuilder.emptySchema()
-            .unevaluatedProperties(CompositeSchemaBuilder.falseSchema())
+    fun unevaluatedProperties() {
+        val schema = SchemaBuilder.emptySchema()
+            .unevaluatedProperties(SchemaBuilder.falseSchema())
             .build()
 
         val actual = Validator.forSchema(schema).validate(JsonParser("""
@@ -218,5 +215,22 @@ class SchemaBuilderTest {
             .hasFieldOrPropertyWithValue("message", "object properties propA failed to validate against \"unevaluatedProperties\" subschema")
             .hasFieldOrPropertyWithValue("keyword", Keyword.UNEVALUATED_PROPERTIES)
             .matches {fail -> fail.schema.location.pointer.toString() == "#/unevaluatedProperties" }
+    }
+
+    @Test
+    fun unevaluatedItems() {
+        val schema = SchemaBuilder.typeArray()
+            .unevaluatedItems(SchemaBuilder.falseSchema())
+            .build()
+
+        val actual = Validator.forSchema(schema).validate(JsonParser("""
+            [1]
+        """.trimIndent())())!!
+
+        println(actual)
+        assertThat(actual)
+            .hasFieldOrPropertyWithValue("message", "array items 0 failed to validate against \"unevaluatedItems\" subschema")
+            .hasFieldOrPropertyWithValue("keyword", Keyword.UNEVALUATED_ITEMS)
+            .matches {fail -> fail.schema.location.pointer.toString() == "#/unevaluatedItems" }
     }
 }

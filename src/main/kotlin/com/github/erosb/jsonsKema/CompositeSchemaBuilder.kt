@@ -20,9 +20,33 @@ internal fun callingSourceLocation(pointer: JsonPointer): SourceLocation {
     } ?: UnknownSource
 }
 
-class SchemaBuilder private constructor(
+abstract class SchemaBuilder {
+    protected var ptr: JsonPointer = JsonPointer()
+
+    open fun buildAt(parentPointer: JsonPointer): Schema {
+        val origPtr = this.ptr
+        this.ptr = parentPointer
+        try {
+            return build()
+        } finally {
+            this.ptr = origPtr
+        }
+    }
+
+    abstract fun build(): Schema
+
+    fun buildAt(loc: SourceLocation) = buildAt(loc.pointer)
+}
+
+class FalseSchemaBuilder(
+    private val origLocation: SourceLocation = callingSourceLocation(JsonPointer()),
+) : SchemaBuilder() {
+    override fun build(): Schema = FalseSchema(origLocation.withPointer(ptr + "false"))
+}
+
+class CompositeSchemaBuilder private constructor(
     subschemas: List<SchemaSupplier>,
-) {
+) : SchemaBuilder() {
     companion object {
         private fun type(typeValue: String): SchemaSupplier =
             { ptr ->
@@ -33,48 +57,52 @@ class SchemaBuilder private constructor(
             }
 
         @JvmStatic
-        fun typeString(): SchemaBuilder = SchemaBuilder(listOf(type("string")))
+        fun typeString(): CompositeSchemaBuilder = CompositeSchemaBuilder(listOf(type("string")))
 
         @JvmStatic
-        fun typeObject(): SchemaBuilder = SchemaBuilder(listOf(type("object")))
+        fun typeObject(): CompositeSchemaBuilder = CompositeSchemaBuilder(listOf(type("object")))
 
         @JvmStatic
-        fun typeArray(): SchemaBuilder = SchemaBuilder(listOf(type("array")))
+        fun typeArray(): CompositeSchemaBuilder = CompositeSchemaBuilder(listOf(type("array")))
 
         @JvmStatic
-        fun typeNumber(): SchemaBuilder = SchemaBuilder(listOf(type("number")))
+        fun typeNumber(): CompositeSchemaBuilder = CompositeSchemaBuilder(listOf(type("number")))
 
         @JvmStatic
-        fun typeInteger(): SchemaBuilder = SchemaBuilder(listOf(type("integer")))
+        fun typeInteger(): CompositeSchemaBuilder = CompositeSchemaBuilder(listOf(type("integer")))
 
         @JvmStatic
-        fun typeBoolean(): SchemaBuilder = SchemaBuilder(listOf(type("boolean")))
+        fun typeBoolean(): CompositeSchemaBuilder = CompositeSchemaBuilder(listOf(type("boolean")))
 
         @JvmStatic
-        fun typeNull(): SchemaBuilder = SchemaBuilder(listOf(type("null")))
+        fun typeNull(): CompositeSchemaBuilder = CompositeSchemaBuilder(listOf(type("null")))
+
+        @JvmStatic
+        fun emptySchema(): CompositeSchemaBuilder = CompositeSchemaBuilder(listOf())
+
+        @JvmStatic
+        fun falseSchema(): SchemaBuilder = FalseSchemaBuilder()
     }
 
-    private val subschemas: MutableList<SchemaSupplier> =
-        subschemas
-            .toMutableList()
+    private val subschemas: MutableList<SchemaSupplier> = subschemas.toMutableList()
     private val propertySchemas = mutableMapOf<String, SchemaSupplier>()
     private val patternPropertySchemas = mutableMapOf<String, SchemaSupplier>()
-    private var ptr: JsonPointer = JsonPointer()
+    private var unevaluatedPropertiesSchema: SchemaSupplier? = null
     private val regexFactory = JavaUtilRegexpFactory()
 
-    fun minLength(minLength: Int): SchemaBuilder {
+    fun minLength(minLength: Int): CompositeSchemaBuilder {
         val callingLocation = callingSourceLocation(JsonPointer())
         subschemas.add { ptr -> MinLengthSchema(minLength, callingLocation.withPointer(ptr + Keyword.MIN_LENGTH)) }
         return this
     }
 
-    fun maxLength(maxLength: Int): SchemaBuilder {
+    fun maxLength(maxLength: Int): CompositeSchemaBuilder {
         val callingLocation = callingSourceLocation(JsonPointer())
         subschemas.add { ptr -> MaxLengthSchema(maxLength, callingLocation.withPointer(ptr + Keyword.MAX_LENGTH)) }
         return this
     }
 
-    fun build(): Schema =
+    override fun build(): Schema =
         CompositeSchema(
             subschemas =
                 subschemas
@@ -83,36 +111,26 @@ class SchemaBuilder private constructor(
             location = callingSourceLocation(ptr),
             propertySchemas = propertySchemas.mapValues { it.value(ptr) },
             patternPropertySchemas =
-                patternPropertySchemas.map {
-                    regexFactory.createHandler(it.key,) to it.value(ptr)
-                }.toMap(),
+                patternPropertySchemas
+                    .map {
+                        regexFactory.createHandler(it.key) to it.value(ptr)
+                    }.toMap(),
+            unevaluatedPropertiesSchema = unevaluatedPropertiesSchema?.invoke(ptr),
         )
-
-    private fun buildAt(parentPointer: JsonPointer): Schema {
-        val origPtr = this.ptr
-        this.ptr = parentPointer
-        try {
-            return build()
-        } finally {
-            this.ptr = origPtr
-        }
-    }
-
-    private fun buildAt(loc: SourceLocation) = buildAt(loc.pointer)
 
     fun property(
         propertyName: String,
-        schema: SchemaBuilder,
-    ): SchemaBuilder {
+        schema: CompositeSchemaBuilder,
+    ): CompositeSchemaBuilder {
         propertySchemas[propertyName] = { ptr ->
             schema.buildAt(ptr + Keyword.PROPERTIES.value + propertyName)
         }
         return this
     }
 
-    fun minItems(minItems: Int): SchemaBuilder = appendSupplier(Keyword.MIN_ITEMS) { loc -> MinItemsSchema(minItems, loc) }
+    fun minItems(minItems: Int): CompositeSchemaBuilder = appendSupplier(Keyword.MIN_ITEMS) { loc -> MinItemsSchema(minItems, loc) }
 
-    fun maxItems(maxItems: Int): SchemaBuilder = appendSupplier(Keyword.MAX_ITEMS) { loc -> MaxItemsSchema(maxItems, loc) }
+    fun maxItems(maxItems: Int): CompositeSchemaBuilder = appendSupplier(Keyword.MAX_ITEMS) { loc -> MaxItemsSchema(maxItems, loc) }
 
     private fun createSupplier(
         kw: Keyword,
@@ -124,12 +142,15 @@ class SchemaBuilder private constructor(
         }
     }
 
-    private fun appendSupplier(kw: Keyword, baseSchemaFn: (SourceLocation) -> Schema): SchemaBuilder {
+    private fun appendSupplier(
+        kw: Keyword,
+        baseSchemaFn: (SourceLocation) -> Schema,
+    ): CompositeSchemaBuilder {
         subschemas.add(createSupplier(kw, baseSchemaFn))
         return this
     }
 
-    fun items(itemsSchema: SchemaBuilder): SchemaBuilder =
+    fun items(itemsSchema: SchemaBuilder): CompositeSchemaBuilder =
         appendSupplier(Keyword.ITEMS) { loc ->
             ItemsSchema(itemsSchema.buildAt(loc), 0, loc)
         }
@@ -139,11 +160,17 @@ class SchemaBuilder private constructor(
             ContainsSchema(containedSchema.buildAt(loc), 1, null, loc)
         }
 
-    fun minContains(minContains: Int, containedSchema: SchemaBuilder) = appendSupplier(Keyword.MIN_CONTAINS) { loc ->
+    fun minContains(
+        minContains: Int,
+        containedSchema: SchemaBuilder,
+    ) = appendSupplier(Keyword.MIN_CONTAINS) { loc ->
         ContainsSchema(containedSchema.buildAt(loc), minContains, null, loc)
     }
 
-    fun maxContains(maxContains: Int, containedSchema: SchemaBuilder) = appendSupplier(Keyword.MAX_CONTAINS) { loc ->
+    fun maxContains(
+        maxContains: Int,
+        containedSchema: SchemaBuilder,
+    ) = appendSupplier(Keyword.MAX_CONTAINS) { loc ->
         ContainsSchema(containedSchema.buildAt(loc), 0, maxContains, loc)
     }
 
@@ -153,16 +180,21 @@ class SchemaBuilder private constructor(
 
     fun maxProperties(maxProperties: Int) = appendSupplier(Keyword.MAX_PROPERTIES) { loc -> MaxPropertiesSchema(maxProperties, loc) }
 
-    fun propertyNames(propertyNameSchema: SchemaBuilder) = appendSupplier(Keyword.PROPERTY_NAMES) { loc -> PropertyNamesSchema(
-        propertyNameSchema.buildAt(loc), loc
-    )}
+    fun propertyNames(propertyNameSchema: SchemaBuilder) =
+        appendSupplier(Keyword.PROPERTY_NAMES) { loc ->
+            PropertyNamesSchema(
+                propertyNameSchema.buildAt(loc),
+                loc,
+            )
+        }
 
+    fun required(vararg requiredProperties: String) =
+        appendSupplier(Keyword.REQUIRED) { loc -> RequiredSchema(requiredProperties.toList(), loc) }
 
-    fun required(vararg requiredProperties: String) = appendSupplier(Keyword.REQUIRED) { loc -> RequiredSchema(requiredProperties.toList(), loc) }
-
-    fun dependentRequired(dependentRequired: Map<String, List<String>>) = appendSupplier(Keyword.DEPENDENT_REQUIRED) {
-            loc -> DependentRequiredSchema(dependentRequired, loc)
-    }
+    fun dependentRequired(dependentRequired: Map<String, List<String>>) =
+        appendSupplier(Keyword.DEPENDENT_REQUIRED) { loc ->
+            DependentRequiredSchema(dependentRequired, loc)
+        }
 
     fun readOnly(readOnly: Boolean) = if (readOnly) appendSupplier(Keyword.READ_ONLY) { loc -> ReadOnlySchema(loc) } else this
 
@@ -173,9 +205,16 @@ class SchemaBuilder private constructor(
             PatternSchema(regexFactory.createHandler(regexp), loc)
         }
 
-    fun patternProperties(patternProps: Map<String, SchemaBuilder>): SchemaBuilder {
+    fun patternProperties(patternProps: Map<String, SchemaBuilder>): CompositeSchemaBuilder {
         patternProps.forEach { (pattern, builder) ->
             patternPropertySchemas[pattern] = { loc -> builder.buildAt(loc) }
+        }
+        return this
+    }
+
+    fun unevaluatedProperties(schema: SchemaBuilder): CompositeSchemaBuilder {
+        unevaluatedPropertiesSchema = createSupplier(Keyword.UNEVALUATED_PROPERTIES) { loc ->
+            UnevaluatedPropertiesSchema(schema.buildAt(loc), loc)
         }
         return this
     }

@@ -161,9 +161,7 @@ class SchemaBuilderTest {
             ))
         ), subschemas = setOf(TypeSchema(JsonString("object"), UnknownSource))
         )
-        assertThat(schema).usingRecursiveComparison()
-            .ignoringFieldsOfTypes(SourceLocation::class.java)
-            .isEqualTo(expected)
+        assertBuiltSchema(schema, expected)
     }
 
     @Test
@@ -193,14 +191,18 @@ class SchemaBuilderTest {
             WriteOnlySchema(UnknownSource)
         ))
 
-        assertThat(schema).usingRecursiveComparison()
+        assertBuiltSchema(schema, expected)
+    }
+
+    private fun assertBuiltSchema(actual: Schema, expected: CompositeSchema) {
+        assertThat(actual).usingRecursiveComparison()
             .ignoringFieldsOfTypes(SourceLocation::class.java)
             .isEqualTo(expected)
     }
 
     @Test
     fun unevaluatedProperties() {
-        val schema = SchemaBuilder.emptySchema()
+        val schema = SchemaBuilder.empty()
             .unevaluatedProperties(SchemaBuilder.falseSchema())
             .build()
 
@@ -233,4 +235,42 @@ class SchemaBuilderTest {
             .hasFieldOrPropertyWithValue("keyword", Keyword.UNEVALUATED_ITEMS)
             .matches {fail -> fail.schema.location.pointer.toString() == "#/unevaluatedItems" }
     }
+
+    @Test
+    fun ifThenElse() {
+        val schema = SchemaBuilder.ifSchema(SchemaBuilder.typeString())
+            .thenSchema(SchemaBuilder.empty().minLength(3))
+            .elseSchema(SchemaBuilder.typeInteger().minimum(100))
+            .build()
+
+        val expected = CompositeSchema(subschemas = setOf(
+            IfThenElseSchema(
+                CompositeSchema(subschemas = setOf(TypeSchema(JsonString("string"), UnknownSource))),
+                CompositeSchema(subschemas = setOf(
+                    MinLengthSchema(3, UnknownSource)
+                )),
+                CompositeSchema(subschemas = setOf(
+                    TypeSchema(JsonString("integer"), UnknownSource),
+                    MinimumSchema(100, UnknownSource)
+                )), UnknownSource
+                )
+        ))
+
+        assertBuiltSchema(schema, expected)
+    }
+
+    @Test
+    fun onlyIfThen() {
+        val schema = SchemaBuilder.ifSchema(SchemaBuilder.typeString())
+            .thenSchema(SchemaBuilder.empty().minLength(5))
+            .build()
+
+        val actual = Validator.forSchema(schema).validate(JsonParser("""
+            "xx"
+        """.trimIndent())())!!
+
+        assertThat(actual.message).isEqualTo("actual string length 2 is lower than minLength 5")
+        assertThat(actual.schema.location.pointer.toString()).isEqualTo("#/then/minLength")
+    }
+
 }

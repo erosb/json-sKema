@@ -21,7 +21,6 @@ internal fun callingSourceLocation(pointer: JsonPointer): SourceLocation {
 }
 
 abstract class SchemaBuilder {
-
     companion object {
         private fun type(typeValue: String): SchemaSupplier =
             { ptr ->
@@ -53,10 +52,15 @@ abstract class SchemaBuilder {
         fun typeNull(): CompositeSchemaBuilder = CompositeSchemaBuilder(listOf(type("null")))
 
         @JvmStatic
-        fun emptySchema(): CompositeSchemaBuilder = CompositeSchemaBuilder(listOf())
+        fun empty(): CompositeSchemaBuilder = CompositeSchemaBuilder(listOf())
 
         @JvmStatic
         fun falseSchema(): SchemaBuilder = FalseSchemaBuilder()
+
+        fun trueSchema(): SchemaBuilder = TrueSchemaBuilder()
+
+        @JvmStatic
+        fun ifSchema(ifSchema: SchemaBuilder) = SchemaBuilder.empty().ifSchema(ifSchema)
     }
 
     protected var ptr: JsonPointer = JsonPointer()
@@ -79,7 +83,13 @@ abstract class SchemaBuilder {
 class FalseSchemaBuilder(
     private val origLocation: SourceLocation = callingSourceLocation(JsonPointer()),
 ) : SchemaBuilder() {
-    override fun build(): Schema = FalseSchema(origLocation.withPointer(ptr + "false"))
+    override fun build(): Schema = FalseSchema(origLocation.withPointer(ptr + Keyword.FALSE.value))
+}
+
+class TrueSchemaBuilder(
+    private val origLocation: SourceLocation = callingSourceLocation(JsonPointer()),
+) : SchemaBuilder() {
+    override fun build(): Schema = TrueSchema(origLocation.withPointer(ptr + Keyword.TRUE.value))
 }
 
 class CompositeSchemaBuilder internal constructor(
@@ -90,6 +100,9 @@ class CompositeSchemaBuilder internal constructor(
     private val patternPropertySchemas = mutableMapOf<String, SchemaSupplier>()
     private var unevaluatedPropertiesSchema: SchemaSupplier? = null
     private var unevaluatedItemsSchema: SchemaSupplier? = null
+    private var ifSchema: SchemaSupplier? = null
+    private var thenSchema: SchemaSupplier? = null
+    private var elseSchema: SchemaSupplier? = null
     private val regexFactory = JavaUtilRegexpFactory()
 
     fun minLength(minLength: Int): CompositeSchemaBuilder {
@@ -104,22 +117,27 @@ class CompositeSchemaBuilder internal constructor(
         return this
     }
 
-    override fun build(): Schema =
-        CompositeSchema(
+    override fun build(): Schema {
+        val ifSchema = this.ifSchema
+        if (ifSchema != null) {
+            subschemas.add { loc -> IfThenElseSchema(ifSchema(ptr), thenSchema?.invoke(loc), elseSchema?.invoke(loc), callingSourceLocation(loc))}
+        }
+        return CompositeSchema(
             subschemas =
-                subschemas
-                    .map { it(ptr) }
-                    .toSet(),
+            subschemas
+                .map { it(ptr) }
+                .toSet(),
             location = callingSourceLocation(ptr),
             propertySchemas = propertySchemas.mapValues { it.value(ptr) },
             patternPropertySchemas =
-                patternPropertySchemas
-                    .map {
-                        regexFactory.createHandler(it.key) to it.value(ptr)
-                    }.toMap(),
+            patternPropertySchemas
+                .map {
+                    regexFactory.createHandler(it.key) to it.value(ptr)
+                }.toMap(),
             unevaluatedPropertiesSchema = unevaluatedPropertiesSchema?.invoke(ptr),
-            unevaluatedItemsSchema = unevaluatedItemsSchema?.invoke(ptr)
+            unevaluatedItemsSchema = unevaluatedItemsSchema?.invoke(ptr),
         )
+    }
 
     fun property(
         propertyName: String,
@@ -216,16 +234,37 @@ class CompositeSchemaBuilder internal constructor(
     }
 
     fun unevaluatedProperties(schema: SchemaBuilder): CompositeSchemaBuilder {
-        unevaluatedPropertiesSchema = createSupplier(Keyword.UNEVALUATED_PROPERTIES) { loc ->
-            UnevaluatedPropertiesSchema(schema.buildAt(loc), loc)
-        }
+        unevaluatedPropertiesSchema =
+            createSupplier(Keyword.UNEVALUATED_PROPERTIES) { loc ->
+                UnevaluatedPropertiesSchema(schema.buildAt(loc), loc)
+            }
         return this
     }
 
     fun unevaluatedItems(schema: SchemaBuilder): CompositeSchemaBuilder {
-        unevaluatedItemsSchema = createSupplier(Keyword.UNEVALUATED_ITEMS) { loc ->
-            UnevaluatedItemsSchema(schema.buildAt(loc), loc)
-        }
+        unevaluatedItemsSchema =
+            createSupplier(Keyword.UNEVALUATED_ITEMS) { loc ->
+                UnevaluatedItemsSchema(schema.buildAt(loc), loc)
+            }
         return this
     }
+
+    fun ifSchema(ifSchema: SchemaBuilder): CompositeSchemaBuilder {
+        this.ifSchema = createSupplier(Keyword.IF) { loc -> ifSchema.buildAt(loc) }
+        return this
+    }
+
+    fun thenSchema(thenSchema: SchemaBuilder): CompositeSchemaBuilder {
+        this.thenSchema = createSupplier(Keyword.THEN) { loc -> thenSchema.buildAt(loc) }
+        return this
+    }
+
+    fun elseSchema(elseSchema: SchemaBuilder): CompositeSchemaBuilder {
+        this.elseSchema = createSupplier(Keyword.ELSE) { loc -> elseSchema.buildAt(loc) }
+        return this
+    }
+
+    fun minimum(minimum: Number) = appendSupplier(Keyword.MINIMUM) { loc -> MinimumSchema(minimum, loc) }
+
+    fun maximum(minimum: Number) = appendSupplier(Keyword.MAXIMUM) { loc -> MaximumSchema(minimum, loc) }
 }

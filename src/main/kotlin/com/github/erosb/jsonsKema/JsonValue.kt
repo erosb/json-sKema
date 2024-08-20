@@ -242,7 +242,7 @@ data class JsonNumber(
 
     override fun equals(other: Any?): Boolean {
         if (other === this) return true
-        if (!(other is IJsonNumber)) return false
+        if (other !is IJsonNumber) return false
         return BigDecimal(value.toString()).compareTo(BigDecimal(other.value.toString())) == 0
     }
 }

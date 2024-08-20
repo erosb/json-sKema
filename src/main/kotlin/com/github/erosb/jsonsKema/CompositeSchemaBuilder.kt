@@ -71,6 +71,12 @@ abstract class SchemaBuilder {
 
         @JvmStatic
         fun anyOf(subschemas: List<SchemaBuilder>): CompositeSchemaBuilder = empty().anyOf(subschemas)
+
+        @JvmStatic
+        fun not(notSchema: SchemaBuilder): CompositeSchemaBuilder = empty().not(notSchema)
+
+        @JvmStatic
+        fun const(constant: IJsonValue): CompositeSchemaBuilder = empty().const(constant)
     }
 
     protected var ptr: JsonPointer = JsonPointer()
@@ -299,4 +305,13 @@ class CompositeSchemaBuilder internal constructor(
         appendSupplier(Keyword.ANY_OF) { loc ->
             AnyOfSchema(subschemas.map { it.buildAt(loc) }, loc)
         }
+
+    fun not(negatedSchema: SchemaBuilder) =
+        appendSupplier(Keyword.NOT) { loc ->
+            NotSchema(negatedSchema.buildAt(loc), loc)
+        }
+
+    fun const(constant: IJsonValue) = appendSupplier(Keyword.CONST) { loc ->
+        ConstSchema(constant, loc)
+    }
 }

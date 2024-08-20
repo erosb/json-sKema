@@ -89,8 +89,6 @@ class SchemaBuilderTest {
             }
         """.trimIndent())())!!
 
-        println(actual)
-
         actual.causes.find { it.message.contains("instance value did not match pattern \\d{2}.*") }!!
         actual.causes.find { it.message.contains("expected type: string, actual: integer") }!!
     }
@@ -212,7 +210,6 @@ class SchemaBuilderTest {
             }
         """.trimIndent())())!!
 
-        println(actual)
         assertThat(actual)
             .hasFieldOrPropertyWithValue("message", "object properties propA failed to validate against \"unevaluatedProperties\" subschema")
             .hasFieldOrPropertyWithValue("keyword", Keyword.UNEVALUATED_PROPERTIES)
@@ -229,7 +226,6 @@ class SchemaBuilderTest {
             [1]
         """.trimIndent())())!!
 
-        println(actual)
         assertThat(actual)
             .hasFieldOrPropertyWithValue("message", "array items 0 failed to validate against \"unevaluatedItems\" subschema")
             .hasFieldOrPropertyWithValue("keyword", Keyword.UNEVALUATED_ITEMS)
@@ -324,6 +320,25 @@ class SchemaBuilderTest {
 
         assertThat(actual.message).isEqualTo("no subschema out of 2 matched")
         assertThat(actual.keyword).isEqualTo(Keyword.ANY_OF)
+    }
+
+    @Test
+    fun not() {
+        val schema = SchemaBuilder.not(SchemaBuilder.typeObject()
+            .property("propA", SchemaBuilder.typeNumber().not(
+                SchemaBuilder.const(JsonNumber(2))
+            ))
+        ).build()
+
+
+        val actual = Validator.forSchema(schema).validate("""
+            {
+                "propA": 3
+            }
+        """.trimIndent())!!
+
+        assertThat(actual.message).isEqualTo("negated subschema did not fail")
+        assertThat(actual.keyword).isEqualTo(Keyword.NOT)
     }
 
 }

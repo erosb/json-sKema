@@ -97,6 +97,8 @@ interface Validator {
     }
 
     fun validate(instance: IJsonValue): ValidationFailure?
+
+    fun validate(instanceJson: String): ValidationFailure? = validate(JsonParser(instanceJson)())
 }
 
 private class MarkableJsonArray<I : IJsonValue>(private val original: IJsonArray<I>) :

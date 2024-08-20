@@ -57,10 +57,14 @@ abstract class SchemaBuilder {
         @JvmStatic
         fun falseSchema(): SchemaBuilder = FalseSchemaBuilder()
 
+        @JvmStatic
         fun trueSchema(): SchemaBuilder = TrueSchemaBuilder()
 
         @JvmStatic
         fun ifSchema(ifSchema: SchemaBuilder) = SchemaBuilder.empty().ifSchema(ifSchema)
+
+        @JvmStatic
+        fun allOf(subschemas: List<SchemaBuilder>): CompositeSchemaBuilder = SchemaBuilder.empty().allOf(subschemas)
     }
 
     protected var ptr: JsonPointer = JsonPointer()
@@ -267,4 +271,10 @@ class CompositeSchemaBuilder internal constructor(
     fun minimum(minimum: Number) = appendSupplier(Keyword.MINIMUM) { loc -> MinimumSchema(minimum, loc) }
 
     fun maximum(minimum: Number) = appendSupplier(Keyword.MAXIMUM) { loc -> MaximumSchema(minimum, loc) }
+
+    fun allOf(subschemas: List<SchemaBuilder>): CompositeSchemaBuilder {
+        return appendSupplier(Keyword.ALL_OF) { loc ->
+            AllOfSchema(subschemas.map { it.buildAt(loc) }, loc)
+        }
+    }
 }

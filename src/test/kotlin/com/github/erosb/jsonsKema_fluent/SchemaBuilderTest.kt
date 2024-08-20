@@ -273,4 +273,23 @@ class SchemaBuilderTest {
         assertThat(actual.schema.location.pointer.toString()).isEqualTo("#/then/minLength")
     }
 
+    @Test
+    fun allOf() {
+        val schema = SchemaBuilder.allOf(listOf(
+            SchemaBuilder.typeObject().property("propA", SchemaBuilder.typeString()),
+            SchemaBuilder.empty().property("propB", SchemaBuilder.typeInteger())
+        )).build()
+
+        val actual = Validator.forSchema(schema).validate(JsonParser("""
+            {
+                "propA": null,
+                "propB": "xx"
+            }
+        """.trimIndent())())!!
+
+        println(actual)
+        assertThat(actual.message).isEqualTo("2 subschemas out of 2 failed to validate")
+        assertThat(actual.keyword).isEqualTo(Keyword.ALL_OF)
+    }
+
 }

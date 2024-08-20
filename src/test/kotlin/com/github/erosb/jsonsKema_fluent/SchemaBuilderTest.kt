@@ -287,9 +287,43 @@ class SchemaBuilderTest {
             }
         """.trimIndent())())!!
 
-        println(actual)
         assertThat(actual.message).isEqualTo("2 subschemas out of 2 failed to validate")
         assertThat(actual.keyword).isEqualTo(Keyword.ALL_OF)
+    }
+
+    @Test
+    fun oneOf() {
+        val schema = SchemaBuilder.oneOf(listOf(
+            SchemaBuilder.typeObject().property("propA", SchemaBuilder.typeString()),
+            SchemaBuilder.empty().property("propB", SchemaBuilder.typeInteger())
+        )).build()
+
+        val actual = Validator.forSchema(schema).validate(JsonParser("""
+            {
+                "propA": null,
+                "propB": "xx"
+            }
+        """.trimIndent())())!!
+
+        assertThat(actual.message).isEqualTo("expected 1 subschema to match out of 2, 0 matched")
+        assertThat(actual.keyword).isEqualTo(Keyword.ONE_OF)
+    }
+
+    @Test
+    fun anyOf() {
+        val schema = SchemaBuilder.anyOf(listOf(
+            SchemaBuilder.typeObject().property("propA", SchemaBuilder.typeString()),
+            SchemaBuilder.empty().property("propA", SchemaBuilder.typeInteger())
+        )).build()
+
+        val actual = Validator.forSchema(schema).validate(JsonParser("""
+            {
+                "propA": null
+            }
+        """.trimIndent())())!!
+
+        assertThat(actual.message).isEqualTo("no subschema out of 2 matched")
+        assertThat(actual.keyword).isEqualTo(Keyword.ANY_OF)
     }
 
 }

@@ -61,10 +61,16 @@ abstract class SchemaBuilder {
         fun trueSchema(): SchemaBuilder = TrueSchemaBuilder()
 
         @JvmStatic
-        fun ifSchema(ifSchema: SchemaBuilder) = SchemaBuilder.empty().ifSchema(ifSchema)
+        fun ifSchema(ifSchema: SchemaBuilder) = empty().ifSchema(ifSchema)
 
         @JvmStatic
-        fun allOf(subschemas: List<SchemaBuilder>): CompositeSchemaBuilder = SchemaBuilder.empty().allOf(subschemas)
+        fun allOf(subschemas: List<SchemaBuilder>): CompositeSchemaBuilder = empty().allOf(subschemas)
+
+        @JvmStatic
+        fun oneOf(subschemas: List<SchemaBuilder>): CompositeSchemaBuilder = empty().oneOf(subschemas)
+
+        @JvmStatic
+        fun anyOf(subschemas: List<SchemaBuilder>): CompositeSchemaBuilder = empty().anyOf(subschemas)
     }
 
     protected var ptr: JsonPointer = JsonPointer()
@@ -124,20 +130,27 @@ class CompositeSchemaBuilder internal constructor(
     override fun build(): Schema {
         val ifSchema = this.ifSchema
         if (ifSchema != null) {
-            subschemas.add { loc -> IfThenElseSchema(ifSchema(ptr), thenSchema?.invoke(loc), elseSchema?.invoke(loc), callingSourceLocation(loc))}
+            subschemas.add { loc ->
+                IfThenElseSchema(
+                    ifSchema(ptr),
+                    thenSchema?.invoke(loc),
+                    elseSchema?.invoke(loc),
+                    callingSourceLocation(loc),
+                )
+            }
         }
         return CompositeSchema(
             subschemas =
-            subschemas
-                .map { it(ptr) }
-                .toSet(),
+                subschemas
+                    .map { it(ptr) }
+                    .toSet(),
             location = callingSourceLocation(ptr),
             propertySchemas = propertySchemas.mapValues { it.value(ptr) },
             patternPropertySchemas =
-            patternPropertySchemas
-                .map {
-                    regexFactory.createHandler(it.key) to it.value(ptr)
-                }.toMap(),
+                patternPropertySchemas
+                    .map {
+                        regexFactory.createHandler(it.key) to it.value(ptr)
+                    }.toMap(),
             unevaluatedPropertiesSchema = unevaluatedPropertiesSchema?.invoke(ptr),
             unevaluatedItemsSchema = unevaluatedItemsSchema?.invoke(ptr),
         )
@@ -272,9 +285,18 @@ class CompositeSchemaBuilder internal constructor(
 
     fun maximum(minimum: Number) = appendSupplier(Keyword.MAXIMUM) { loc -> MaximumSchema(minimum, loc) }
 
-    fun allOf(subschemas: List<SchemaBuilder>): CompositeSchemaBuilder {
-        return appendSupplier(Keyword.ALL_OF) { loc ->
+    fun allOf(subschemas: List<SchemaBuilder>) =
+        appendSupplier(Keyword.ALL_OF) { loc ->
             AllOfSchema(subschemas.map { it.buildAt(loc) }, loc)
         }
-    }
+
+    fun oneOf(subschemas: List<SchemaBuilder>) =
+        appendSupplier(Keyword.ONE_OF) { loc ->
+            OneOfSchema(subschemas.map { it.buildAt(loc) }, loc)
+        }
+
+    fun anyOf(subschemas: List<SchemaBuilder>) =
+        appendSupplier(Keyword.ANY_OF) { loc ->
+            AnyOfSchema(subschemas.map { it.buildAt(loc) }, loc)
+        }
 }

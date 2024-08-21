@@ -77,6 +77,12 @@ abstract class SchemaBuilder {
 
         @JvmStatic
         fun const(constant: IJsonValue): CompositeSchemaBuilder = empty().const(constant)
+
+        @JvmStatic
+        fun enumSchema(vararg enumValues: IJsonValue) = enumSchema(enumValues.toList())
+
+        @JvmStatic
+        fun enumSchema(enumValues: List<IJsonValue>): CompositeSchemaBuilder = empty().enumSchema(enumValues)
     }
 
     protected var ptr: JsonPointer = JsonPointer()
@@ -311,7 +317,28 @@ class CompositeSchemaBuilder internal constructor(
             NotSchema(negatedSchema.buildAt(loc), loc)
         }
 
-    fun const(constant: IJsonValue) = appendSupplier(Keyword.CONST) { loc ->
-        ConstSchema(constant, loc)
-    }
+    fun const(constant: IJsonValue) =
+        appendSupplier(Keyword.CONST) { loc ->
+            ConstSchema(constant, loc)
+        }
+
+    fun enumSchema(enumValues: List<IJsonValue>) =
+        appendSupplier(Keyword.ENUM) { loc ->
+            EnumSchema(enumValues, loc)
+        }
+
+    fun exclusiveMinimum(exclMinimum: Int) =
+        appendSupplier(Keyword.EXCLUSIVE_MINIMUM) { loc ->
+            ExclusiveMinimumSchema(exclMinimum, loc)
+        }
+
+    fun exclusiveMaximum(exclMaximum: Int) =
+        appendSupplier(Keyword.EXCLUSIVE_MAXIMUM) { loc ->
+            ExclusiveMaximumSchema(exclMaximum, loc)
+        }
+
+    fun multipleOf(denominator: Int) =
+        appendSupplier(Keyword.MULTIPLE_OF) { loc ->
+            MultipleOfSchema(denominator, loc)
+        }
 }

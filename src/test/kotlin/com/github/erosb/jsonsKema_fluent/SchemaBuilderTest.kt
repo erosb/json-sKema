@@ -309,7 +309,7 @@ class SchemaBuilderTest {
     fun anyOf() {
         val schema = SchemaBuilder.anyOf(listOf(
             SchemaBuilder.typeObject().property("propA", SchemaBuilder.typeString()),
-            SchemaBuilder.empty().property("propA", SchemaBuilder.typeInteger())
+            SchemaBuilder.empty().property("propA", SchemaBuilder.enumSchema(JsonNumber(2), JsonString("2")))
         )).build()
 
         val actual = Validator.forSchema(schema).validate(JsonParser("""
@@ -340,5 +340,18 @@ class SchemaBuilderTest {
         assertThat(actual.message).isEqualTo("negated subschema did not fail")
         assertThat(actual.keyword).isEqualTo(Keyword.NOT)
     }
+
+    @Test
+    fun numberKeywords() {
+    val schema = SchemaBuilder.typeInteger()
+        .exclusiveMinimum(10)
+        .exclusiveMaximum(8)
+        .multipleOf(3)
+        .build()
+
+        val actual = Validator.forSchema(schema).validate("8")!!
+        assertThat(actual.causes).hasSize(3)
+    }
+
 
 }

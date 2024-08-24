@@ -343,15 +343,29 @@ class SchemaBuilderTest {
 
     @Test
     fun numberKeywords() {
-    val schema = SchemaBuilder.typeInteger()
-        .exclusiveMinimum(10)
-        .exclusiveMaximum(8)
-        .multipleOf(3)
-        .build()
+        val schema = SchemaBuilder.typeInteger()
+                .exclusiveMinimum(10)
+                .exclusiveMaximum(8)
+                .multipleOf(3)
+                .build()
 
         val actual = Validator.forSchema(schema).validate("8")!!
         assertThat(actual.causes).hasSize(3)
     }
 
+    @Test
+    fun formatSchema() {
+        val schema = SchemaBuilder.typeString()
+                .format("date")
+                .build()
 
+        val actual = Validator.forSchema(schema).validate(
+                """
+                "not a date"
+                """.trimIndent(),
+            )!!
+
+        assertThat(actual.message).isEqualTo("instance does not match format 'date'")
+        assertThat(actual.keyword).isEqualTo(Keyword.FORMAT)
+    }
 }

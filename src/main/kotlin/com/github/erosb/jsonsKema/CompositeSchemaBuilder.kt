@@ -341,4 +341,6 @@ class CompositeSchemaBuilder internal constructor(
         appendSupplier(Keyword.MULTIPLE_OF) { loc ->
             MultipleOfSchema(denominator, loc)
         }
+
+    fun format(formatName: String) = appendSupplier(Keyword.FORMAT) { loc -> FormatSchema(formatName, loc) }
 }

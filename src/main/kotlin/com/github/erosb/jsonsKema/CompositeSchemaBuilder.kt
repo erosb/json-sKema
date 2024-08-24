@@ -343,4 +343,9 @@ class CompositeSchemaBuilder internal constructor(
         }
 
     fun format(formatName: String) = appendSupplier(Keyword.FORMAT) { loc -> FormatSchema(formatName, loc) }
+
+    fun dependentSchemas(dependentSchemas: Map<String, SchemaBuilder>) =
+        appendSupplier(Keyword.DEPENDENT_SCHEMAS) { loc ->
+            DependentSchemasSchema(dependentSchemas.mapValues { it.value.buildAt(loc) }, loc)
+        }
 }

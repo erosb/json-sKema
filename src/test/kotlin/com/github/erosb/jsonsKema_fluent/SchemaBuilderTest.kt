@@ -368,4 +368,27 @@ class SchemaBuilderTest {
         assertThat(actual.message).isEqualTo("instance does not match format 'date'")
         assertThat(actual.keyword).isEqualTo(Keyword.FORMAT)
     }
+
+    @Test
+    fun dependentSchemas() {
+        val schema = SchemaBuilder.typeObject()
+            .dependentSchemas(mapOf(
+                "propA" to SchemaBuilder.empty().required("propC"),
+                "propD" to SchemaBuilder.typeObject()
+                    .property("propB", SchemaBuilder.typeInteger())
+            ))
+            .build()
+
+        val actual = Validator.forSchema(schema).validate("""
+            {
+                "propA": true,
+                "propB": null,
+                "propD": false
+            }
+        """.trimIndent())!!
+
+        assertThat(actual.message).isEqualTo("some dependent subschemas did not match")
+        assertThat(actual.keyword).isEqualTo(Keyword.DEPENDENT_SCHEMAS)
+        assertThat(actual.causes).hasSize(2)
+    }
 }

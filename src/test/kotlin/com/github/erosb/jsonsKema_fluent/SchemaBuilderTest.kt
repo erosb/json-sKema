@@ -418,4 +418,16 @@ class SchemaBuilderTest {
         actual.causes.find { it.keyword == Keyword.ITEMS }!!
     }
 
+    @Test
+    fun keywordOverride() {
+        val schema = SchemaBuilder.typeInteger()
+            .minimum(3)
+            .minimum(2)
+            .build()
+
+        val actual =  Validator.forSchema(schema).validate("2")
+
+        assertThat(actual).isNull()
+    }
+
 }

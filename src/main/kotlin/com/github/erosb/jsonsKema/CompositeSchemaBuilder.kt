@@ -31,28 +31,28 @@ abstract class SchemaBuilder {
             }
 
         @JvmStatic
-        fun typeString(): CompositeSchemaBuilder = CompositeSchemaBuilder(listOf(type("string")))
+        fun typeString(): CompositeSchemaBuilder = empty().type("string")
 
         @JvmStatic
-        fun typeObject(): CompositeSchemaBuilder = CompositeSchemaBuilder(listOf(type("object")))
+        fun typeObject(): CompositeSchemaBuilder = empty().type("object")
 
         @JvmStatic
-        fun typeArray(): CompositeSchemaBuilder = CompositeSchemaBuilder(listOf(type("array")))
+        fun typeArray(): CompositeSchemaBuilder = empty().type("array")
 
         @JvmStatic
-        fun typeNumber(): CompositeSchemaBuilder = CompositeSchemaBuilder(listOf(type("number")))
+        fun typeNumber(): CompositeSchemaBuilder = empty().type("number")
 
         @JvmStatic
-        fun typeInteger(): CompositeSchemaBuilder = CompositeSchemaBuilder(listOf(type("integer")))
+        fun typeInteger(): CompositeSchemaBuilder = empty().type("integer")
 
         @JvmStatic
-        fun typeBoolean(): CompositeSchemaBuilder = CompositeSchemaBuilder(listOf(type("boolean")))
+        fun typeBoolean(): CompositeSchemaBuilder = empty().type("boolean")
 
         @JvmStatic
-        fun typeNull(): CompositeSchemaBuilder = CompositeSchemaBuilder(listOf(type("null")))
+        fun typeNull(): CompositeSchemaBuilder = empty().type("null")
 
         @JvmStatic
-        fun empty(): CompositeSchemaBuilder = CompositeSchemaBuilder(listOf())
+        fun empty(): CompositeSchemaBuilder = CompositeSchemaBuilder()
 
         @JvmStatic
         fun falseSchema(): SchemaBuilder = FalseSchemaBuilder()
@@ -114,10 +114,8 @@ class TrueSchemaBuilder(
     override fun build(): Schema = TrueSchema(origLocation.withPointer(ptr + Keyword.TRUE.value))
 }
 
-class CompositeSchemaBuilder internal constructor(
-    subschemas: List<SchemaSupplier>,
-) : SchemaBuilder() {
-    private val subschemas: MutableList<SchemaSupplier> = subschemas.toMutableList()
+class CompositeSchemaBuilder internal constructor() : SchemaBuilder() {
+    private val subschemas: MutableMap<Keyword, SchemaSupplier> = mutableMapOf()// subschemas.toMutableList()
     private val propertySchemas = mutableMapOf<String, SchemaSupplier>()
     private val patternPropertySchemas = mutableMapOf<String, SchemaSupplier>()
     private var unevaluatedPropertiesSchema: SchemaSupplier? = null
@@ -128,22 +126,20 @@ class CompositeSchemaBuilder internal constructor(
     private val regexFactory = JavaUtilRegexpFactory()
     private var prefixSchemasCount: Int = 0
 
-    fun minLength(minLength: Int): CompositeSchemaBuilder {
-        val callingLocation = callingSourceLocation(JsonPointer())
-        subschemas.add { ptr -> MinLengthSchema(minLength, callingLocation.withPointer(ptr + Keyword.MIN_LENGTH)) }
-        return this
-    }
+    fun minLength(minLength: Int) =
+        appendSupplier(Keyword.MIN_LENGTH) { loc ->
+            MinLengthSchema(minLength, loc)
+        }
 
-    fun maxLength(maxLength: Int): CompositeSchemaBuilder {
-        val callingLocation = callingSourceLocation(JsonPointer())
-        subschemas.add { ptr -> MaxLengthSchema(maxLength, callingLocation.withPointer(ptr + Keyword.MAX_LENGTH)) }
-        return this
+    fun maxLength(maxLength: Int) =
+        appendSupplier(Keyword.MAX_LENGTH) { loc ->
+            MaxLengthSchema(maxLength, loc)
     }
 
     override fun build(): Schema {
         val ifSchema = this.ifSchema
         if (ifSchema != null) {
-            subschemas.add { loc ->
+            subschemas[Keyword.IF] = { loc ->
                 IfThenElseSchema(
                     ifSchema(ptr),
                     thenSchema?.invoke(loc),
@@ -154,7 +150,7 @@ class CompositeSchemaBuilder internal constructor(
         }
         return CompositeSchema(
             subschemas =
-                subschemas
+                subschemas.values
                     .map { it(ptr) }
                     .toSet(),
             location = callingSourceLocation(ptr),
@@ -197,7 +193,7 @@ class CompositeSchemaBuilder internal constructor(
         kw: Keyword,
         baseSchemaFn: (SourceLocation) -> Schema,
     ): CompositeSchemaBuilder {
-        subschemas.add(createSupplier(kw, baseSchemaFn))
+        subschemas[kw] = createSupplier(kw, baseSchemaFn)
         return this
     }
 
@@ -368,4 +364,6 @@ class CompositeSchemaBuilder internal constructor(
             PrefixItemsSchema(prefixSchemas.map { it.buildAt(loc) }, loc)
         }
     }
+
+    fun type(type: String)  = appendSupplier(Keyword.TYPE) { loc -> TypeSchema(JsonString(type), loc)}
 }

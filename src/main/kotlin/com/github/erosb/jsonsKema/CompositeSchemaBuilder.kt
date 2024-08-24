@@ -348,4 +348,16 @@ class CompositeSchemaBuilder internal constructor(
         appendSupplier(Keyword.DEPENDENT_SCHEMAS) { loc ->
             DependentSchemasSchema(dependentSchemas.mapValues { it.value.buildAt(loc) }, loc)
         }
+
+    fun additionalProperties(additionalPropertiesSchema: SchemaBuilder) =
+        appendSupplier(Keyword.ADDITIONAL_PROPERTIES) { loc ->
+            AdditionalPropertiesSchema(
+                additionalPropertiesSchema.buildAt(loc),
+                propertySchemas.keys.toList(),
+                patternPropertySchemas.keys.toList().map {
+                    regexFactory.createHandler(it)
+                },
+                loc,
+            )
+        }
 }

@@ -75,22 +75,30 @@ class SchemaBuilderTest {
         val subject = SchemaBuilder.typeObject()
             .property("propA", SchemaBuilder.typeString()
                 .pattern("\\d{2}.*"))
-            .property("propB", SchemaBuilder.typeObject().patternProperties(mapOf(
-                "[A-Z]{2}" to SchemaBuilder.typeString()
-            )))
+            .property("propB", SchemaBuilder.typeObject()
+                .patternProperties(mapOf(
+                    "[A-Z]{2}" to SchemaBuilder.typeString()
+                ))
+                .additionalProperties(SchemaBuilder.falseSchema())
+            )
             .build()
 
         val actual = Validator.forSchema(subject).validate(JsonParser("""
             {
                 "propA": "1asd",
                 "propB": {
-                    "HU": 0
+                    "HU": 0,
+                    "additional": "bad"
                 }
             }
         """.trimIndent())())!!
 
         actual.causes.find { it.message.contains("instance value did not match pattern \\d{2}.*") }!!
-        actual.causes.find { it.message.contains("expected type: string, actual: integer") }!!
+        actual.causes.find { it.schema.location.pointer.toString() == "#/properties/propB" }!!
+            .let {
+                it.causes.find { it.message == "false schema always fails" } !!
+                it.causes.find { it.message == "expected type: string, actual: integer" } !!
+            }
     }
 
     @Test
@@ -165,6 +173,7 @@ class SchemaBuilderTest {
     @Test
     fun moreObjectProps() {
         val schema = SchemaBuilder.typeObject()
+            .additionalProperties(SchemaBuilder.falseSchema())
             .minProperties(2)
             .maxProperties(3)
             .propertyNames(SchemaBuilder.typeString().minLength(3))
@@ -178,6 +187,7 @@ class SchemaBuilderTest {
 
         val expected = CompositeSchema(subschemas = setOf(
             TypeSchema(JsonString("object"), UnknownSource),
+            AdditionalPropertiesSchema(FalseSchema(UnknownSource), listOf(), listOf(), UnknownSource),
             MinPropertiesSchema(2, UnknownSource),
             MaxPropertiesSchema(3, UnknownSource),
             PropertyNamesSchema(SchemaBuilder.typeString().minLength(3).build(), UnknownSource),
@@ -391,4 +401,5 @@ class SchemaBuilderTest {
         assertThat(actual.keyword).isEqualTo(Keyword.DEPENDENT_SCHEMAS)
         assertThat(actual.causes).hasSize(2)
     }
+
 }

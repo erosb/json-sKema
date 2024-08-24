@@ -126,6 +126,7 @@ class CompositeSchemaBuilder internal constructor(
     private var thenSchema: SchemaSupplier? = null
     private var elseSchema: SchemaSupplier? = null
     private val regexFactory = JavaUtilRegexpFactory()
+    private var prefixSchemasCount: Int = 0
 
     fun minLength(minLength: Int): CompositeSchemaBuilder {
         val callingLocation = callingSourceLocation(JsonPointer())
@@ -202,7 +203,7 @@ class CompositeSchemaBuilder internal constructor(
 
     fun items(itemsSchema: SchemaBuilder): CompositeSchemaBuilder =
         appendSupplier(Keyword.ITEMS) { loc ->
-            ItemsSchema(itemsSchema.buildAt(loc), 0, loc)
+            ItemsSchema(itemsSchema.buildAt(loc), prefixSchemasCount, loc)
         }
 
     fun contains(containedSchema: SchemaBuilder) =
@@ -360,4 +361,11 @@ class CompositeSchemaBuilder internal constructor(
                 loc,
             )
         }
+
+    fun prefixItems(prefixSchemas: List<SchemaBuilder>): CompositeSchemaBuilder {
+        prefixSchemasCount = prefixSchemas.size
+        return appendSupplier(Keyword.PREFIX_ITEMS) { loc ->
+            PrefixItemsSchema(prefixSchemas.map { it.buildAt(loc) }, loc)
+        }
+    }
 }

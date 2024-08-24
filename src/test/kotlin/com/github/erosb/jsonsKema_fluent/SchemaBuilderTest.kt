@@ -402,4 +402,20 @@ class SchemaBuilderTest {
         assertThat(actual.causes).hasSize(2)
     }
 
+    @Test
+    fun prefixItems() {
+        val schema = SchemaBuilder.typeArray()
+            .items(SchemaBuilder.typeInteger())
+            .prefixItems(listOf(SchemaBuilder.typeBoolean()))
+            .build()
+
+        val success = Validator.forSchema(schema).validate("[false, 2, 2, 2]")
+
+        assertThat(success).isNull()
+
+        val actual = Validator.forSchema(schema).validate("[null, false]")!!
+        actual.causes.find { it.keyword == Keyword.PREFIX_ITEMS }!!
+        actual.causes.find { it.keyword == Keyword.ITEMS }!!
+    }
+
 }

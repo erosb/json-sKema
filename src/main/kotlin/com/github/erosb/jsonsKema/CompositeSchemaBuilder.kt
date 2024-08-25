@@ -67,16 +67,25 @@ abstract class SchemaBuilder {
         fun allOf(subschemas: List<SchemaBuilder>): CompositeSchemaBuilder = empty().allOf(subschemas)
 
         @JvmStatic
+        fun allOf(vararg subschemas: SchemaBuilder): CompositeSchemaBuilder = empty().allOf(*subschemas)
+
+        @JvmStatic
         fun oneOf(subschemas: List<SchemaBuilder>): CompositeSchemaBuilder = empty().oneOf(subschemas)
+
+        @JvmStatic
+        fun oneOf(vararg subschemas: SchemaBuilder): CompositeSchemaBuilder = empty().oneOf(*subschemas)
 
         @JvmStatic
         fun anyOf(subschemas: List<SchemaBuilder>): CompositeSchemaBuilder = empty().anyOf(subschemas)
 
         @JvmStatic
+        fun anyOf(vararg subschemas: SchemaBuilder): CompositeSchemaBuilder = empty().anyOf(*subschemas)
+
+        @JvmStatic
         fun not(notSchema: SchemaBuilder): CompositeSchemaBuilder = empty().not(notSchema)
 
         @JvmStatic
-        fun const(constant: IJsonValue): CompositeSchemaBuilder = empty().const(constant)
+        fun constSchema(constant: IJsonValue): CompositeSchemaBuilder = empty().constSchema(constant)
 
         @JvmStatic
         fun enumSchema(vararg enumValues: IJsonValue) = enumSchema(enumValues.toList())
@@ -299,22 +308,28 @@ class CompositeSchemaBuilder internal constructor() : SchemaBuilder() {
             AllOfSchema(subschemas.map { it.buildAt(loc) }, loc)
         }
 
+    fun allOf(vararg subschemas: SchemaBuilder) = allOf(subschemas.toList())
+
     fun oneOf(subschemas: List<SchemaBuilder>) =
         appendSupplier(Keyword.ONE_OF) { loc ->
             OneOfSchema(subschemas.map { it.buildAt(loc) }, loc)
         }
+
+    fun oneOf(vararg subschemas: SchemaBuilder) = oneOf(subschemas.toList())
 
     fun anyOf(subschemas: List<SchemaBuilder>) =
         appendSupplier(Keyword.ANY_OF) { loc ->
             AnyOfSchema(subschemas.map { it.buildAt(loc) }, loc)
         }
 
+    fun anyOf(vararg subschemas: SchemaBuilder) = anyOf(subschemas.toList())
+
     fun not(negatedSchema: SchemaBuilder) =
         appendSupplier(Keyword.NOT) { loc ->
             NotSchema(negatedSchema.buildAt(loc), loc)
         }
 
-    fun const(constant: IJsonValue) =
+    fun constSchema(constant: IJsonValue) =
         appendSupplier(Keyword.CONST) { loc ->
             ConstSchema(constant, loc)
         }

@@ -11,6 +11,8 @@
     <description>JSON Schema Parser and Validator</description>
     <url>https://github.com/erosb/json-sKema</url>
 
+    <packaging>jar</packaging>
+
     <scm>
         <connection>https://github.com/erosb/json-sKema</connection>
         <url>https://github.com/erosb/json-sKema</url>

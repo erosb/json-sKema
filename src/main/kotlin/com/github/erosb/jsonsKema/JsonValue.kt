@@ -221,12 +221,12 @@ abstract class JsonValue(override val location: SourceLocation = UnknownSource) 
     final override fun toString(): String = accept(JsonPrintingVisitor())!!
 }
 
-data class JsonNull(override val location: SourceLocation = UnknownSource) : IJsonNull, JsonValue(location) {
+data class JsonNull @JvmOverloads constructor(override val location: SourceLocation = UnknownSource) : IJsonNull, JsonValue(location) {
     override fun unwrap(): Any? = null
     override fun equals(other: Any?) = super.equals(other)
 }
 
-data class JsonBoolean(
+data class JsonBoolean @JvmOverloads constructor(
     override val value: Boolean,
     override val location: SourceLocation = UnknownSource
 ) : JsonValue(location), IJsonBoolean {
@@ -234,7 +234,7 @@ data class JsonBoolean(
     override fun equals(other: Any?) = super.equals(other)
 }
 
-data class JsonNumber(
+data class JsonNumber @JvmOverloads constructor(
     override val value: Number,
     override val location: SourceLocation = UnknownSource
 ) : JsonValue(location), IJsonNumber {
@@ -247,15 +247,17 @@ data class JsonNumber(
     }
 }
 
-data class JsonString(override val value: String, override val location: SourceLocation = UnknownSource) :
-    JsonValue(location), IJsonString {
+data class JsonString @JvmOverloads constructor(
+    override val value: String,
+    override val location: SourceLocation = UnknownSource
+) : JsonValue(location), IJsonString {
 
     override fun equals(other: Any?) = super.equals(other)
 
     override fun unwrap() = value
 }
 
-data class JsonArray(
+data class JsonArray @JvmOverloads constructor(
     override val elements: List<JsonValue>,
     override val location: SourceLocation = UnknownSource
 ) : JsonValue(location), IJsonArray<JsonValue> {
@@ -267,7 +269,7 @@ data class JsonArray(
     override fun equals(other: Any?) = super.equals(other)
 }
 
-data class JsonObject(
+data class JsonObject @JvmOverloads constructor(
     override val properties: Map<JsonString, JsonValue>,
     override val location: SourceLocation = UnknownSource
 ) : JsonValue(location), IJsonObject<JsonString, JsonValue> {

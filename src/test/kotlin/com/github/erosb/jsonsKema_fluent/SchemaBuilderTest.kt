@@ -336,7 +336,7 @@ class SchemaBuilderTest {
     fun not() {
         val schema = SchemaBuilder.not(SchemaBuilder.typeObject()
             .property("propA", SchemaBuilder.typeNumber().not(
-                SchemaBuilder.const(JsonNumber(2))
+                SchemaBuilder.constSchema(JsonNumber(2))
             ))
         ).build()
 

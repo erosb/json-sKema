@@ -4,7 +4,25 @@ _json-sKema is a [Json Schema](https://json-schema.org/) validator library for t
 
 Are you new to JSON Schema? Get started with [Understanding JSON Schema](https://json-schema.org/understanding-json-schema/)!
 
-
+<!-- TOC -->
+* [json-sKema](#json-skema)
+  * [Installation](#installation)
+    * [Maven](#maven)
+    * [Gradle](#gradle)
+  * [Usage](#usage)
+    * [Hello-world](#hello-world)
+    * [Loading a schema file from URL](#loading-a-schema-file-from-url)
+    * [Pre-registering schemas by URI before schema loading](#pre-registering-schemas-by-uri-before-schema-loading)
+    * [Validating in Read or Write context](#validating-in-read-or-write-context)
+    * [SchemaBuilder for dynamic (programmatic) schema construction](#schemabuilder-for-dynamic-programmatic-schema-construction)
+  * [Compatibility notes](#compatibility-notes)
+    * [`"format"` support](#format-support)
+    * [Support for older JSON Schema drafts](#support-for-older-json-schema-drafts)
+  * [Contribution guideline](#contribution-guideline)
+    * [Building the project:](#building-the-project)
+    * [Building the project and running the official test suite:](#building-the-project-and-running-the-official-test-suite)
+    * [Building the project without running the official test suite:](#building-the-project-without-running-the-official-test-suite)
+<!-- TOC -->
 
 ## Installation
 
@@ -195,7 +213,7 @@ The library allows dynamic schema construction via its `SchemaBuilder` class. Th
 static schemas or externally fed JSON Schemas, the application needs to create a schema instance at run-time, dynamically. This can
 be done with a fluent API, demonstrated below:
 
-[Complete source](TODO)
+[Complete source](https://github.com/erosb/json-sKema-examples/blob/master/src/main/java/com/github/erosb/jsonsKema/examples/SchemaBuilderDemo.java)
 
 ```java
 import static com.github.erosb.jsonsKema.SchemaBuilder.*;

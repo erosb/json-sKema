@@ -16,7 +16,7 @@ Add the following dependency to the `<dependencies>` section of your project:
 <dependency>
     <groupId>com.github.erosb</groupId>
     <artifactId>json-sKema</artifactId>
-    <version>0.15.0</version>
+    <version>0.16.0</version>
 </dependency>
 ```
 
@@ -24,7 +24,7 @@ Add the following dependency to the `<dependencies>` section of your project:
 
 ```groovy
 dependencies {
-    implementation("com.github.erosb:json-sKema:0.15.0")
+    implementation("com.github.erosb:json-sKema:0.16.0")
 }
 ```
 
@@ -187,6 +187,38 @@ var readContextFailure = readContextValidator.validate(instance);
 
 // prints failure because the write-only property "password" is present in read context
 System.out.println(readContextFailure);
+```
+
+### SchemaBuilder for dynamic (programmatic) schema construction
+
+The library allows dynamic schema construction via its `SchemaBuilder` class. This is useful in cases when, instead of working with
+static schemas or externally fed JSON Schemas, the application needs to create a schema instance at run-time, dynamically. This can
+be done with a fluent API, demonstrated below:
+
+[Complete source](TODO)
+
+```java
+import static com.github.erosb.jsonsKema.SchemaBuilder.*;
+//...
+typeObject()
+    .property("myString", typeString()
+        .minLength(2)
+        .maxLength(50)
+        .pattern("^[a-zA-Z ]*$")
+    ).property("myInteger", typeInteger()
+        .minimum(10)
+        .maximum(20)
+        .multipleOf(4)
+    ).property("myObject", typeObject()
+        .additionalProperties(falseSchema())
+        .patternProperties(Map.of(
+            "^[A-Z]{2}$", allOf(
+                typeArray().items(typeNumber())
+                    .prefixItems(List.of(typeBoolean(), typeBoolean())),
+                typeArray().minContains(3, constSchema(new JsonNumber(1.5)))
+            )
+        ))
+    )
 ```
 
 ## Compatibility notes

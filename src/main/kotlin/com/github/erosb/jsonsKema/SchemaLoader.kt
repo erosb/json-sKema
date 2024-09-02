@@ -589,7 +589,10 @@ class SchemaLoader(
     }
 
     private fun loadChild(schemaJson: IJsonValue): Schema {
-        return SchemaLoader(schemaJson, config, loadingState).doLoadSchema(schemaJson)
+        val childLoader = SchemaLoader(schemaJson, config, loadingState)
+        val child = childLoader.doLoadSchema(schemaJson)
+        collectedExceptions.addAll(childLoader.collectedExceptions)
+        return child
     }
 }
 

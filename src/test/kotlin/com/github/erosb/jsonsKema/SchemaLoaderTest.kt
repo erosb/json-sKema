@@ -119,15 +119,20 @@ class SchemaLoaderTest {
     @Test
     fun `obsolete use of items`() {
         val exception = assertThrows(JsonTypeMismatchException::class.java) {
-            createSchemaLoaderForString(
+            println(createSchemaLoaderForString(
                 """
-                { 
-                    "type": "array", 
-                    "title": "array desc", 
-                    "items": [ {"type": "object", "title": "some obj"} ] 
+                {
+                    "type": "object",
+                    "properties": {
+                        "prop": { 
+                            "type": "array", 
+                            "title": "array desc", 
+                            "items": [ {"type": "object", "title": "some obj"} ] 
+                        } 
+                    }
                 }
                 """.trimIndent()
-            )()
+            )())
         }
         assertThat(exception.message).contains("boolean or object")
     }

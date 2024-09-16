@@ -64,7 +64,7 @@ internal class AggregatingValidationFailure(
 
     override fun join(parent: Schema, instance: IJsonValue, other: ValidationFailure): ValidationFailure {
         if (instance != this.instance) {
-            TODO("something went wrong: $instance vs ${this.instance}")
+            return AggregatingValidationFailure(parent, instance, _causes + other)
         }
         _causes.add(other)
         return this

@@ -90,14 +90,31 @@ internal class MemoizingSchemaClient(private val delegate: SchemaClient) : Schem
     override fun get(uri: URI): InputStream = ByteArrayInputStream(
         cache.computeIfAbsent(uri) {
             val out = ByteArrayOutputStream()
-            delegate.get(it).transferTo(out)
+            delegate.get(it).transferToOut(out)
             return@computeIfAbsent out.toByteArray()
         }
     )
+
+}
+
+private fun InputStream.transferToOut(out: OutputStream): Long {
+    var transferred: Long = 0
+    val bufferSize = 8192
+    val buffer = ByteArray(bufferSize)
+    var read: Int
+    while ((this.read(buffer, 0, bufferSize).also { read = it }) >= 0) {
+        out.write(buffer, 0, read)
+        transferred += read.toLong()
+    }
+    return transferred
 }
 
 internal fun readFromClassPath(path: String): String =
-    String(PrepopulatedSchemaClient::class.java.getResourceAsStream(path)!!.readAllBytes())
+    String(
+        ByteArrayOutputStream().also {
+            PrepopulatedSchemaClient::class.java.getResourceAsStream(path)!!.transferToOut(it)
+        }.toByteArray()
+    )
 
 internal class PrepopulatedSchemaClient(
     private val fallbackClient: SchemaClient,

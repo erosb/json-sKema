@@ -243,7 +243,6 @@ typeObject()
 
 The library implements the JSON Schema draft 2020-12 core and validation specifications, with the following notes:
  * `$dynamicAnchor` and `$dynamicRef` support is partially implemented
- * the library supports JDK 11 and newer
 
 ### `"format"` support
 

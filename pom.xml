@@ -40,6 +40,7 @@
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
         <maven.compiler.target>8</maven.compiler.target>
         <junit.version>5.7.0</junit.version>
+        <mockito.version>4.11.0</mockito.version>
     </properties>
 
     <dependencies>
@@ -87,13 +88,13 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>5.13.0</version>
+            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
-            <version>5.13.0</version>
+            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

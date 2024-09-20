@@ -34,7 +34,7 @@ Add the following dependency to the `<dependencies>` section of your project:
 <dependency>
     <groupId>com.github.erosb</groupId>
     <artifactId>json-sKema</artifactId>
-    <version>0.17.0</version>
+    <version>0.18.0</version>
 </dependency>
 ```
 
@@ -42,7 +42,7 @@ Add the following dependency to the `<dependencies>` section of your project:
 
 ```groovy
 dependencies {
-    implementation("com.github.erosb:json-sKema:0.17.0")
+    implementation("com.github.erosb:json-sKema:0.18.0")
 }
 ```
 

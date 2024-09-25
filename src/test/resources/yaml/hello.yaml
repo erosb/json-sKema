@@ -1,0 +1,6 @@
+myObj:
+  prop: value
+  arr:
+    - 1
+    - 3
+

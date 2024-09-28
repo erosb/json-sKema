@@ -3,4 +3,6 @@ myObj:
   arr:
     - 1
     - 3
-
+    - null
+  nullProp:
+  objProp: {}

@@ -1,5 +1,6 @@
 package com.github.erosb.jsonsKema
 
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.nodes.MappingNode
@@ -8,21 +9,44 @@ import org.yaml.snakeyaml.nodes.ScalarNode
 import org.yaml.snakeyaml.nodes.SequenceNode
 import java.io.BufferedReader
 import java.io.InputStreamReader
-
-class YamlJsonObject(override val location: SourceLocation) : IJsonObject<IJsonString, IJsonValue> {
-
-    override val properties: Map<IJsonString, IJsonValue> = mapOf()
-
-    override fun markUnevaluated(propName: String) {
-    }
-
-    override fun markEvaluated(propName: String) {
-    }
-
-}
+import java.io.StringReader
 
 
 class SnakeYamlTest {
+
+    @Test
+    fun readNull() {
+        val yaml = Yaml().compose(StringReader("null"))
+        val actual = loadFromYaml(yaml)
+        assertThat(actual).isEqualTo(JsonNull(
+            SourceLocation(1, 1, JsonPointer())
+        ))
+    }
+
+    @Test
+    fun readString() {
+        val yaml = Yaml().compose(StringReader("""
+            "null"
+        """))
+        val actual = loadFromYaml(yaml)
+        assertThat(actual).isEqualTo(JsonString("null",
+            SourceLocation(1, 1, JsonPointer())
+        ))
+    }
+
+    @Test
+    fun readObject() {
+        val yaml = Yaml().compose(StringReader("""
+            propA: val-a
+            propB:
+        """.trimIndent()))
+
+        val actual = loadFromYaml(yaml)
+        assertThat(actual).isEqualTo(JsonObject(mapOf(
+            JsonString("propA", SourceLocation(1, 1, JsonPointer())) to JsonString("val-a", SourceLocation(1, 8, JsonPointer())),
+            JsonString("propB", SourceLocation(2, 1, JsonPointer())) to JsonNull(SourceLocation(2, 8, JsonPointer()))
+        )))
+    }
 
     @Test
     fun YamlNodeToJsonValue(){
@@ -33,7 +57,10 @@ class SnakeYamlTest {
         dump(n)
     }
 
+
+
     private fun dump(n: Node) {
+        println("n.type = " +n.javaClass.simpleName + " at " + n.tag)
         when (n) {
             is MappingNode -> {
                 n.value.forEach { tuple ->
@@ -46,7 +73,9 @@ class SnakeYamlTest {
                 println("scalar: ${n.value} at ${n.startMark.line} , ${n.startMark.column}")
             }
             is SequenceNode -> {
-                
+                n.value.forEach {
+                    dump(it)
+                }
             }
             else -> TODO(n::class.toString())
         }

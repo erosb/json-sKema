@@ -3,6 +3,7 @@ package com.github.erosb.jsonsKema
 import org.yaml.snakeyaml.nodes.MappingNode
 import org.yaml.snakeyaml.nodes.Node
 import org.yaml.snakeyaml.nodes.ScalarNode
+import org.yaml.snakeyaml.nodes.SequenceNode
 import org.yaml.snakeyaml.nodes.Tag
 
 class YamlJsonObject(
@@ -17,38 +18,40 @@ class YamlJsonObject(
     }
 }
 
-internal fun loadFromYaml(node: Node): JsonValue {
+
+
+internal fun loadFromYaml(node: Node, ptr: JsonPointer = JsonPointer()): JsonValue {
     val location = SourceLocation(
             node.startMark.line + 1,
             node.startMark.column + 1,
-            JsonPointer(),
+            ptr,
             null,
         )
-
     when (node) {
         is ScalarNode -> {
             if (node.tag == Tag.NULL) {
-                return JsonNull(
-                    location,
-                )
+                return JsonNull(location)
             } else if (node.tag == Tag.STR) {
-                return JsonString(
-                    node.value,
-                    SourceLocation(
-                        node.startMark.line + 1,
-                        node.startMark.column + 1,
-                        JsonPointer(),
-                        null,
-                    ),
-                )
+                return JsonString(node.value, location)
+            } else if (node.tag == Tag.BOOL) {
+                val value = node.value.lowercase() in listOf("yes", "y", "on", "true")
+                return JsonBoolean(value, location)
             }
         }
         is MappingNode -> {
-            val x = node.value.map { loadFromYaml(it.keyNode).requireString() as JsonString to loadFromYaml(it.valueNode) }.toMap()
-            return JsonObject(x)
+            val props = node.value.map {
+                val nextPtr = ptr + (it.keyNode as ScalarNode).value
+                loadFromYaml(it.keyNode).requireString() as JsonString to loadFromYaml(it.valueNode, nextPtr)
+            }.toMap()
+            return JsonObject(props, location)
         }
-
-        else -> TODO()
+        is SequenceNode -> {
+            val items = node.value.mapIndexed { index, childNode ->
+                val childPtr = ptr + index.toString()
+                loadFromYaml(childNode, childPtr)
+            }
+            return JsonArray(items, location)
+        }
     }
-    TODO()
+    TODO("unhandled type ${node.javaClass} / ${node.tag}")
 }

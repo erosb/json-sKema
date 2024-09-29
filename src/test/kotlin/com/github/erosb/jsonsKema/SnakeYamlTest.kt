@@ -38,13 +38,39 @@ class SnakeYamlTest {
     fun readObject() {
         val yaml = Yaml().compose(StringReader("""
             propA: val-a
-            propB:
+            propB:  null
         """.trimIndent()))
 
         val actual = loadFromYaml(yaml)
-        assertThat(actual).isEqualTo(JsonObject(mapOf(
-            JsonString("propA", SourceLocation(1, 1, JsonPointer())) to JsonString("val-a", SourceLocation(1, 8, JsonPointer())),
-            JsonString("propB", SourceLocation(2, 1, JsonPointer())) to JsonNull(SourceLocation(2, 8, JsonPointer()))
+        assertThat(actual).usingRecursiveComparison().isEqualTo(JsonObject(mapOf(
+            JsonString("propA", SourceLocation(1, 1, JsonPointer())) to JsonString("val-a", SourceLocation(1, 8, JsonPointer("propA"))),
+            JsonString("propB", SourceLocation(2, 1, JsonPointer())) to JsonNull(SourceLocation(2, 9, JsonPointer("propB")))
+        ), SourceLocation(1, 1, JsonPointer())))
+    }
+
+    @Test
+    fun readSequence() {
+        val yaml = Yaml().compose(StringReader("""
+            - null
+            - "asd"
+            - true
+        """.trimIndent()))
+
+        val actual = loadFromYaml(yaml)
+        assertThat(actual).isEqualTo(JsonArray(listOf(
+            JsonNull(),
+            JsonString("asd"),
+            JsonBoolean(true)
+        )))
+    }
+
+    @Test
+    fun readBooleans() {
+        val yaml = Yaml().compose(StringReader("[yes, true, ON, No, false, off]"))
+        val actual = loadFromYaml(yaml)
+        assertThat(actual).isEqualTo(JsonArray(listOf(
+            JsonBoolean(true), JsonBoolean(true), JsonBoolean(true),
+            JsonBoolean(false), JsonBoolean(false), JsonBoolean(false)
         )))
     }
 

@@ -1,0 +1,17 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+type: object
+additionalProperties: false
+properties:
+  str:
+    type: string
+  num:
+    type: number
+    minimum: 0
+  int:
+    type: integer
+    maximum: 1
+  bool:
+    type: boolean
+  nullish:
+    type: null
+

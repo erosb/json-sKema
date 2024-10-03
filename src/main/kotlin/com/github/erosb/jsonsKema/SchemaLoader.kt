@@ -131,6 +131,7 @@ class SchemaLoader(
 
         @JvmStatic
         fun forURL(url: String): SchemaLoader {
+
             val schemaJson = createDefaultConfig().schemaClient.getParsed(URI(url))
             return SchemaLoader(
                 schemaJson = schemaJson,

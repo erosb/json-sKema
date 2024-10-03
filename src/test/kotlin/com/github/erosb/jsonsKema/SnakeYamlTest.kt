@@ -1,12 +1,14 @@
 package com.github.erosb.jsonsKema
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.nodes.MappingNode
 import org.yaml.snakeyaml.nodes.Node
 import org.yaml.snakeyaml.nodes.ScalarNode
 import org.yaml.snakeyaml.nodes.SequenceNode
+import org.yaml.snakeyaml.parser.ParserException
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.StringReader
@@ -84,6 +86,16 @@ class SnakeYamlTest {
     }
 
 
+    @Test
+    fun loadSchemaFromYaml() {
+        val schema = SchemaLoader.forURL("classpath://yaml/schema.yml")
+    }
+
+    @Test
+    fun loadMalformedYamlSchema() {
+        assertThatThrownBy { SchemaLoader.forURL("classpath://yaml/malformed.yml") }
+            .isInstanceOf(ParserException::class.java)
+    }
 
     private fun dump(n: Node) {
         println("n.type = " +n.javaClass.simpleName + " at " + n.tag)

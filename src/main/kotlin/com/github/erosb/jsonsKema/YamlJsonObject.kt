@@ -36,6 +36,8 @@ internal fun loadFromYaml(node: Node, ptr: JsonPointer = JsonPointer()): JsonVal
             } else if (node.tag == Tag.BOOL) {
                 val value = node.value.lowercase() in listOf("yes", "y", "on", "true")
                 return JsonBoolean(value, location)
+            } else if (node.tag == Tag.INT) {
+                return JsonNumber(node.value.toInt(), location)
             }
         }
         is MappingNode -> {

@@ -77,16 +77,6 @@ class SnakeYamlTest {
     }
 
     @Test
-    fun YamlNodeToJsonValue(){
-        val n = Yaml().compose(
-            BufferedReader(InputStreamReader(this::class.java.getResourceAsStream("/yaml/hello.yaml")))
-        )
-
-        dump(n)
-    }
-
-
-    @Test
     fun loadSchemaFromYaml() {
         val schema = SchemaLoader.forURL("classpath://yaml/schema.yml")
     }
@@ -97,25 +87,25 @@ class SnakeYamlTest {
             .isInstanceOf(ParserException::class.java)
     }
 
-    private fun dump(n: Node) {
-        println("n.type = " +n.javaClass.simpleName + " at " + n.tag)
-        when (n) {
-            is MappingNode -> {
-                n.value.forEach { tuple ->
-                    val keyNode = tuple.keyNode as ScalarNode
-                    println("${keyNode.value} at ${keyNode.startMark.line} , ${keyNode.startMark.column}")
-                    dump(tuple.valueNode)
-                }
-            }
-            is ScalarNode -> {
-                println("scalar: ${n.value} at ${n.startMark.line} , ${n.startMark.column}")
-            }
-            is SequenceNode -> {
-                n.value.forEach {
-                    dump(it)
-                }
-            }
-            else -> TODO(n::class.toString())
-        }
+    @Test
+    fun loadSchemaFromYamlString() {
+        val schema = SchemaLoader("""
+            $schema: https://json-schema.org/draft/2020-12/schema
+            type: object
+            additionalProperties: false
+            properties:
+              str:
+                type: string
+              num:
+                type: number
+                minimum: 0.5
+              int:
+                type: integer
+                maximum: 1
+              bool:
+                type: boolean
+              nullish:
+                type: "null"
+        """.trimIndent())()
     }
 }

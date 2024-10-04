@@ -136,9 +136,10 @@ class SchemaLoadingFailureTest {
                     }
                 """.trimIndent(),
                 URI("classpath://xml") to """
-                    <?xml version="1.0">
-                    <project>
-                    </project>
+                    x:
+                      - [[[[
+                      [[[[]y
+
                 """.trimIndent()
             ))
         )

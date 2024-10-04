@@ -38,6 +38,8 @@ internal fun loadFromYaml(node: Node, ptr: JsonPointer = JsonPointer()): JsonVal
                 return JsonBoolean(value, location)
             } else if (node.tag == Tag.INT) {
                 return JsonNumber(node.value.toInt(), location)
+            } else if (node.tag == Tag.FLOAT) {
+                return JsonNumber(node.value.toDouble(), location)
             }
         }
         is MappingNode -> {

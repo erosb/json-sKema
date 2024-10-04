@@ -7,13 +7,6 @@ import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.util.*
 
-
-private val yamlSupport = runCatching {
-    try {
-        Class.forName("org.yaml.snakeyaml.Yaml")
-    } catch (e: Exception) { e.printStackTrace()}
-}.isSuccess
-
 fun interface SchemaClient {
     fun get(uri: URI): InputStream
 
@@ -22,19 +15,8 @@ fun interface SchemaClient {
         try {
             val reader = BufferedReader(InputStreamReader(get(uri)))
             string = reader.readText()
-            return JsonParser(string, uri)()
+            return parseStringIntoRawSchema(string, uri)
         } catch (ex: UncheckedIOException) {
-            throw JsonDocumentLoadingException(uri, ex)
-        } catch (ex: JsonParseException) {
-            if (yamlSupport && string != null) {
-                try {
-                    return loadFromYaml(Yaml().compose(StringReader(string)))
-                } catch (e: RuntimeException) {
-                    if (ex.location.lineNumber == 1 && ex.location.position == 1) {
-                        throw e
-                    }
-                }
-            }
             throw JsonDocumentLoadingException(uri, ex)
         }
     }

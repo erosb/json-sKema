@@ -28,6 +28,8 @@ data class JsonTypeMismatchException(
     val expectedType: String = cause.expectedType,
     val actualType: String = cause.actualType,
     val location: SourceLocation = cause.location
-) : SchemaLoadingException(cause.message ?: "", cause) {}
+) : SchemaLoadingException(cause.message ?: "", cause)
 
-data class JsonDocumentLoadingException(val uri: URI, override val cause: Throwable? = null): SchemaLoadingException(cause?.message ?: "", cause);
+open class SchemaDocumentLoadingException(open val uri: URI, override val cause: Throwable? = null): SchemaLoadingException(cause?.message ?: "", cause)
+
+data class JsonDocumentLoadingException(override val uri: URI, override val cause: Throwable? = null): SchemaDocumentLoadingException(uri, cause)

@@ -1,5 +1,7 @@
 package com.github.erosb.jsonsKema
 
+import org.yaml.snakeyaml.Yaml
+import java.io.StringReader
 import java.net.URI
 import java.net.URISyntaxException
 import java.net.URLDecoder
@@ -122,6 +124,27 @@ internal data class LoadingContext(
 
 internal typealias KeywordLoader = (context: LoadingContext) -> Schema?
 
+private val yamlSupport = runCatching {
+    Class.forName("org.yaml.snakeyaml.Yaml")
+}.isSuccess
+
+internal fun parseStringIntoRawSchema(string: String, documentSource: URI? = null): IJsonValue {
+    try {
+        return JsonParser(string, documentSource)()
+    } catch (ex: JsonParseException) {
+        if (yamlSupport) {
+            try {
+                return loadFromYaml(Yaml().compose(StringReader(string)))
+            } catch (e: RuntimeException) {
+                if (ex.location.lineNumber == 1 && ex.location.position == 1) {
+                    throw YamlDocumentLoadingException(documentSource ?: URI(DEFAULT_BASE_URI), e)
+                }
+            }
+        }
+        throw ex
+    }
+}
+
 class SchemaLoader(
         val schemaJson: IJsonValue,
         val config: SchemaLoaderConfig = createDefaultConfig()
@@ -131,6 +154,7 @@ class SchemaLoader(
 
         @JvmStatic
         fun forURL(url: String): SchemaLoader {
+
             val schemaJson = createDefaultConfig().schemaClient.getParsed(URI(url))
             return SchemaLoader(
                 schemaJson = schemaJson,
@@ -144,7 +168,7 @@ class SchemaLoader(
 
     constructor(schemaJson: IJsonValue) : this(schemaJson, createDefaultConfig()) {}
 
-    constructor(schemaJson: String) : this(JsonParser(schemaJson)(), createDefaultConfig()) {}
+    constructor(schemaJson: String) : this(parseStringIntoRawSchema(schemaJson), createDefaultConfig()) {}
 
     private val regexpFactory: RegexpFactory = JavaUtilRegexpFactory()
 

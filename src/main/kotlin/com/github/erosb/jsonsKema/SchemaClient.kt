@@ -1,23 +1,22 @@
 package com.github.erosb.jsonsKema
 
+import org.yaml.snakeyaml.Yaml
 import java.io.*
 import java.net.URI
 import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.util.*
 
-
 fun interface SchemaClient {
     fun get(uri: URI): InputStream
 
     fun getParsed(uri: URI): IJsonValue {
+        var string: String? = null
         try {
             val reader = BufferedReader(InputStreamReader(get(uri)))
-            val string = reader.readText()
-            return JsonParser(string, uri)()
+            string = reader.readText()
+            return parseStringIntoRawSchema(string, uri)
         } catch (ex: UncheckedIOException) {
-            throw JsonDocumentLoadingException(uri, ex)
-        } catch (ex: JsonParseException) {
             throw JsonDocumentLoadingException(uri, ex)
         }
     }

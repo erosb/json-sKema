@@ -136,9 +136,10 @@ class SchemaLoadingFailureTest {
                     }
                 """.trimIndent(),
                 URI("classpath://xml") to """
-                    <?xml version="1.0">
-                    <project>
-                    </project>
+                    x:
+                      - [[[[
+                      [[[[]y
+
                 """.trimIndent()
             ))
         )
@@ -148,8 +149,6 @@ class SchemaLoadingFailureTest {
             fail("did not throw exception")
         } catch (ex: AggregateSchemaLoadingException) {
             ex.causes.forEach { println(it.javaClass.simpleName) }
-
-            ex.printStackTrace(System.out)
         }
     }
 }

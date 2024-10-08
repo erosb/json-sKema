@@ -5,15 +5,18 @@ import org.yaml.snakeyaml.nodes.Node
 import org.yaml.snakeyaml.nodes.ScalarNode
 import org.yaml.snakeyaml.nodes.SequenceNode
 import org.yaml.snakeyaml.nodes.Tag
+import java.net.URI
 
 class YamlParseException(override val cause: Throwable): RuntimeException(cause)
 
-internal fun loadFromYaml(node: Node, ptr: JsonPointer = JsonPointer()): JsonValue {
+internal fun loadFromYaml(node: Node, documentSource: URI) = loadFromYaml(node, JsonPointer(), documentSource)
+
+internal fun loadFromYaml(node: Node, ptr: JsonPointer = JsonPointer(), documentSource: URI = URI(DEFAULT_BASE_URI)): JsonValue {
     val location = SourceLocation(
             node.startMark.line + 1,
             node.startMark.column + 1,
             ptr,
-            null,
+            documentSource,
         )
     when (node) {
         is ScalarNode -> {
@@ -33,14 +36,16 @@ internal fun loadFromYaml(node: Node, ptr: JsonPointer = JsonPointer()): JsonVal
         is MappingNode -> {
             val props = node.value.map {
                 val nextPtr = ptr + (it.keyNode as ScalarNode).value
-                loadFromYaml(it.keyNode).requireString() as JsonString to loadFromYaml(it.valueNode, nextPtr)
+                val jsonPropName = loadFromYaml(it.keyNode, ptr, documentSource).requireString() as JsonString
+                val jsonPropValue = loadFromYaml(it.valueNode, nextPtr, documentSource)
+                jsonPropName to jsonPropValue
             }.toMap()
             return JsonObject(props, location)
         }
         is SequenceNode -> {
             val items = node.value.mapIndexed { index, childNode ->
                 val childPtr = ptr + index.toString()
-                loadFromYaml(childNode, childPtr)
+                loadFromYaml(childNode, childPtr, documentSource)
             }
             return JsonArray(items, location)
         }

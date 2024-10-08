@@ -247,7 +247,7 @@ private class DefaultValidator(
         return if (original is MarkableJsonObject<*, *>) {
             original
         } else {
-            MarkableJsonObject(instance as IJsonObject<IJsonString, IJsonValue>)
+            MarkableJsonObject(instance as IJsonObj)
         }
     }
 

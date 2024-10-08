@@ -1,6 +1,5 @@
 package com.github.erosb.jsonsKema
 
-import org.yaml.snakeyaml.Yaml
 import java.io.*
 import java.net.URI
 import java.net.URL
@@ -20,7 +19,7 @@ fun interface SchemaClient {
     fun getParsed(uri: URI): IJsonValue {
         try {
             val reader = BufferedReader(InputStreamReader(get(uri)))
-            return parseStringIntoRawSchema(reader.readText(), uri)
+            return parseStringIntoSchemaJson(reader.readText(), uri)
         } catch (ex: UncheckedIOException) {
             throw SchemaDocumentLoadingException(uri, ex)
         } catch (ex: JsonParseException) {

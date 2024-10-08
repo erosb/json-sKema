@@ -1,10 +1,8 @@
 package com.github.erosb.jsonsKema
 
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.io.IOException
-import java.io.InputStream
 import java.io.UncheckedIOException
 import java.net.URI
 
@@ -156,9 +154,9 @@ class SchemaLoadingFailureTest {
 
     @Test
     fun `IOException in get() is mapped to SchemaLoadingException`() {
-        val loader = SchemaLoader(parseStringIntoRawSchema("""
+        val loader = SchemaLoader(parseStringIntoSchemaJson("""
             {"$ref": "http://example.org"}
-        """), SchemaLoaderConfig(
+        """, URI(DEFAULT_BASE_URI)), SchemaLoaderConfig(
             schemaClient = { throw UncheckedIOException("msg", IOException()) }
         )
         )

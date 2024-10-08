@@ -12,6 +12,7 @@ import org.yaml.snakeyaml.parser.ParserException
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.StringReader
+import java.net.URI
 import java.util.function.Consumer
 
 
@@ -44,11 +45,12 @@ class SnakeYamlTest {
             propB:  null
         """.trimIndent()))
 
-        val actual = loadFromYaml(yaml)
+        val docSource = URI("whoami://example.org")
+        val actual = loadFromYaml(yaml, docSource)
         assertThat(actual).usingRecursiveComparison().isEqualTo(JsonObject(mapOf(
-            JsonString("propA", SourceLocation(1, 1, JsonPointer())) to JsonString("val-a", SourceLocation(1, 8, JsonPointer("propA"))),
-            JsonString("propB", SourceLocation(2, 1, JsonPointer())) to JsonNull(SourceLocation(2, 9, JsonPointer("propB")))
-        ), SourceLocation(1, 1, JsonPointer())))
+            JsonString("propA", SourceLocation(1, 1, JsonPointer(), docSource)) to JsonString("val-a", SourceLocation(1, 8, JsonPointer("propA"), docSource)),
+            JsonString("propB", SourceLocation(2, 1, JsonPointer(), docSource)) to JsonNull(SourceLocation(2, 9, JsonPointer("propB"), docSource))
+        ), SourceLocation(1, 1, JsonPointer(), docSource)))
     }
 
     @Test

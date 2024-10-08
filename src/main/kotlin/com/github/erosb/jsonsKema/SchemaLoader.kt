@@ -132,13 +132,13 @@ private val yamlSupport = runCatching {
  * @throws JsonParseException
  * @throws YamlParseException
  */
-internal fun parseStringIntoRawSchema(string: String, documentSource: URI? = null): IJsonValue {
+internal fun parseStringIntoSchemaJson(string: String, documentSource: URI): IJsonValue {
     try {
         return JsonParser(string, documentSource)()
     } catch (ex: JsonParseException) {
         if (yamlSupport) {
             try {
-                return loadFromYaml(Yaml().compose(StringReader(string)))
+                return loadFromYaml(Yaml().compose(StringReader(string)), documentSource)
             } catch (e: RuntimeException) {
                 if (ex.location.lineNumber == 1 && ex.location.position == 1) {
                     val yamlDocEx = YamlParseException(e)
@@ -174,7 +174,7 @@ class SchemaLoader(
 
     constructor(schemaJson: IJsonValue) : this(schemaJson, createDefaultConfig()) {}
 
-    constructor(schemaJson: String) : this(parseStringIntoRawSchema(schemaJson), createDefaultConfig()) {}
+    constructor(schemaJson: String) : this(parseStringIntoSchemaJson(schemaJson, URI(DEFAULT_BASE_URI)), createDefaultConfig()) {}
 
     private val regexpFactory: RegexpFactory = JavaUtilRegexpFactory()
 

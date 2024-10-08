@@ -32,6 +32,6 @@ data class JsonTypeMismatchException(
 
 open class SchemaDocumentLoadingException(open val uri: URI, override val cause: Throwable? = null): SchemaLoadingException(cause?.message ?: "", cause)
 
-data class JsonDocumentLoadingException(override val uri: URI, override val cause: Throwable? = null): SchemaDocumentLoadingException(uri, cause)
+data class JsonDocumentLoadingException(override val uri: URI, override val cause: JsonParseException): SchemaDocumentLoadingException(uri, cause)
 
-data class YamlDocumentLoadingException(override val uri: URI, override val cause: Throwable? = null): SchemaDocumentLoadingException(uri, cause)
+data class YamlDocumentLoadingException(override val uri: URI, override val cause: YamlParseException): SchemaDocumentLoadingException(uri, cause)

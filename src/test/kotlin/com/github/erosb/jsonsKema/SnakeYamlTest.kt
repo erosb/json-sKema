@@ -12,6 +12,7 @@ import org.yaml.snakeyaml.parser.ParserException
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.StringReader
+import java.util.function.Consumer
 
 
 class SnakeYamlTest {
@@ -85,6 +86,27 @@ class SnakeYamlTest {
     fun loadMalformedYamlSchema() {
         assertThatThrownBy { SchemaLoader.forURL("classpath://yaml/malformed.yml") }
             .isInstanceOf(YamlDocumentLoadingException::class.java)
+            .satisfies(object: Consumer<Throwable> {
+                override fun accept(actual: Throwable) {
+                    actual.cause!! as YamlParseException
+                    actual.cause!!.suppressedExceptions.single() as JsonParseException
+                }
+            })
+    }
+
+    @Test
+    fun loadMalformedRootYamlSchema() {
+        assertThatThrownBy { SchemaLoader("""
+            x:
+              - [[[[
+              [[[[]y
+        """.trimIndent()) }
+            .isInstanceOf(YamlParseException::class.java)
+            .satisfies(object: Consumer<Throwable> {
+                override fun accept(actual: Throwable) {
+                    actual.suppressedExceptions.single() as JsonParseException
+                }
+            })
     }
 
     @Test

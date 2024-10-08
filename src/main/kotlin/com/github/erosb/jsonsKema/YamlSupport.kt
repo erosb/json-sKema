@@ -6,6 +6,8 @@ import org.yaml.snakeyaml.nodes.ScalarNode
 import org.yaml.snakeyaml.nodes.SequenceNode
 import org.yaml.snakeyaml.nodes.Tag
 
+class YamlParseException(override val cause: Throwable): RuntimeException(cause)
+
 internal fun loadFromYaml(node: Node, ptr: JsonPointer = JsonPointer()): JsonValue {
     val location = SourceLocation(
             node.startMark.line + 1,

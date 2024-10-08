@@ -10,14 +10,23 @@ import java.util.*
 fun interface SchemaClient {
     fun get(uri: URI): InputStream
 
+    /**
+     * Fetches a raw json schema as string using {@code get()} and parses it into an {@code IJsonValue} instance.
+     *
+     * @throws SchemaDocumentLoadingException if an IO exception or a parsing exception occurs
+     * @throws JsonDocumentLoadingException if a {@code JsonParseException} occurs
+     * @throws YamlDocumentLoadingException if a {@code YamlParseException} occurs
+     */
     fun getParsed(uri: URI): IJsonValue {
-        var string: String? = null
         try {
             val reader = BufferedReader(InputStreamReader(get(uri)))
-            string = reader.readText()
-            return parseStringIntoRawSchema(string, uri)
+            return parseStringIntoRawSchema(reader.readText(), uri)
         } catch (ex: UncheckedIOException) {
+            throw SchemaDocumentLoadingException(uri, ex)
+        } catch (ex: JsonParseException) {
             throw JsonDocumentLoadingException(uri, ex)
+        } catch (ex: YamlParseException) {
+            throw YamlDocumentLoadingException(uri, ex)
         }
     }
 }

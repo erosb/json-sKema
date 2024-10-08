@@ -128,6 +128,10 @@ private val yamlSupport = runCatching {
     Class.forName("org.yaml.snakeyaml.Yaml")
 }.isSuccess
 
+/**
+ * @throws JsonParseException
+ * @throws YamlParseException
+ */
 internal fun parseStringIntoRawSchema(string: String, documentSource: URI? = null): IJsonValue {
     try {
         return JsonParser(string, documentSource)()
@@ -137,7 +141,9 @@ internal fun parseStringIntoRawSchema(string: String, documentSource: URI? = nul
                 return loadFromYaml(Yaml().compose(StringReader(string)))
             } catch (e: RuntimeException) {
                 if (ex.location.lineNumber == 1 && ex.location.position == 1) {
-                    throw YamlDocumentLoadingException(documentSource ?: URI(DEFAULT_BASE_URI), e)
+                    val yamlDocEx = YamlParseException(e)
+                    yamlDocEx.addSuppressed(ex)
+                    throw yamlDocEx
                 }
             }
         }

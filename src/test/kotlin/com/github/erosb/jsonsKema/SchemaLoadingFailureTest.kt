@@ -1,9 +1,11 @@
 package com.github.erosb.jsonsKema
 
 import org.assertj.core.api.Assertions
-import org.assertj.core.api.Assertions.fail
-import org.assertj.core.api.Assertions.from
+import org.assertj.core.api.Assertions.*
 import org.junit.jupiter.api.Test
+import java.io.IOException
+import java.io.InputStream
+import java.io.UncheckedIOException
 import java.net.URI
 
 class SchemaLoadingFailureTest {
@@ -27,7 +29,7 @@ class SchemaLoadingFailureTest {
             resolutionFailureLocation = SourceLocation(3, 14, JsonPointer(listOf("$defs")))
         )
 
-        Assertions.assertThatThrownBy { subject.load() }
+        assertThatThrownBy { subject.load() }
             .isEqualTo(expected)
             .hasMessage("$ref resolution failure: could not evaluate pointer \"mem://input#/$defs/missing\", property \"missing\" not found at Line 3, character 14")
     }
@@ -52,8 +54,8 @@ class SchemaLoadingFailureTest {
             ref = ReferenceSchema(null, "mem://input#/definitions/0/missing", SourceLocation(5, 13, JsonPointer(listOf("properties", "prop", "$ref")))),
             missingProperty = "0",
             resolutionFailureLocation = SourceLocation(8, 20, JsonPointer(listOf("definitions")))
-        );
-        Assertions.assertThatThrownBy { subject.load() }
+        )
+        assertThatThrownBy { subject.load() }
             .isEqualTo(expected)
     }
 
@@ -86,7 +88,7 @@ class SchemaLoadingFailureTest {
             resolutionFailureLocation = SourceLocation(2, 14, JsonPointer(listOf("$defs")), URI("urn:asdasd"))
         )
 
-        Assertions.assertThatThrownBy { subject.load() }
+        assertThatThrownBy { subject.load() }
             .usingRecursiveComparison()
             .isEqualTo(expected)
     }
@@ -101,7 +103,7 @@ class SchemaLoadingFailureTest {
             }
         """.trimIndent()).parse())
 
-        Assertions.assertThatThrownBy { subject.load() }
+        assertThatThrownBy { subject.load() }
             .isInstanceOf(SchemaLoadingException::class.java)
     }
 
@@ -150,5 +152,19 @@ class SchemaLoadingFailureTest {
         } catch (ex: AggregateSchemaLoadingException) {
             ex.causes.forEach { println(it.javaClass.simpleName) }
         }
+    }
+
+    @Test
+    fun `IOException in get() is mapped to SchemaLoadingException`() {
+        val loader = SchemaLoader(parseStringIntoRawSchema("""
+            {"$ref": "http://example.org"}
+        """), SchemaLoaderConfig(
+            schemaClient = { throw UncheckedIOException("msg", IOException()) }
+        )
+        )
+
+        assertThatThrownBy {
+            loader()
+        }.isInstanceOf(SchemaLoadingException::class.java)
     }
 }

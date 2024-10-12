@@ -11,7 +11,7 @@ class YamlParseException(override val cause: Throwable): RuntimeException(cause)
 
 internal fun loadFromYaml(node: Node, documentSource: URI) = loadFromYaml(node, JsonPointer(), documentSource)
 
-internal fun loadFromYaml(node: Node, ptr: JsonPointer = JsonPointer(), documentSource: URI = URI(DEFAULT_BASE_URI)): JsonValue {
+internal fun loadFromYaml(node: Node, ptr: JsonPointer = JsonPointer(), documentSource: URI = DEFAULT_BASE_URI): JsonValue {
     val location = SourceLocation(
             node.startMark.line + 1,
             node.startMark.column + 1,

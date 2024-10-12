@@ -11,7 +11,7 @@ import java.util.stream.Collectors.toList
 
 data class SchemaLoaderConfig @JvmOverloads constructor(
     val schemaClient: SchemaClient,
-    val initialBaseURI: String = DEFAULT_BASE_URI,
+    val initialBaseURI: URI = DEFAULT_BASE_URI,
     val additionalMappings: Map<URI, String> = mapOf()
 ) {
     companion object {
@@ -33,7 +33,7 @@ internal fun createDefaultConfig(additionalMappings: Map<URI, String> = mapOf())
 /**
  * http://json-schema.org/draft/2020-12/json-schema-core.html#initial-base
  */
-val DEFAULT_BASE_URI: String = "mem://input"
+val DEFAULT_BASE_URI = URI("mem://input")
 
 internal data class Knot(
         var json: IJsonValue? = null,
@@ -165,7 +165,7 @@ class SchemaLoader(
             return SchemaLoader(
                 schemaJson = schemaJson,
                 config = createDefaultConfig().copy(
-                    initialBaseURI = url
+                    initialBaseURI = URI(url)
                 )
             )
         }
@@ -174,7 +174,7 @@ class SchemaLoader(
 
     constructor(schemaJson: IJsonValue) : this(schemaJson, createDefaultConfig()) {}
 
-    constructor(schemaJson: String) : this(parseStringIntoSchemaJson(schemaJson, URI(DEFAULT_BASE_URI)), createDefaultConfig()) {}
+    constructor(schemaJson: String) : this(parseStringIntoSchemaJson(schemaJson, DEFAULT_BASE_URI), createDefaultConfig()) {}
 
     private val regexpFactory: RegexpFactory = JavaUtilRegexpFactory()
 
@@ -231,7 +231,7 @@ class SchemaLoader(
         }
     }
 
-    private var loadingState: LoadingState = LoadingState(schemaJson, baseURI = URI(config.initialBaseURI), vocabulary = findVocabulariesInMetaSchema(schemaJson))
+    private var loadingState: LoadingState = LoadingState(schemaJson, baseURI = config.initialBaseURI, vocabulary = findVocabulariesInMetaSchema(schemaJson))
 
     private fun findVocabulariesInMetaSchema(schemaJson: IJsonValue): List<String> {
         return when (schemaJson) {
@@ -486,11 +486,11 @@ class SchemaLoader(
             is IJsonObject<*, *> -> root[Keyword.ID.value]?.requireString()?.value
             else -> null
         }
-        val baseURIofRoot: String = idKeywordValue
-                ?: root.location.documentSource?.toString()
+        val baseURIofRoot: URI = idKeywordValue?.let { URI(it) }
+                ?: root.location.documentSource
                 ?: DEFAULT_BASE_URI
 
-        return runWithChangedBaseURI(URI(baseURIofRoot)) {
+        return runWithChangedBaseURI(baseURIofRoot) {
             lookupNext(root, segments)
         }
     }

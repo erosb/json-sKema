@@ -309,7 +309,7 @@ class JsonParser {
         val literal = sb.toString().intern() // walker.readUntil('"').intern()
         if (putReadLiteralToNestingPath) {
             nestingPath.add(literal)
-            loc = SourceLocation(loc.lineNumber, loc.position, JsonPointer(nestingPath.toList()))
+            loc = SourceLocation(loc.lineNumber, loc.position, JsonPointer(nestingPath.toList()), documentSource)
             // no removal from nestingPath, call-site responsibility
         }
         return JsonString(literal, loc)

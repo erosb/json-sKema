@@ -172,9 +172,12 @@ class SchemaLoader(
 
     }
 
-    constructor(schemaJson: IJsonValue) : this(schemaJson, createDefaultConfig()) {}
+    constructor(schemaJson: IJsonValue) : this(schemaJson, createDefaultConfig())
 
-    constructor(schemaJson: String) : this(parseStringIntoSchemaJson(schemaJson, DEFAULT_BASE_URI), createDefaultConfig()) {}
+    constructor(schemaJson: String, documentSource: URI = DEFAULT_BASE_URI) : this(
+        parseStringIntoSchemaJson(schemaJson, documentSource),
+        createDefaultConfig()
+    )
 
     private val regexpFactory: RegexpFactory = JavaUtilRegexpFactory()
 
@@ -231,7 +234,7 @@ class SchemaLoader(
         }
     }
 
-    private var loadingState: LoadingState = LoadingState(schemaJson, baseURI = config.initialBaseURI, vocabulary = findVocabulariesInMetaSchema(schemaJson))
+    private var loadingState: LoadingState = LoadingState(schemaJson, baseURI = schemaJson.location.documentSource ?: config.initialBaseURI, vocabulary = findVocabulariesInMetaSchema(schemaJson))
 
     private fun findVocabulariesInMetaSchema(schemaJson: IJsonValue): List<String> {
         return when (schemaJson) {

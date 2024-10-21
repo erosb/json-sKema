@@ -72,6 +72,62 @@ class ValidationFailureTest {
     }
 
     @Test
+    fun flatten() {
+        val subject = AggregatingValidationFailure(
+            CompositeSchema(
+                subschemas = setOf(
+                    maximumFailure().schema,
+                    minimumFailure().schema
+                ),
+                location = SourceLocation(1, 1, JsonPointer(listOf()), URI("http://example.com/my-json"))
+            ),
+            instance = JsonNumber(15, SourceLocation(70, 66, JsonPointer(listOf()), URI("http://example.com/my-json"))),
+            causes = setOf(maximumFailure(), minimumFailure())
+        )
+        val flattened: List<ValidationFailure> = subject.flatten()
+
+        assertThat(flattened).containsExactlyInAnyOrder(
+            minimumFailure(), maximumFailure()
+        )
+    }
+
+    @Test
+    fun flattenNoCauses() {
+        val subject = minimumFailure()
+
+        val actual = subject.flatten()
+
+        assertThat(actual).containsExactly(subject)
+    }
+
+    @Test
+    fun flattenRecursive() {
+        val falseSubschema = FalseSchema(UnknownSource)
+        val falseFailure = FalseValidationFailure(falseSubschema, JsonNull(UnknownSource))
+        val subject = AggregatingValidationFailure(
+            CompositeSchema(
+                subschemas = setOf(
+                    maximumFailure().schema,
+                    minimumFailure().schema
+                ),
+                location = SourceLocation(1, 1, JsonPointer(listOf()), URI("http://example.com/my-json"))
+            ),
+            instance = JsonNumber(15, SourceLocation(70, 66, JsonPointer(listOf()), URI("http://example.com/my-json"))),
+            causes = setOf(maximumFailure(), AggregatingValidationFailure(
+                schema = falseSubschema,
+                instance = JsonNull(UnknownSource),
+                causes = setOf(
+                    minimumFailure(), falseFailure
+                )
+            ))
+        )
+
+        assertThat(subject.flatten()).containsExactlyInAnyOrder(
+            minimumFailure(), maximumFailure(), falseFailure
+        )
+    }
+
+    @Test
     fun issue26Test() {
         val doc = """{
               "customerName": "acme",

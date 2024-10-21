@@ -48,6 +48,11 @@ abstract class ValidationFailure(
     internal open fun join(parent: Schema, instance: IJsonValue, other: ValidationFailure): ValidationFailure {
         return AggregatingValidationFailure(parent, instance, setOf(this, other))
     }
+
+    fun flatten(): List<ValidationFailure> {
+        if (causes.isEmpty()) return listOf(this)
+        return causes.toList().flatMap { it.flatten() }
+    }
 }
 
 internal class AggregatingValidationFailure(

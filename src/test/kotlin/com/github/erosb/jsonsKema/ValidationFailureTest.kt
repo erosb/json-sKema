@@ -23,12 +23,12 @@ class ValidationFailureTest {
     }
 
     private fun maximumFailure() = MaximumValidationFailure(
-        MaximumSchema(12, SourceLocation(10, 5, JsonPointer(listOf("properties", "numProp", "maximum")))),
+        MaximumSchema(12, SourceLocation(10, 5, JsonPointer(listOf("properties", "numProp", "maximum")), URI("test-uri"))),
         JsonNumber(15, SourceLocation(70, 66, JsonPointer(listOf("numProp")), URI("http://example.com/my-json")))
     )
 
     private fun minimumFailure() = MinimumValidationFailure(
-        MinimumSchema(22, SourceLocation(20, 5, JsonPointer(listOf("properties", "numProp", "minimum")))),
+        MinimumSchema(22, SourceLocation(20, 5, JsonPointer(listOf("properties", "numProp", "minimum")), URI("test-uri"))),
         JsonNumber(15, SourceLocation(70, 66, JsonPointer(listOf("numProp")), URI("http://example.com/my-json")))
     )
 

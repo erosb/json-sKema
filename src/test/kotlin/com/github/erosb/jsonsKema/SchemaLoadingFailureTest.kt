@@ -19,17 +19,17 @@ class SchemaLoadingFailureTest {
                     "Present": false
                 }
             }
-        """.trimIndent()).parse())
+        """.trimIndent(), URI("my-uri")).parse())
 
         val expected = RefResolutionException(
-            ref = ReferenceSchema(null, "mem://input#/$defs/missing", SourceLocation(2, 5, JsonPointer(listOf("$ref")))),
+            ref = ReferenceSchema(null, "my-uri#/$defs/missing", SourceLocation(2, 5, JsonPointer("$ref"), URI("my-uri"))),
             missingProperty = "missing",
-            resolutionFailureLocation = SourceLocation(3, 14, JsonPointer(listOf("$defs")))
+            resolutionFailureLocation = SourceLocation(3, 14, JsonPointer("$defs"), URI("my-uri"))
         )
 
         assertThatThrownBy { subject.load() }
             .isEqualTo(expected)
-            .hasMessage("$ref resolution failure: could not evaluate pointer \"mem://input#/$defs/missing\", property \"missing\" not found at Line 3, character 14")
+            .hasMessage("$ref resolution failure: could not evaluate pointer \"my-uri#/$defs/missing\", property \"missing\" not found at my-uri: Line 3, character 14")
     }
 
     @Test

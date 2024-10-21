@@ -11,6 +11,7 @@ import java.net.URI
 
 private class SourceWalker(
     input: InputStream,
+    private val documentSource: URI,
     private val reader: Reader = BufferedReader(InputStreamReader(input)),
 ) {
 
@@ -92,22 +93,22 @@ private class SourceWalker(
     }
 
     val location: TextLocation
-        get() = TextLocation(lineNumber, position)
+        get() = TextLocation(lineNumber, position, documentSource)
 }
 
 class JsonParser {
 
     private val walker: SourceWalker
-    private val documentSource: URI?
+    private val documentSource: URI
 
     @JvmOverloads
-    constructor(schemaJson: String, documentSource: URI? = null) {
-        this.walker = SourceWalker(ByteArrayInputStream(schemaJson.toByteArray()))
+    constructor(schemaJson: String, documentSource: URI = DEFAULT_BASE_URI) {
+        this.walker = SourceWalker(ByteArrayInputStream(schemaJson.toByteArray()), documentSource)
         this.documentSource = documentSource
     }
 
-    constructor(schemaInputStream: InputStream, documentSource: URI? = null) {
-        this.walker = SourceWalker(schemaInputStream)
+    constructor(schemaInputStream: InputStream, documentSource: URI) {
+        this.walker = SourceWalker(schemaInputStream, documentSource)
         this.documentSource = documentSource
     }
 

@@ -44,7 +44,7 @@ class JsonParserTest {
         val exception = assertThrows(JsonParseException::class.java) {
             JsonParser("nil")()
         }
-        assertEquals(JsonParseException("Unexpected character found: i", TextLocation(1, 2)), exception)
+        assertEquals(JsonParseException("Unexpected character found: i", TextLocation(1, 2, DEFAULT_BASE_URI)), exception)
     }
 
     @Test
@@ -52,7 +52,7 @@ class JsonParserTest {
         val exception = assertThrows(JsonParseException::class.java) {
             JsonParser("nu")()
         }
-        assertEquals(JsonParseException("Unexpected EOF", TextLocation(1, 3)), exception)
+        assertEquals(JsonParseException("Unexpected EOF", TextLocation(1, 3, DEFAULT_BASE_URI)), exception)
     }
 
     @Test
@@ -60,7 +60,7 @@ class JsonParserTest {
         val exception = assertThrows(JsonParseException::class.java) {
             JsonParser("")()
         }
-        assertEquals(JsonParseException("Unexpected EOF", TextLocation(1, 1)), exception)
+        assertEquals(JsonParseException("Unexpected EOF", TextLocation(1, 1, DEFAULT_BASE_URI)), exception)
     }
 
     @Test
@@ -78,7 +78,7 @@ class JsonParserTest {
     }
 
     @Nested
-    class UnicodeEscapeSequenceTest {
+    inner class UnicodeEscapeSequenceTest {
 
         @Test
         fun `escaped unicode codepoint`() {
@@ -91,7 +91,7 @@ class JsonParserTest {
             val exception = assertThrows(JsonParseException::class.java) {
                 JsonParser("\"p\\u022suffix\"")()
             }
-            assertEquals(JsonParseException("invalid unicode sequence: 022s", TextLocation(1, 4)), exception)
+            assertEquals(JsonParseException("invalid unicode sequence: 022s", TextLocation(1, 4, DEFAULT_BASE_URI)), exception)
         }
 
         @Test
@@ -99,7 +99,7 @@ class JsonParserTest {
             val exception = assertThrows(JsonParseException::class.java) {
                 JsonParser("\"p\\u022")()
             }
-            assertEquals(JsonParseException("Unexpected EOF", TextLocation(1, 8)), exception)
+            assertEquals(JsonParseException("Unexpected EOF", TextLocation(1, 8, DEFAULT_BASE_URI)), exception)
         }
 
         @Test

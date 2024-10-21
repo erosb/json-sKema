@@ -27,7 +27,7 @@ data class JsonPointer(val segments: List<String>) {
 
 fun pointer(vararg segments: String) = JsonPointer(segments.toList())
 
-open class TextLocation(val lineNumber: Int, val position: Int, val documentSource: URI? = null) {
+open class TextLocation(val lineNumber: Int, val position: Int, val documentSource: URI) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -55,7 +55,7 @@ open class SourceLocation(
     lineNumber: Int,
     position: Int,
     val pointer: JsonPointer,
-    documentSource: URI? = null
+    documentSource: URI = DEFAULT_BASE_URI
 ) : TextLocation(lineNumber, position, documentSource) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -109,7 +109,7 @@ open class SourceLocation(
     fun withPointer(pointer: JsonPointer): SourceLocation = SourceLocation(lineNumber, position, pointer, documentSource)
 }
 
-object UnknownSource : SourceLocation(0, 0, JsonPointer(emptyList())) {
+object UnknownSource : SourceLocation(0, 0, JsonPointer(emptyList()), URI("UNKNOWN")) {
     override fun toString(): String = "UNKNOWN"
 }
 

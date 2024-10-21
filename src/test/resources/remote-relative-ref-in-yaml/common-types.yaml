@@ -1,0 +1,8 @@
+Id:
+  type: integer
+  minimum: 0
+UserIdentifier:
+  type: object
+  properties:
+    id:
+      $ref: "#/Id"

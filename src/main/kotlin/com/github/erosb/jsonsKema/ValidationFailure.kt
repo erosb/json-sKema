@@ -16,7 +16,7 @@ abstract class ValidationFailure(
                 "${linePrefix}Instance pointer: ${instance.location.pointer}\n" +
                 "${linePrefix}Instance location: ${instance.location.getLocation()}")
         if (causes.isNotEmpty()) {
-            sb.append("\nCauses:")
+            sb.append("\n${linePrefix}Causes:")
             for (cause in causes) {
                 sb.append("\n\n")
                 cause.appendTo(sb, linePrefix + "\t")

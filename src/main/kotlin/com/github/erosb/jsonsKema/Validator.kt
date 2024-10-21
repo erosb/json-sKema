@@ -2,6 +2,7 @@ package com.github.erosb.jsonsKema
 
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.net.URI
 
 internal fun getAsBigDecimal(number: Any): BigDecimal {
     return if (number is BigDecimal) {
@@ -98,7 +99,8 @@ interface Validator {
 
     fun validate(instance: IJsonValue): ValidationFailure?
 
-    fun validate(instanceJson: String): ValidationFailure? = validate(JsonParser(instanceJson)())
+    fun validate(instanceJson: String, documentSource: URI = DEFAULT_BASE_URI): ValidationFailure? =
+        validate(JsonParser(instanceJson, documentSource)())
 }
 
 private class MarkableJsonArray<I : IJsonValue>(private val original: IJsonArray<I>) :

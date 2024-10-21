@@ -1,0 +1,17 @@
+$ref: "#/components/schemas/CreatePetRequest"
+components:
+  schemas:
+    CreatePetRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - owner
+      properties:
+        name:
+          $ref: "#/components/schemas/Name"
+        owner:
+          $ref: "./common-types.yaml#/UserIdentifier"
+    Name:
+      type: string
+      minLength: 1

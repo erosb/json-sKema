@@ -38,13 +38,13 @@ class SchemaLoaderTest {
     @Test
     fun `loads true schema`() {
         val underTest = createSchemaLoaderForString("true")
-        assertThat(underTest()).isEqualTo(TrueSchema(SourceLocation(1, 1, pointer())))
+        assertThat(underTest()).isEqualTo(TrueSchema(SourceLocation(1, 1, pointer(), DEFAULT_BASE_URI)))
     }
 
     @Test
     fun `loads false schema`() {
         val underTest = createSchemaLoaderForString("false")
-        assertThat(underTest()).isEqualTo(FalseSchema(SourceLocation(1, 1, pointer())))
+        assertThat(underTest()).isEqualTo(FalseSchema(SourceLocation(1, 1, pointer(), DEFAULT_BASE_URI)))
     }
 
     @Test
@@ -57,9 +57,9 @@ class SchemaLoaderTest {
         assertThat(underTest()).isEqualTo(
             CompositeSchema(
                 setOf(
-                    MinLengthSchema(20, SourceLocation(1, 3, pointer("minLength")))
+                    MinLengthSchema(20, SourceLocation(1, 3, pointer("minLength"), DEFAULT_BASE_URI))
                 ),
-                SourceLocation(1, 1, pointer())
+                SourceLocation(1, 1, pointer(), DEFAULT_BASE_URI)
             )
         )
     }
@@ -74,9 +74,9 @@ class SchemaLoaderTest {
         assertThat(underTest()).isEqualTo(
             CompositeSchema(
                 setOf(
-                    MaxLengthSchema(20, SourceLocation(1, 3, pointer("maxLength")))
+                    MaxLengthSchema(20, SourceLocation(1, 3, pointer("maxLength"), DEFAULT_BASE_URI))
                 ),
-                SourceLocation(1, 1, pointer())
+                SourceLocation(1, 1, pointer(), DEFAULT_BASE_URI)
             )
         )
     }
@@ -99,10 +99,10 @@ class SchemaLoaderTest {
         val expected = CompositeSchema(
             subschemas = setOf(
                 IfThenElseSchema(
-                    FalseSchema(SourceLocation(8, 11, pointer("#/if"))),
-                    TrueSchema(SourceLocation(9, 13, pointer("#/then"))),
+                    FalseSchema(SourceLocation(8, 11, pointer("#/if"), DEFAULT_BASE_URI)),
+                    TrueSchema(SourceLocation(9, 13, pointer("#/then"), DEFAULT_BASE_URI)),
                     null,
-                    SourceLocation(8, 5, pointer("#/if")))
+                    SourceLocation(8, 5, pointer("#/if"), DEFAULT_BASE_URI))
             ),
             location = UnknownSource,
             title = JsonString("My title"),

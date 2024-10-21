@@ -15,7 +15,7 @@ import java.util.regex.Pattern
 import java.util.stream.Stream
 
 internal fun loadTests(input: InputStream): JsonArray {
-    return JsonParser(input)().requireArray() as JsonArray
+    return JsonParser(input, DEFAULT_BASE_URI)().requireArray() as JsonArray
 }
 
 private fun <T : JsonValue> trimLeadingPointer(obj: T, pointerPrefixLength: Int): T {

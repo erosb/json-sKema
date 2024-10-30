@@ -10,10 +10,20 @@ import java.math.BigInteger
 import java.net.URI
 
 private class SourceWalker(
-    input: InputStream,
-    private val documentSource: URI,
-    private val reader: Reader = BufferedReader(InputStreamReader(input)),
+    inputReader: Reader,
+    private val documentSource: URI
 ) {
+
+    private val reader = inputReader.let { if (it.markSupported()) it else BufferedReader(it) }
+
+    constructor(input: InputStream, documentSource: URI) : this(
+        BufferedReader(InputStreamReader(input)),
+        documentSource
+    )
+
+    init {
+        reader.markSupported()
+    }
 
     private var lineNumber = 1
     private var position = 1
@@ -104,6 +114,12 @@ class JsonParser {
     @JvmOverloads
     constructor(schemaJson: String, documentSource: URI = DEFAULT_BASE_URI) {
         this.walker = SourceWalker(ByteArrayInputStream(schemaJson.toByteArray()), documentSource)
+        this.documentSource = documentSource
+    }
+
+    @JvmOverloads
+    constructor(schemaJson: Reader, documentSource: URI = DEFAULT_BASE_URI) {
+        this.walker = SourceWalker(schemaJson, documentSource)
         this.documentSource = documentSource
     }
 

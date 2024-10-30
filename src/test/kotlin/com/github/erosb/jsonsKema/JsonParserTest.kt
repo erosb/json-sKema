@@ -5,6 +5,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import java.io.BufferedReader
+import java.io.ByteArrayInputStream
+import java.io.InputStreamReader
 import java.math.BigDecimal
 import java.math.BigInteger
 
@@ -37,6 +40,24 @@ class JsonParserTest {
             JsonParser("\t  null   null")()
         }
         assertEquals("Extraneous character found: n", exception.message)
+    }
+
+    @Test
+    fun `create from Reader`() {
+        val parser = JsonParser(
+            BufferedReader(
+            InputStreamReader(ByteArrayInputStream("true".toByteArray()))
+            )
+        )
+        assertEquals(JsonBoolean(true, SourceLocation(1, 1, JsonPointer())), parser.parse())
+    }
+
+    @Test
+    fun `create from non-buffered`() {
+        val parser = JsonParser(
+            InputStreamReader(ByteArrayInputStream("  true".toByteArray()))
+        )
+        assertEquals(JsonBoolean(true, SourceLocation(1, 3, JsonPointer())), parser.parse())
     }
 
     @Test

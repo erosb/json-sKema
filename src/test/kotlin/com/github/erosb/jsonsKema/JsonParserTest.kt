@@ -61,6 +61,28 @@ class JsonParserTest {
     }
 
     @Test
+    fun `too deep nesting`() {
+        val actual = assertThrows(TooDeeplyNestedValueException::class.java) {
+            JsonParser(
+                """
+            [
+                {
+                    "a": [
+                        {
+                            "b": [
+                                {}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        """.trimIndent(), DEFAULT_BASE_URI, 5
+            )()
+        }
+        assertThat(actual.message).isEqualTo("too deeply nested json value at line 6, character 21. Maximum nesting level in json structures is 5.")
+    }
+
+    @Test
     fun `null token mismatch`() {
         val exception = assertThrows(JsonParseException::class.java) {
             JsonParser("nil")()

@@ -8,6 +8,7 @@ import java.io.Reader
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.net.URI
+import kotlin.RuntimeException
 
 private class SourceWalker(
     inputReader: Reader,
@@ -106,27 +107,28 @@ private class SourceWalker(
         get() = TextLocation(lineNumber, position, documentSource)
 }
 
-class JsonParser {
+private val DEFAULT_MAX_NESTING_DEPTH = 100_000
 
-    private val walker: SourceWalker
-    private val documentSource: URI
+class TooDeeplyNestedValueException(loc: TextLocation, maxDepth: Int): RuntimeException("too deeply nested json value at line ${loc.lineNumber}, character ${loc.position}. Maximum nesting level in json structures is $maxDepth.")
+
+class JsonParser private constructor(
+    private val walker: SourceWalker,
+    private val documentSource: URI,
+    private val maxNestingDepth: Int
+){
+    private var currentNestingDepth = 0
 
     @JvmOverloads
-    constructor(schemaJson: String, documentSource: URI = DEFAULT_BASE_URI) {
-        this.walker = SourceWalker(ByteArrayInputStream(schemaJson.toByteArray()), documentSource)
-        this.documentSource = documentSource
-    }
+    constructor(schemaJson: String, documentSource: URI = DEFAULT_BASE_URI, maxNestingDepth: Int = DEFAULT_MAX_NESTING_DEPTH)
+    : this(SourceWalker(ByteArrayInputStream(schemaJson.toByteArray()), documentSource), documentSource, maxNestingDepth)
 
     @JvmOverloads
-    constructor(schemaJson: Reader, documentSource: URI = DEFAULT_BASE_URI) {
-        this.walker = SourceWalker(schemaJson, documentSource)
-        this.documentSource = documentSource
-    }
+    constructor(schemaJson: Reader, documentSource: URI = DEFAULT_BASE_URI, maxNestingDepth: Int = DEFAULT_MAX_NESTING_DEPTH)
+    : this(SourceWalker(schemaJson, documentSource), documentSource, maxNestingDepth)
 
-    constructor(schemaInputStream: InputStream, documentSource: URI) {
-        this.walker = SourceWalker(schemaInputStream, documentSource)
-        this.documentSource = documentSource
-    }
+    @JvmOverloads
+    constructor(schemaInputStream: InputStream, documentSource: URI = DEFAULT_BASE_URI, maxNestingDepth: Int = DEFAULT_MAX_NESTING_DEPTH)
+    : this(SourceWalker(schemaInputStream, documentSource), documentSource, maxNestingDepth)
 
     private val nestingPath: MutableList<String> = mutableListOf()
 
@@ -140,6 +142,10 @@ class JsonParser {
 
     private fun parseValue(): JsonValue {
         walker.skipWhitespaces()
+        currentNestingDepth++
+        if (currentNestingDepth > maxNestingDepth) {
+            throw TooDeeplyNestedValueException(sourceLocation(), maxNestingDepth)
+        }
         val curr = walker.curr()
         val location = sourceLocation()
         var jsonValue: JsonValue? = null

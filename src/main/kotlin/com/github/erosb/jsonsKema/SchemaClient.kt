@@ -7,6 +7,16 @@ import java.nio.charset.StandardCharsets
 import java.util.*
 
 fun interface SchemaClient {
+
+    companion object {
+        @JvmStatic
+        fun createDefaultInstance(additionalMappings: Map<URI, String>): SchemaClient = MemoizingSchemaClient(
+            PrepopulatedSchemaClient(
+                ClassPathAwareSchemaClient(URLQueryingSchemaClient()),
+                additionalMappings
+            )
+        )
+    }
     fun get(uri: URI): InputStream
 
     /**
@@ -30,7 +40,7 @@ fun interface SchemaClient {
     }
 }
 
-internal class DefaultSchemaClient : SchemaClient {
+internal class URLQueryingSchemaClient : SchemaClient {
 
     override fun get(uri: URI): InputStream {
         try {

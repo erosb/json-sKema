@@ -17,12 +17,7 @@ data class SchemaLoaderConfig @JvmOverloads constructor(
     companion object {
         @JvmStatic
         fun createDefaultConfig(additionalMappings: Map<URI, String> = mapOf()) = SchemaLoaderConfig(
-            schemaClient = MemoizingSchemaClient(
-                PrepopulatedSchemaClient(
-                    ClassPathAwareSchemaClient(DefaultSchemaClient()),
-                    additionalMappings
-                )
-            ),
+            schemaClient = SchemaClient.createDefaultInstance(additionalMappings),
             additionalMappings = additionalMappings
         )
     }

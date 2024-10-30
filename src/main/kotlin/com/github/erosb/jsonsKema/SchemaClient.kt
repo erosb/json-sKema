@@ -9,6 +9,21 @@ import java.util.*
 fun interface SchemaClient {
 
     companion object {
+
+        /**
+         * Returns a [SchemaClient] instance which is used by default by [SchemaLoader] (unless it overwritten by
+         * passing an other instance to [SchemaLoaderConfig.schemaClient]).
+         *
+         * Directly calling this method can be useful in cases when a custom [SchemaClient] implementation is necessary, but
+         * it has to use this default instance as a fallback mechanism in some scenario.
+         *
+         * The returned value (as of now) is a chain of `SchemaClient`s with fallbacks, as:
+         * - the first in chain is a[MemoizingSchemaClient] (to avoid duplicate lookups)
+         * - the second is a [PrepopulatedSchemaClient] ([additionalMappings] are passed to it)
+         * - the third is a [ClassPathAwareSchemaClient], which is used to query schema documents from the classpath
+         * - the last an [URLQueryingSchemaClient] which, if no previous lookup succeeded, converts the [URI] into  [URL], and
+         * performs an actual network call.
+         */
         @JvmStatic
         fun createDefaultInstance(additionalMappings: Map<URI, String>): SchemaClient = MemoizingSchemaClient(
             PrepopulatedSchemaClient(
@@ -20,11 +35,11 @@ fun interface SchemaClient {
     fun get(uri: URI): InputStream
 
     /**
-     * Fetches a raw json schema as string using {@code get()} and parses it into an {@code IJsonValue} instance.
+     * Fetches a raw json schema as string using [get(URI)] and parses it into an [IJsonValue] instance.
      *
      * @throws SchemaDocumentLoadingException if an IO exception or a parsing exception occurs
-     * @throws JsonDocumentLoadingException if a {@code JsonParseException} occurs
-     * @throws YamlDocumentLoadingException if a {@code YamlParseException} occurs
+     * @throws JsonDocumentLoadingException if a [JsonParseException] occurs
+     * @throws YamlDocumentLoadingException if a [YamlParseException] occurs
      */
     fun getParsed(uri: URI): IJsonValue {
         try {
@@ -40,7 +55,12 @@ fun interface SchemaClient {
     }
 }
 
-internal class URLQueryingSchemaClient : SchemaClient {
+/**
+ * A [SchemaClient] which converts the [URI] into [URL] and attempts to make a network call.
+ *
+ * In case it receives a response containing a `Location` header, it will follow the redirect.
+ */
+class URLQueryingSchemaClient : SchemaClient {
 
     override fun get(uri: URI): InputStream {
         try {
@@ -62,17 +82,22 @@ internal class URLQueryingSchemaClient : SchemaClient {
     }
 }
 
+/**
+ * A [SchemaClient] which first checks if the URI scheme is `classpath`, and if yes, it attempts to load
+ * the schema document from the classpath.
+ *
+ * For non-classpath URIs it delegates the call to its [fallbackClient].
+ */
+class ClassPathAwareSchemaClient(private val fallbackClient: SchemaClient) : SchemaClient {
 
-internal class ClassPathAwareSchemaClient(private val fallbackClient: SchemaClient) : SchemaClient {
 
-
-    override fun get(url: URI): InputStream {
-        val maybeString = handleProtocol(url.toString())
+    override fun get(uri: URI): InputStream {
+        val maybeString = handleProtocol(uri.toString())
         return if (maybeString.isPresent) {
             val stream = loadFromClasspath(maybeString.get())
-            stream ?: throw UncheckedIOException(IOException(String.format("Could not find %s", url)))
+            stream ?: throw UncheckedIOException(IOException(String.format("Could not find %s", uri)))
         } else {
-            fallbackClient.get(url)
+            fallbackClient.get(uri)
         }
     }
 
@@ -100,7 +125,7 @@ internal class ClassPathAwareSchemaClient(private val fallbackClient: SchemaClie
 }
 
 
-internal class MemoizingSchemaClient(private val delegate: SchemaClient) : SchemaClient {
+class MemoizingSchemaClient(private val delegate: SchemaClient) : SchemaClient {
 
     val cache: MutableMap<URI, ByteArray> = mutableMapOf()
 
@@ -133,12 +158,18 @@ internal fun readFromClassPath(path: String): String =
         }.toByteArray()
     )
 
-internal class PrepopulatedSchemaClient(
+/**
+ * A SchemaClient which, holds a registry of URI -> String mapping. If the URI received by {@code get()} is known by the registry,
+ * then the mapped {@code String} is returned, otherwise the {@code fallbackClient} is used to obtain the content.
+ *
+ * The registry contains default mappings for meta-schema URIs, which can be extended by adding {@code additionalMappings}.
+ */
+class PrepopulatedSchemaClient(
     private val fallbackClient: SchemaClient,
     additionalMappings: Map<URI, String> = mapOf()
     ) : SchemaClient {
 
-    private val mappings: Map<URI, String> = mapOf(
+    private val registry: Map<URI, String> = mapOf(
         URI("https://json-schema.org/draft/2020-12/schema") to readFromClassPath("/json-meta-schemas/draft2020-12/schema.json"),
         URI("https://json-schema.org/draft/2020-12/meta/core") to readFromClassPath("/json-meta-schemas/draft2020-12/core.json"),
         URI("https://json-schema.org/draft/2020-12/meta/validation") to readFromClassPath("/json-meta-schemas/draft2020-12/validation.json"),
@@ -150,10 +181,9 @@ internal class PrepopulatedSchemaClient(
     ) + additionalMappings
 
     override fun get(uri: URI): InputStream {
-        return mappings[uri]
+        return registry[uri]
             ?.toByteArray(StandardCharsets.UTF_8)
             ?.let { ByteArrayInputStream(it) }
             ?: fallbackClient.get(uri)
     }
-
 }

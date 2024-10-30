@@ -83,6 +83,24 @@ class JsonParserTest {
     }
 
     @Test
+    fun `not too deep nesting`() {
+        JsonParser(
+            """
+        [
+            {
+                "a": [
+                ]
+            },
+            [],
+            [],
+            [],
+            []
+        ]
+    """.trimIndent(), DEFAULT_BASE_URI, 5
+        )()
+    }
+
+    @Test
     fun `null token mismatch`() {
         val exception = assertThrows(JsonParseException::class.java) {
             JsonParser("nil")()

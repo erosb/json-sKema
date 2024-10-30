@@ -200,6 +200,7 @@ class JsonParser private constructor(
         if (jsonValue == null) {
             throw JsonParseException("unexpected character $curr", sourceLocation())
         }
+        --currentNestingDepth
         walker.skipWhitespaces()
         return jsonValue
     }

@@ -154,7 +154,7 @@ class SchemaLoadingFailureTest {
 
     @Test
     fun `IOException in get() is mapped to SchemaLoadingException`() {
-        val loader = SchemaLoader(parseStringIntoSchemaJson("""
+        val loader = SchemaLoader(JsonValue.parse("""
             {"$ref": "http://example.org"}
         """, DEFAULT_BASE_URI), SchemaLoaderConfig(
             schemaClient = { throw UncheckedIOException("msg", IOException()) }

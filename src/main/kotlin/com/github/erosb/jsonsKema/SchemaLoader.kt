@@ -119,33 +119,6 @@ internal data class LoadingContext(
 
 internal typealias KeywordLoader = (context: LoadingContext) -> Schema?
 
-private val yamlSupport = runCatching {
-    Class.forName("org.yaml.snakeyaml.Yaml")
-}.isSuccess
-
-/**
- * @throws JsonParseException
- * @throws YamlParseException
- */
-internal fun parseStringIntoSchemaJson(string: String, documentSource: URI): IJsonValue {
-    try {
-        return JsonParser(string, documentSource)()
-    } catch (ex: JsonParseException) {
-        if (yamlSupport) {
-            try {
-                return loadFromYaml(Yaml().compose(StringReader(string)), documentSource)
-            } catch (e: RuntimeException) {
-                if (ex.location.lineNumber == 1 && ex.location.position == 1) {
-                    val yamlDocEx = YamlParseException(e)
-                    yamlDocEx.addSuppressed(ex)
-                    throw yamlDocEx
-                }
-            }
-        }
-        throw ex
-    }
-}
-
 class SchemaLoader(
         val schemaJson: IJsonValue,
         val config: SchemaLoaderConfig = createDefaultConfig()
@@ -169,8 +142,9 @@ class SchemaLoader(
 
     constructor(schemaJson: IJsonValue) : this(schemaJson, createDefaultConfig())
 
+    @JvmOverloads
     constructor(schemaJson: String, documentSource: URI = DEFAULT_BASE_URI) : this(
-        parseStringIntoSchemaJson(schemaJson, documentSource),
+        JsonValue.parse(schemaJson, documentSource),
         createDefaultConfig()
     )
 

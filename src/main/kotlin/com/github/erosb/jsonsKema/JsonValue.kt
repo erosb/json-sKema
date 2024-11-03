@@ -1,5 +1,7 @@
 package com.github.erosb.jsonsKema
 
+import org.yaml.snakeyaml.Yaml
+import java.io.StringReader
 import java.math.BigDecimal
 import java.net.URI
 import java.util.stream.Collectors.joining
@@ -205,6 +207,38 @@ interface JsonVisitor<P> {
 }
 
 abstract class JsonValue(override val location: SourceLocation = UnknownSource) : IJsonValue {
+
+    companion object {
+
+        private val yamlSupport = runCatching {
+            Class.forName("org.yaml.snakeyaml.Yaml")
+        }.isSuccess
+
+        /**
+         * Parses the source string into a JsonValue. The source can be either a JSON string or a
+         * YAML document.
+         */
+        @JvmOverloads
+        @JvmStatic
+        fun parse(source: String, documentSource: URI = DEFAULT_BASE_URI): JsonValue {
+            try {
+                return JsonParser(source, documentSource)()
+            } catch (ex: JsonParseException) {
+                if (yamlSupport) {
+                    try {
+                        return loadFromYaml(Yaml().compose(StringReader(source)), documentSource)
+                    } catch (e: RuntimeException) {
+                        if (ex.location.lineNumber == 1 && ex.location.position == 1) {
+                            val yamlDocEx = YamlParseException(e)
+                            yamlDocEx.addSuppressed(ex)
+                            throw yamlDocEx
+                        }
+                    }
+                }
+                throw ex
+            }
+        }
+    }
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other === null) return false

@@ -11,16 +11,20 @@ abstract class SchemaVisitor<P> {
     private val dynamicScope = mutableListOf<CompositeSchema>()
 
     private fun findSubschemaByDynamicAnchor(scope: CompositeSchema, lookupValue: String): Schema? {
+        println("    checking in ${scope.location.pointer}")
         if (scope.dynamicAnchor == lookupValue) {
             return scope
         }
         val definedSubschema = scope.definedSubschemas.values
             .filterIsInstance<CompositeSchema>()
-            .map { scope -> findSubschemaByDynamicAnchor(scope, lookupValue) }
+            .filter { scope -> scope.dynamicAnchor == lookupValue }
+//            .map { scope -> findSubschemaByDynamicAnchor(scope, lookupValue) }
             .firstOrNull()
         if (definedSubschema != null) {
+            println("    found ${scope.definedSubschemas.size} in ${scope.location.pointer}, returning ${definedSubschema}")
             return definedSubschema
         }
+//        return null;
         return scope.subschemas().stream()
             .filter { it is CompositeSchema}
             .map { it as CompositeSchema }
@@ -35,12 +39,16 @@ abstract class SchemaVisitor<P> {
         try {
             val dynamicRef = schema.dynamicRef
             if (dynamicRef != null) {
+                println("found dynamic ref ${dynamicRef.ref}")
                 val anchorName = dynamicRef.ref.substring(dynamicRef.ref.indexOf("#") + 1)
                 var referred = dynamicScope.stream()
+                    .peek { scope -> println("  checking on dyn scope $scope")}
                     .map  { scope -> findSubschemaByDynamicAnchor(scope, anchorName) }
+                    .peek { println("  -> $it")}
                     .filter (Objects::nonNull)
                     .findAny()
                     .orElse(null)
+                println("found referred $referred")
                 if (referred === null) {
                     if (dynamicRef.fallbackReferredSchema == null) {
                         TODO("not implemented (no matching dynamicAnchor for dynamicRef $dynamicRef")

@@ -136,4 +136,18 @@ class SchemaLoaderTest {
         }
         assertThat(exception.message).contains("boolean or object")
     }
+
+    @Test
+    fun `empty fragment in $schema`() {
+        SchemaLoader("""
+            {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "properties": {
+                "a": {
+                    "type": "number"
+                }
+              }
+            }
+        """.trimIndent())()
+    }
 }

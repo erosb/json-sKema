@@ -159,14 +159,19 @@ class JsonParser private constructor(
             walker.skipWhitespaces()
             val elements = mutableListOf<JsonValue>()
             while (walker.curr() != ']') {
+                var commaCharFound = false
                 nestingPath.add(elements.size.toString().intern())
                 val element = parseValue()
                 elements.add(element)
                 nestingPath.removeLast()
                 if (walker.curr() == ',') {
+                    commaCharFound = true
                     walker.forward()
                 }
                 walker.skipWhitespaces()
+                if (!commaCharFound && walker.curr() != ']') {
+                    throw JsonParseException("unexpected character", sourceLocation())
+                }
             }
             walker.forward()
             jsonValue = JsonArray(elements.toList(), location)
@@ -175,15 +180,20 @@ class JsonParser private constructor(
             walker.forward()
             walker.skipWhitespaces()
             while (walker.curr() != '}') {
+                var commaCharFound = false
                 val propName = parseString(true)
                 walker.skipWhitespaces().consume(":").skipWhitespaces()
                 val propValue = parseValue()
                 nestingPath.removeLast()
                 properties.put(propName, propValue)
                 if (walker.curr() == ',') {
+                    commaCharFound = true
                     walker.forward()
                 }
                 walker.skipWhitespaces()
+                if (!commaCharFound && walker.curr() != '}') {
+                    throw JsonParseException("unexpected character", sourceLocation())
+                }
             }
             walker.forward()
             jsonValue = JsonObject(properties.toMap(), location)

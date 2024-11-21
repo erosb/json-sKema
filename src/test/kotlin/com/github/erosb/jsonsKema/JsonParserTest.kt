@@ -125,6 +125,22 @@ class JsonParserTest {
     }
 
     @Test
+    fun `missing comma character in object`() {
+        val exception = assertThrows(JsonParseException::class.java) {
+            JsonParser("{\"key1\":\"value1\", \"key2\":\"value2\" \"key3\":\"value3\"}\n")()
+        }
+        assertEquals(JsonParseException("Unexpected character found: \". Expected ',', '}'", SourceLocation(1, 35, pointer())), exception)
+    }
+
+    @Test
+    fun `missing comma character in array`() {
+        val exception = assertThrows(JsonParseException::class.java) {
+            JsonParser("[1, 2 3]")()
+        }
+        assertEquals(JsonParseException("Unexpected character found: 3. Expected ',', ']'", SourceLocation(1, 7, pointer())), exception)
+    }
+
+    @Test
     fun `string parsing`() {
         val actual = JsonParser("  \"string literal\"  ")()
         val expected = JsonString("string literal", SourceLocation(1, 3, pointer()))

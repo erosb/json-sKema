@@ -129,7 +129,7 @@ class JsonParserTest {
         val exception = assertThrows(JsonParseException::class.java) {
             JsonParser("{\"key1\":\"value1\", \"key2\":\"value2\" \"key3\":\"value3\"}\n")()
         }
-        assertEquals(JsonParseException("unexpected character", SourceLocation(1, 35, pointer())), exception)
+        assertEquals(JsonParseException("Unexpected character found: \". Expected ',', '}'", SourceLocation(1, 35, pointer())), exception)
     }
 
     @Test
@@ -137,7 +137,7 @@ class JsonParserTest {
         val exception = assertThrows(JsonParseException::class.java) {
             JsonParser("[1, 2 3]")()
         }
-        assertEquals(JsonParseException("unexpected character", SourceLocation(1, 7, pointer())), exception)
+        assertEquals(JsonParseException("Unexpected character found: 3. Expected ',', ']'", SourceLocation(1, 7, pointer())), exception)
     }
 
     @Test

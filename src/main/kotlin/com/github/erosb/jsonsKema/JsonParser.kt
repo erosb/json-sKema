@@ -169,8 +169,9 @@ class JsonParser private constructor(
                     walker.forward()
                 }
                 walker.skipWhitespaces()
+                val curr = walker.curr()
                 if (!commaCharFound && walker.curr() != ']') {
-                    throw JsonParseException("unexpected character", sourceLocation())
+                    throw JsonParseException("Unexpected character found: $curr. Expected ',', ']'", sourceLocation())
                 }
             }
             walker.forward()
@@ -191,8 +192,9 @@ class JsonParser private constructor(
                     walker.forward()
                 }
                 walker.skipWhitespaces()
-                if (!commaCharFound && walker.curr() != '}') {
-                    throw JsonParseException("unexpected character", sourceLocation())
+                val curr = walker.curr()
+                if (!commaCharFound && curr != '}') {
+                    throw JsonParseException("Unexpected character found: $curr. Expected ',', '}'", sourceLocation())
                 }
             }
             walker.forward()

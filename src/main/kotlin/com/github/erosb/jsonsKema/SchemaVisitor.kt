@@ -17,17 +17,18 @@ abstract class SchemaVisitor<P> {
         }
         val definedSubschema = scope.definedSubschemas.values
             .filterIsInstance<CompositeSchema>()
+            .filter { it.id?.value == scope.id?.value }
             .filter { scope -> scope.dynamicAnchor == lookupValue }
-//            .map { scope -> findSubschemaByDynamicAnchor(scope, lookupValue) }
+            .map { scope -> findSubschemaByDynamicAnchor(scope, lookupValue) }
             .firstOrNull()
         if (definedSubschema != null) {
-            println("    found ${scope.definedSubschemas.size} in ${scope.location.pointer}, returning ${definedSubschema}")
+            println("    found ${scope.definedSubschemas.size} in ${scope.location.pointer}, returning ${definedSubschema.location.pointer}")
             return definedSubschema
         }
-//        return null;
         return scope.subschemas().stream()
             .filter { it is CompositeSchema}
             .map { it as CompositeSchema }
+            .filter { it.id?.value == scope.id?.value }
             .map  { scope -> findSubschemaByDynamicAnchor(scope, lookupValue) }
             .filter (Objects::nonNull)
             .findAny()
@@ -40,7 +41,10 @@ abstract class SchemaVisitor<P> {
             val dynamicRef = schema.dynamicRef
             if (dynamicRef != null) {
                 println("found dynamic ref ${dynamicRef.ref}")
+                println("fallback is ${dynamicRef.fallbackReferredSchema?.location?.pointer}")
+                println("schema id = ${schema.id}")
                 val anchorName = dynamicRef.ref.substring(dynamicRef.ref.indexOf("#") + 1)
+                println("lookup start by anchorName=$anchorName")
                 var referred = dynamicScope.stream()
                     .peek { scope -> println("  checking on dyn scope $scope")}
                     .map  { scope -> findSubschemaByDynamicAnchor(scope, anchorName) }
@@ -48,7 +52,7 @@ abstract class SchemaVisitor<P> {
                     .filter (Objects::nonNull)
                     .findAny()
                     .orElse(null)
-                println("found referred $referred")
+                println("found referred ${referred?.location?.pointer}")
                 if (referred === null) {
                     if (dynamicRef.fallbackReferredSchema == null) {
                         TODO("not implemented (no matching dynamicAnchor for dynamicRef $dynamicRef")

@@ -302,7 +302,7 @@ private class DefaultValidator(
         }
     }
 
-    override fun visitPropertySchema(property: String, schema: Schema): ValidationFailure? {
+    override fun doVisitPropertySchema(property: String, schema: Schema): ValidationFailure? {
         if (instance !is IJsonObject<*, *>) {
             return null
         }
@@ -467,9 +467,9 @@ private class DefaultValidator(
         }
     }
 
-    override fun visitMinimumSchema(schema: MinimumSchema): ValidationFailure? = instance.maybeNumber {
+    override fun doVisitMinimumSchema(schema: MinimumSchema): ValidationFailure? = instance.maybeNumber {
         if (it.value.toDouble() < schema.minimum.toDouble()) {
-            MinimumValidationFailure(schema, it)
+            MinimumValidationFailure(schema, it, dynamicPath)
         } else {
             null
         }

@@ -10,7 +10,7 @@ class NumberValidationTest {
         val subject = MinimumSchema(10.0, UnknownSource)
         val instance = JsonNumber(1)
         val actual = Validator.forSchema(subject).validate(instance)!!
-        assertEquals(MinimumValidationFailure(subject, instance), actual)
+        assertEquals(MinimumValidationFailure(subject, instance, JsonPointer("minimum")), actual)
         assertEquals("1 is lower than minimum 10.0", actual.message)
     }
 

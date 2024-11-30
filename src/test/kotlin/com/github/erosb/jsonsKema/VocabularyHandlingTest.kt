@@ -11,7 +11,7 @@ class VocabularyHandlingTest {
     fun `format validation is disabled by default`() {
         val schema = SchemaLoader(JsonParser("""
             {
-                "$schema": "https://json-schema.org/draft/2020-12/schema"
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
                 "format": "email"
             }
         """)()
@@ -28,7 +28,7 @@ class VocabularyHandlingTest {
     fun `format validation is explicitly enabled`() {
         val schema = SchemaLoader(JsonParser("""
             {
-                "$schema": "https://json-schema.org/draft/2020-12/schema"
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
                 "format": "email"
             }
         """)()

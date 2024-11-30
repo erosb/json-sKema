@@ -194,7 +194,7 @@ class RefResolutionTest {
         val root = createSchemaLoaderForString(
             """
             {
-                "$id": "http://original"
+                "$id": "http://original",
                 "$ref": "http://remote#myAnchor"
             }
         """,
@@ -226,7 +226,7 @@ class RefResolutionTest {
         val root = createSchemaLoaderForString(
             """
             {
-                "$id": "http://original"
+                "$id": "http://original",
                 "$ref": "http://remote#myAnchor"
             }
         """,
@@ -373,7 +373,7 @@ class RefResolutionTest {
                                     }
                                 }
                             }
-                        }
+                        },
                         "$anchor": "MyRootSchema",
                         "title": "my root schema title"
                     }
@@ -401,7 +401,7 @@ class RefResolutionTest {
                     """
             {
                 "$id": "https://mismatching-remote",
-                "$ref": "https://mismatching-remote#MySchema"
+                "$ref": "https://mismatching-remote#MySchema",
                 "$defs": {
                     "MySchema": {
                         "$anchor": "MySchema",
@@ -430,7 +430,7 @@ class RefResolutionTest {
             {
                 "$defs" : {
                     "parent": {
-                        "$id": "/my-domain.json"
+                        "$id": "/my-domain.json",
                         "properties": {
                             "child": {
                                 "MySchema": {
@@ -463,7 +463,7 @@ class RefResolutionTest {
         val root = createSchemaLoaderForString(
             """
             {
-                "$ref": "#dyn-ref"
+                "$ref": "#dyn-ref",
                 "$defs": {
                     "DynRefSchema": {
                         "$dynamicAnchor": "dyn-ref",
@@ -643,7 +643,7 @@ class RefResolutionTest {
                                                     "id": {
                                                         "type": "string"
                                                     }
-                                                }
+                                                },
                                                 "additionalProperties": false
                                             }
                                         },

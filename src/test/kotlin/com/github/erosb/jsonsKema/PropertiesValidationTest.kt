@@ -16,7 +16,7 @@ class PropertiesValidationTest {
                 "properties": {
                     "arrProp": {
                         "type": "array"
-                    }          ,
+                    },
                     "objProp": {
                         "type": "object"
                     },
@@ -55,7 +55,7 @@ class PropertiesValidationTest {
         val expected = JsonParser(
             """
             {
-                "instanceRef": "#"
+                "instanceRef": "#",
                 "schemaRef": "#",
                 "message": "multiple validation failures",
                 "causes": [

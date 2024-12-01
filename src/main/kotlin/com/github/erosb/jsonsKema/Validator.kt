@@ -207,16 +207,17 @@ private class DefaultValidator(
 
     inner class TypeValidatingVisitor(private val schema: TypeSchema) : AbstractTypeValidatingVisitor() {
 
-        override fun checkType(actualType: String): ValidationFailure? {
+        override fun checkType(actualType: String): ValidationFailure? = inPathSegment(Keyword.TYPE) {
             if (actualType == "integer" && schema.type.value == "number") {
-                return null
+                return@inPathSegment null
             }
-            return if (schema.type.value == actualType) {
+            return@inPathSegment if (schema.type.value == actualType) {
                 null
             } else TypeValidationFailure(
                 actualType,
                 this.schema,
-                instance
+                instance,
+                dynamicPath
             )
         }
     }
@@ -303,21 +304,22 @@ private class DefaultValidator(
         }
     }
 
-    override fun visitPropertySchema(property: String, schema: Schema): ValidationFailure? = inPathSegment("properties/" + property) {
-        if (instance !is IJsonObject<*, *>) {
-            return@inPathSegment null
+    override fun visitPropertySchema(property: String, schema: Schema): ValidationFailure? =
+        inPathSegment("properties/" + property) {
+            if (instance !is IJsonObject<*, *>) {
+                return@inPathSegment null
+            }
+            if (instance.requireObject()[property] === null) {
+                return@inPathSegment null
+            }
+            val propFailure = withOtherInstance(instance.requireObject().get(property)!!) {
+                schema.accept(this)
+            }
+            if (propFailure === null) {
+                (instance as IJsonObj).markEvaluated(property)
+            }
+            return@inPathSegment propFailure
         }
-        if (instance.requireObject()[property] === null) {
-            return@inPathSegment null
-        }
-        val propFailure = withOtherInstance(instance.requireObject().get(property)!!) {
-            schema.accept(this)
-        }
-        if (propFailure === null) {
-            (instance as IJsonObj).markEvaluated(property)
-        }
-        return@inPathSegment propFailure
-    }
 
     override fun visitPatternPropertySchema(pattern: Regexp, schema: Schema): ValidationFailure? = instance.maybeObject { obj ->
         val failures = obj.properties
@@ -508,33 +510,41 @@ private class DefaultValidator(
     override fun visitFalseSchema(schema: FalseSchema): ValidationFailure =
         FalseValidationFailure(schema, instance)
 
-    override fun visitUniqueItemsSchema(schema: UniqueItemsSchema): ValidationFailure? = if (schema.unique) {
-        instance.maybeArray { array ->
-            val occurrences = mutableMapOf<IJsonValue, Int>()
-            for ((index, elem) in array.elements.withIndex()) {
-                if (occurrences.containsKey(elem)) {
-                    return@maybeArray UniqueItemsValidationFailure(listOf(occurrences[elem]!!, index), schema, array)
+    override fun visitUniqueItemsSchema(schema: UniqueItemsSchema): ValidationFailure? = inPathSegment(Keyword.UNIQUE_ITEMS) {
+        if (schema.unique) {
+            instance.maybeArray { array ->
+                val occurrences = mutableMapOf<IJsonValue, Int>()
+                for ((index, elem) in array.elements.withIndex()) {
+                    if (occurrences.containsKey(elem)) {
+                        return@maybeArray UniqueItemsValidationFailure(
+                            listOf(occurrences[elem]!!, index), schema,
+                            array, dynamicPath
+                        )
+                    }
+                    occurrences[elem] = index
                 }
-                occurrences[elem] = index
+                null
             }
-            null
-        }
-    } else null
+        } else null
+    }
 
-    override fun visitItemsSchema(schema: ItemsSchema): ValidationFailure? = instance.maybeArray { array ->
-        val failures = mutableMapOf<Int, ValidationFailure>()
-        for (index in schema.prefixItemCount until array.length()) {
-            withOtherInstance(array[index]) {
-                schema.itemsSchema.accept(this) ?.let { failures[index] = it }
+
+    override fun visitItemsSchema(schema: ItemsSchema): ValidationFailure? = inPathSegment(Keyword.ITEMS) {
+        instance.maybeArray { array ->
+            val failures = mutableMapOf<Int, ValidationFailure>()
+            for (index in schema.prefixItemCount until array.length()) {
+                withOtherInstance(array[index]) {
+                    schema.itemsSchema.accept(this) ?.let { failures[index] = it }
+                }
             }
-        }
-        if (failures.isEmpty()) {
-            if (array.length() > schema.prefixItemCount) {
-                array.markAllEvaluated()
+            if (failures.isEmpty()) {
+                if (array.length() > schema.prefixItemCount) {
+                    array.markAllEvaluated()
+                }
+                null
+            } else {
+                ItemsValidationFailure(failures.toMap(), schema, array, dynamicPath)
             }
-            null
-        } else {
-            ItemsValidationFailure(failures.toMap(), schema, array)
         }
     }
 
@@ -557,33 +567,35 @@ private class DefaultValidator(
         }
     }
 
-    override fun visitContainsSchema(schema: ContainsSchema): ValidationFailure? = instance.maybeArray { array ->
-        if (array.length() == 0) {
-            val minContainsIsZero = schema.minContains == 0
-            return@maybeArray if (minContainsIsZero) null else ContainsValidationFailure("no array items are valid against \"contains\" subschema, expected minimum is ${schema.minContains}", schema, array)
-        }
-        var successCount = 0
-        for (idx in 0 until array.length()) {
-            val maybeChildFailure = withOtherInstance(array.markEvaluated(idx)) {
-                schema.containedSchema.accept(this)
+    override fun visitContainsSchema(schema: ContainsSchema): ValidationFailure? = inPathSegment(Keyword.CONTAINS) {
+        instance.maybeArray { array ->
+            if (array.length() == 0) {
+                val minContainsIsZero = schema.minContains == 0
+                return@maybeArray if (minContainsIsZero) null else ContainsValidationFailure("no array items are valid against \"contains\" subschema, expected minimum is ${schema.minContains}", schema, array, dynamicPath)
             }
-            if (maybeChildFailure === null) {
-                ++successCount
+            var successCount = 0
+            for (idx in 0 until array.length()) {
+                val maybeChildFailure = withOtherInstance(array.markEvaluated(idx)) {
+                    schema.containedSchema.accept(this)
+                }
+                if (maybeChildFailure === null) {
+                    ++successCount
+                } else {
+                    array.markUnevaluated(idx)
+                }
+            }
+            if (schema.maxContains != null && schema.maxContains.toInt() < successCount) {
+                return@maybeArray ContainsValidationFailure("$successCount array items are valid against \"contains\" subschema, expected maximum is 1", schema, array, dynamicPath)
+            }
+            if (successCount < schema.minContains.toInt()) {
+                val prefix = if (successCount == 0) "no array items are" else if (successCount == 1) "only 1 array item is" else "only $successCount array items are"
+                return@maybeArray ContainsValidationFailure("$prefix valid against \"contains\" subschema, expected minimum is ${schema.minContains.toInt()}", schema, array, dynamicPath)
+            }
+            return@maybeArray if (schema.maxContains == null && schema.minContains == 1 && successCount == 0) {
+                ContainsValidationFailure("expected at least 1 array item to be valid against \"contains\" subschema, found 0", schema, array, dynamicPath)
             } else {
-                array.markUnevaluated(idx)
+                null
             }
-        }
-        if (schema.maxContains != null && schema.maxContains.toInt() < successCount) {
-            return@maybeArray ContainsValidationFailure("$successCount array items are valid against \"contains\" subschema, expected maximum is 1", schema, array)
-        }
-        if (successCount < schema.minContains.toInt()) {
-            val prefix = if (successCount == 0) "no array items are" else if (successCount == 1) "only 1 array item is" else "only $successCount array items are"
-            return@maybeArray ContainsValidationFailure("$prefix valid against \"contains\" subschema, expected minimum is ${schema.minContains.toInt()}", schema, array)
-        }
-        return@maybeArray if (schema.maxContains == null && schema.minContains == 1 && successCount == 0) {
-            ContainsValidationFailure("expected at least 1 array item to be valid against \"contains\" subschema, found 0", schema, array)
-        } else {
-            null
         }
     }
 

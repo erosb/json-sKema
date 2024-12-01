@@ -12,7 +12,7 @@ class ArrayValidationTest {
         val schema = UniqueItemsSchema(true, UnknownSource)
         val instance = JsonArray(listOf(JsonNumber(1), JsonNumber(2), JsonNumber(1)))
         val actual = Validator.forSchema(schema).validate(instance)
-        val expected = UniqueItemsValidationFailure(listOf(0, 2), schema, instance)
+        val expected = UniqueItemsValidationFailure(listOf(0, 2), schema, instance, JsonPointer("uniqueItems"))
         assertEquals(expected, actual)
         assertEquals("the same array element occurs at positions 0, 2", actual?.message)
     }
@@ -34,11 +34,12 @@ class ArrayValidationTest {
         val instance = JsonArray(listOf(JsonBoolean(true), first, second))
         val expected = ItemsValidationFailure(
             mapOf(
-                1 to TypeValidationFailure("string", itemsSchema, first),
-                2 to TypeValidationFailure("string", itemsSchema, second)
+                1 to TypeValidationFailure("string", itemsSchema, first, JsonPointer(listOf("items", "type"))),
+                2 to TypeValidationFailure("string", itemsSchema, second, JsonPointer(listOf("items", "type")))
             ),
             schema,
-            instance
+            instance,
+            JsonPointer("items")
         )
         val actual = Validator.forSchema(schema).validate(instance)
         assertEquals(expected, actual)
@@ -46,7 +47,7 @@ class ArrayValidationTest {
     }
 
     @Nested
-    class ContainsTest {
+    inner class ContainsTest {
         val containedSchema = ConstSchema(JsonNumber(5), UnknownSource)
 
         @Test
@@ -59,7 +60,8 @@ class ArrayValidationTest {
             val expected = ContainsValidationFailure(
                 "no array items are valid against \"contains\" subschema, expected minimum is 1",
                 schema = schema,
-                instance = instance
+                instance = instance,
+                dynamicPath = JsonPointer("contains")
             )
             assertEquals(expected, actual)
         }
@@ -71,7 +73,11 @@ class ArrayValidationTest {
 
             val actual = Validator.forSchema(schema).validate(instance)!!
 
-            val expected = ContainsValidationFailure("only 1 array item is valid against \"contains\" subschema, expected minimum is 2", schema, instance)
+            val expected = ContainsValidationFailure("only 1 array item is valid against \"contains\" subschema, expected minimum is 2",
+                schema,
+                instance,
+                JsonPointer("contains")
+            )
             assertEquals(expected, actual)
         }
 
@@ -102,7 +108,11 @@ class ArrayValidationTest {
             val instance = JsonArray(emptyList())
 
             val actual = Validator.forSchema(schema).validate(instance)
-            val expected = ContainsValidationFailure("no array items are valid against \"contains\" subschema, expected minimum is 1", schema, instance)
+            val expected = ContainsValidationFailure("no array items are valid against \"contains\" subschema, expected minimum is 1",
+                schema,
+                instance,
+                JsonPointer("contains")
+            )
 
             assertEquals(expected, actual)
         }
@@ -114,7 +124,11 @@ class ArrayValidationTest {
             val instance = JsonArray(listOf(JsonNumber(5), JsonNumber(5)))
 
             val actual = Validator.forSchema(schema).validate(instance)
-            val expected = ContainsValidationFailure("2 array items are valid against \"contains\" subschema, expected maximum is 1", schema, instance)
+            val expected = ContainsValidationFailure("2 array items are valid against \"contains\" subschema, expected maximum is 1",
+                schema,
+                instance,
+                JsonPointer("contains")
+            )
 
             assertEquals(expected, actual)
         }

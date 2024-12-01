@@ -20,7 +20,8 @@ internal val typeLoader: KeywordLoader = { ctx ->
 data class TypeValidationFailure(
     val actualInstanceType: String,
     override val schema: TypeSchema,
-    override val instance: IJsonValue
+    override val instance: IJsonValue,
+    val dynamicPath: JsonPointer
 ) : ValidationFailure("expected type: ${schema.type.value}, actual: $actualInstanceType", schema, instance, Keyword.TYPE)
 
 data class MultiTypeValidationFailure(

@@ -84,8 +84,11 @@ abstract class SchemaVisitor<P> {
     }
 
     protected fun inPathSegment(seg: String, cb: () -> P?): P? {
+        val orig = dynamicPath
         dynamicPath += seg
-        return cb()
+        val rval = cb()
+        dynamicPath = orig
+        return rval
     }
 
     protected fun inPathSegment(seg: Keyword, cb: () -> P?): P? = inPathSegment(seg.value, cb)
@@ -109,7 +112,7 @@ abstract class SchemaVisitor<P> {
     open fun visitNotSchema(schema: NotSchema): P? = visitChildren(schema)
     open fun visitRequiredSchema(schema: RequiredSchema): P? = visitChildren(schema)
     open fun visitMaximumSchema(schema: MaximumSchema): P? = visitChildren(schema)
-    open fun visitMinimumSchema(schema: MinimumSchema): P? = inPathSegment("minimum") { visitChildren(schema) }
+    open fun visitMinimumSchema(schema: MinimumSchema): P? = inPathSegment(Keyword.MINIMUM.value) { visitChildren(schema) }
     open fun visitExclusiveMaximumSchema(schema: ExclusiveMaximumSchema): P? = visitChildren(schema)
     open fun visitExclusiveMinimumSchema(schema: ExclusiveMinimumSchema): P? = visitChildren(schema)
     open fun visitMultipleOfSchema(schema: MultipleOfSchema): P? = visitChildren(schema)

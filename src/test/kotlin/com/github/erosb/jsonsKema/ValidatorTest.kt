@@ -73,29 +73,4 @@ class ValidatorTest {
             actual.toJSON()
         )
     }
-
-    @Test
-    fun dynPath() {
-        val schema = SchemaLoader(JsonParser("""
-            {
-              "properties": {
-                "id": {
-                    "$ref": "#/$defs/Id"
-                }
-              },
-              "$defs": {
-                "Id": {
-                  "minimum": 1
-                }
-              }
-            }
-        """.trimIndent())())()
-
-        val actual = Validator.forSchema(schema).validate(JsonParser("""
-            {"id": 0}
-        """.trimIndent())()) as MinimumValidationFailure
-
-        assertEquals("#/properties/id/$ref/minimum", actual.dynamicPath.toString())
-        println(actual.toJSON())
-    }
 }

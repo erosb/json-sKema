@@ -175,11 +175,12 @@ private class DefaultValidator(
         false
     else
         when (rootSchema) {
-        is CompositeSchema -> rootSchema.vocabulary.isEmpty() || rootSchema.vocabulary.contains(
-            "https://json-schema.org/draft/2020-12/vocab/format-assertion"
-        )
-        else -> false
-    }
+            is CompositeSchema -> rootSchema.vocabulary.isEmpty() || rootSchema.vocabulary.contains(
+                "https://json-schema.org/draft/2020-12/vocab/format-assertion"
+            )
+
+            else -> false
+        }
 
     abstract inner class AbstractTypeValidatingVisitor : JsonVisitor<ValidationFailure> {
         override fun visitString(str: IJsonString): ValidationFailure? = checkType("string")
@@ -302,12 +303,12 @@ private class DefaultValidator(
         }
     }
 
-    override fun doVisitPropertySchema(property: String, schema: Schema): ValidationFailure? {
+    override fun visitPropertySchema(property: String, schema: Schema): ValidationFailure? = inPathSegment("properties/" + property) {
         if (instance !is IJsonObject<*, *>) {
-            return null
+            return@inPathSegment null
         }
         if (instance.requireObject()[property] === null) {
-            return null
+            return@inPathSegment null
         }
         val propFailure = withOtherInstance(instance.requireObject().get(property)!!) {
             schema.accept(this)
@@ -315,7 +316,7 @@ private class DefaultValidator(
         if (propFailure === null) {
             (instance as IJsonObj).markEvaluated(property)
         }
-        return propFailure
+        return@inPathSegment propFailure
     }
 
     override fun visitPatternPropertySchema(pattern: Regexp, schema: Schema): ValidationFailure? = instance.maybeObject { obj ->
@@ -335,13 +336,13 @@ private class DefaultValidator(
 
     override fun visitPatternSchema(schema: PatternSchema): ValidationFailure? {
         return instance.maybeString { str ->
-            schema.pattern.patternMatchingFailure(str.value) ?.let { PatternValidationFailure(schema, str) }
+            schema.pattern.patternMatchingFailure(str.value)?.let { PatternValidationFailure(schema, str) }
         }
     }
 
     override fun visitPropertyNamesSchema(propertyNamesSchema: PropertyNamesSchema): ValidationFailure? {
         return instance.maybeObject { obj ->
-            val failures: Map<IJsonString ,ValidationFailure> = obj.properties.keys.map {
+            val failures: Map<IJsonString, ValidationFailure> = obj.properties.keys.map {
                 it to withOtherInstance(it) {
                     propertyNamesSchema.propertyNamesSchema.accept(this)
                 }
@@ -459,19 +460,24 @@ private class DefaultValidator(
             }
         }
 
-    override fun visitMaximumSchema(schema: MaximumSchema): ValidationFailure? = instance.maybeNumber {
-        if (it.value.toDouble() > schema.maximum.toDouble()) {
-            MaximumValidationFailure(schema, it)
-        } else {
-            null
+    override fun visitMaximumSchema(schema: MaximumSchema): ValidationFailure? = inPathSegment(Keyword.MAXIMUM) {
+        instance.maybeNumber {
+            if (it.value.toDouble() > schema.maximum.toDouble()) {
+                MaximumValidationFailure(schema, it, dynamicPath)
+            } else {
+                null
+            }
         }
     }
 
-    override fun doVisitMinimumSchema(schema: MinimumSchema): ValidationFailure? = instance.maybeNumber {
-        if (it.value.toDouble() < schema.minimum.toDouble()) {
-            MinimumValidationFailure(schema, it, dynamicPath)
-        } else {
-            null
+
+    override fun visitMinimumSchema(schema: MinimumSchema): ValidationFailure? = inPathSegment(Keyword.MINIMUM) {
+        instance.maybeNumber {
+            if (it.value.toDouble() < schema.minimum.toDouble()) {
+                MinimumValidationFailure(schema, it, dynamicPath)
+            } else {
+                null
+            }
         }
     }
 

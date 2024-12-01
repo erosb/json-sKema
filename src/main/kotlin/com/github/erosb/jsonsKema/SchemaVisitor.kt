@@ -83,10 +83,12 @@ abstract class SchemaVisitor<P> {
         return result
     }
 
-    private fun inPathSegment(seg: String, cb: () -> P?): P? {
+    protected fun inPathSegment(seg: String, cb: () -> P?): P? {
         dynamicPath += seg
         return cb()
     }
+
+    protected fun inPathSegment(seg: Keyword, cb: () -> P?): P? = inPathSegment(seg.value, cb)
 
     open fun visitTrueSchema(schema: TrueSchema): P? = visitChildren(schema)
     open fun visitFalseSchema(schema: FalseSchema): P? = visitChildren(schema)
@@ -101,15 +103,13 @@ abstract class SchemaVisitor<P> {
     open fun visitEnumSchema(schema: EnumSchema): P? = visitChildren(schema)
     open fun visitTypeSchema(schema: TypeSchema): P? = visitChildren(schema)
     open fun visitMultiTypeSchema(schema: MultiTypeSchema): P? = visitChildren(schema)
-    open fun doVisitPropertySchema(property: String, schema: Schema): P? = visitChildren(schema)
-    fun visitPropertySchema(property: String, schema: Schema): P? = inPathSegment("properties/" + property) { doVisitPropertySchema(property, schema) }
+    open fun visitPropertySchema(property: String, schema: Schema): P? = inPathSegment("properties/" + property) { visitChildren(schema) }
     open fun visitPatternPropertySchema(pattern: Regexp, schema: Schema): P? = visitChildren(schema)
     open fun visitPatternSchema(schema: PatternSchema): P? = visitChildren(schema)
     open fun visitNotSchema(schema: NotSchema): P? = visitChildren(schema)
     open fun visitRequiredSchema(schema: RequiredSchema): P? = visitChildren(schema)
     open fun visitMaximumSchema(schema: MaximumSchema): P? = visitChildren(schema)
-    open fun doVisitMinimumSchema(schema: MinimumSchema): P? = visitChildren(schema)
-    fun visitMinimumSchema(schema: MinimumSchema): P? = inPathSegment("minimum") { doVisitMinimumSchema(schema) }
+    open fun visitMinimumSchema(schema: MinimumSchema): P? = inPathSegment("minimum") { visitChildren(schema) }
     open fun visitExclusiveMaximumSchema(schema: ExclusiveMaximumSchema): P? = visitChildren(schema)
     open fun visitExclusiveMinimumSchema(schema: ExclusiveMinimumSchema): P? = visitChildren(schema)
     open fun visitMultipleOfSchema(schema: MultipleOfSchema): P? = visitChildren(schema)

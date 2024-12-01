@@ -19,7 +19,7 @@ class NumberValidationTest {
         val subject = MaximumSchema(20.0, UnknownSource)
         val instance = JsonNumber(21)
         val actual = Validator.forSchema(subject).validate(instance)!!
-        assertEquals(MaximumValidationFailure(subject, instance), actual)
+        assertEquals(MaximumValidationFailure(subject, instance, JsonPointer("maximum")), actual)
         assertEquals("21 is greater than maximum 20.0", actual.message)
     }
 }

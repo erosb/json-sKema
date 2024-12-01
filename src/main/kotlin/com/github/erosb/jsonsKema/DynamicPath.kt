@@ -11,7 +11,7 @@ class DynamicPath {
         return rval
     }
 
-    fun asPointer(): JsonPointer = JsonPointer(path)
+    fun asPointer(): JsonPointer = JsonPointer(path.toList())
 
 
 }

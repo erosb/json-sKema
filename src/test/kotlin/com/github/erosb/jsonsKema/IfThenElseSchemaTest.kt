@@ -16,7 +16,7 @@ class IfThenElseSchemaTest {
     }
 
     @Test
-    fun `subschemas contain onyl 2 clauses`() {
+    fun `subschemas contain only 2 clauses`() {
         val subject = IfThenElseSchema(ifSchema, thenSchema, null, UnknownSource)
         assertEquals(listOf(ifSchema, thenSchema), subject.subschemas())
     }

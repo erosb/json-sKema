@@ -10,8 +10,6 @@ abstract class SchemaVisitor<P> {
 
     private val dynamicScope = mutableListOf<CompositeSchema>()
 
-    protected var dynamicPath: JsonPointer = JsonPointer()
-
     private fun findSubschemaByDynamicAnchor(scope: CompositeSchema, lookupValue: String): Schema? {
         if (scope.dynamicAnchor == lookupValue) {
             return scope
@@ -83,13 +81,14 @@ abstract class SchemaVisitor<P> {
         return result
     }
 
+
+    private var dynamicPath: DynamicPath = DynamicPath()
+
     protected fun inPathSegment(seg: String, cb: () -> P?): P? {
-        val orig = dynamicPath
-        dynamicPath += seg
-        val rval = cb()
-        dynamicPath = orig
-        return rval
+        return dynamicPath.inSegmentPath(seg, cb)
     }
+
+    protected fun dynamicPath(): JsonPointer = dynamicPath.asPointer()
 
     protected fun inPathSegment(seg: Keyword, cb: () -> P?): P? = inPathSegment(seg.value, cb)
 

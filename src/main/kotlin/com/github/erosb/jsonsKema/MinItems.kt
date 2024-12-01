@@ -10,5 +10,6 @@ internal val minItemsLoader: KeywordLoader = { ctx ->
 
 data class MinItemsValidationFailure(
     override val schema: MinItemsSchema,
-    override val instance: IJsonArray<*>
+    override val instance: IJsonArray<*>,
+    val dynamicPath: JsonPointer
 ) : ValidationFailure("expected minimum items: ${schema.minItems}, found only ${instance.length()}", schema, instance, Keyword.MIN_ITEMS)

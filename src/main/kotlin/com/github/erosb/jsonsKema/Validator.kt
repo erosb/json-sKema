@@ -56,7 +56,7 @@ data class ValidatorConfig @JvmOverloads constructor(
         class ValidatorConfigBuilder {
 
             var readWriteContext: ReadWriteContext = ReadWriteContext.NONE
-            var validateFormat: FormatValidationPolicy = FormatValidationPolicy.DEPENDS_ON_VOCABULARY;
+            var validateFormat: FormatValidationPolicy = FormatValidationPolicy.DEPENDS_ON_VOCABULARY
             val additionalFormatValidators: MutableMap<String, FormatValidator> = mutableMapOf()
 
             fun readWriteContext(readWriteContext: ReadWriteContext): ValidatorConfigBuilder {
@@ -217,7 +217,7 @@ private class DefaultValidator(
                 actualType,
                 this.schema,
                 instance,
-                dynamicPath
+                dynamicPath()
             )
         }
     }
@@ -406,19 +406,23 @@ private class DefaultValidator(
         }
     }
 
-    override fun visitMinItemsSchema(schema: MinItemsSchema): ValidationFailure? = instance.maybeArray { array ->
-        if (array.length() < schema.minItems.toInt()) {
-            MinItemsValidationFailure(schema, array)
-        } else {
-            null
+    override fun visitMinItemsSchema(schema: MinItemsSchema): ValidationFailure? = inPathSegment(Keyword.MIN_ITEMS) {
+        instance.maybeArray { array ->
+            if (array.length() < schema.minItems.toInt()) {
+                MinItemsValidationFailure(schema, array, dynamicPath())
+            } else {
+                null
+            }
         }
     }
 
-    override fun visitMaxItemsSchema(schema: MaxItemsSchema): ValidationFailure? = instance.maybeArray { array ->
-        if (array.length() > schema.maxItems.toInt()) {
-            MaxItemsValidationFailure(schema, array)
-        } else {
-            null
+    override fun visitMaxItemsSchema(schema: MaxItemsSchema): ValidationFailure? = inPathSegment(Keyword.MAX_ITEMS) {
+        instance.maybeArray { array ->
+            if (array.length() > schema.maxItems.toInt()) {
+                MaxItemsValidationFailure(schema, array, dynamicPath())
+            } else {
+                null
+            }
         }
     }
 
@@ -465,7 +469,7 @@ private class DefaultValidator(
     override fun visitMaximumSchema(schema: MaximumSchema): ValidationFailure? = inPathSegment(Keyword.MAXIMUM) {
         instance.maybeNumber {
             if (it.value.toDouble() > schema.maximum.toDouble()) {
-                MaximumValidationFailure(schema, it, dynamicPath)
+                MaximumValidationFailure(schema, it, dynamicPath())
             } else {
                 null
             }
@@ -476,7 +480,7 @@ private class DefaultValidator(
     override fun visitMinimumSchema(schema: MinimumSchema): ValidationFailure? = inPathSegment(Keyword.MINIMUM) {
         instance.maybeNumber {
             if (it.value.toDouble() < schema.minimum.toDouble()) {
-                MinimumValidationFailure(schema, it, dynamicPath)
+                MinimumValidationFailure(schema, it, dynamicPath())
             } else {
                 null
             }
@@ -518,7 +522,7 @@ private class DefaultValidator(
                     if (occurrences.containsKey(elem)) {
                         return@maybeArray UniqueItemsValidationFailure(
                             listOf(occurrences[elem]!!, index), schema,
-                            array, dynamicPath
+                            array, dynamicPath()
                         )
                     }
                     occurrences[elem] = index
@@ -543,7 +547,7 @@ private class DefaultValidator(
                 }
                 null
             } else {
-                ItemsValidationFailure(failures.toMap(), schema, array, dynamicPath)
+                ItemsValidationFailure(failures.toMap(), schema, array, dynamicPath())
             }
         }
     }
@@ -571,7 +575,7 @@ private class DefaultValidator(
         instance.maybeArray { array ->
             if (array.length() == 0) {
                 val minContainsIsZero = schema.minContains == 0
-                return@maybeArray if (minContainsIsZero) null else ContainsValidationFailure("no array items are valid against \"contains\" subschema, expected minimum is ${schema.minContains}", schema, array, dynamicPath)
+                return@maybeArray if (minContainsIsZero) null else ContainsValidationFailure("no array items are valid against \"contains\" subschema, expected minimum is ${schema.minContains}", schema, array, dynamicPath())
             }
             var successCount = 0
             for (idx in 0 until array.length()) {
@@ -585,14 +589,14 @@ private class DefaultValidator(
                 }
             }
             if (schema.maxContains != null && schema.maxContains.toInt() < successCount) {
-                return@maybeArray ContainsValidationFailure("$successCount array items are valid against \"contains\" subschema, expected maximum is 1", schema, array, dynamicPath)
+                return@maybeArray ContainsValidationFailure("$successCount array items are valid against \"contains\" subschema, expected maximum is 1", schema, array, dynamicPath())
             }
             if (successCount < schema.minContains.toInt()) {
                 val prefix = if (successCount == 0) "no array items are" else if (successCount == 1) "only 1 array item is" else "only $successCount array items are"
-                return@maybeArray ContainsValidationFailure("$prefix valid against \"contains\" subschema, expected minimum is ${schema.minContains.toInt()}", schema, array, dynamicPath)
+                return@maybeArray ContainsValidationFailure("$prefix valid against \"contains\" subschema, expected minimum is ${schema.minContains.toInt()}", schema, array, dynamicPath())
             }
             return@maybeArray if (schema.maxContains == null && schema.minContains == 1 && successCount == 0) {
-                ContainsValidationFailure("expected at least 1 array item to be valid against \"contains\" subschema, found 0", schema, array, dynamicPath)
+                ContainsValidationFailure("expected at least 1 array item to be valid against \"contains\" subschema, found 0", schema, array, dynamicPath())
             } else {
                 null
             }

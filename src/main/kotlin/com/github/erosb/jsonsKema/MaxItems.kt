@@ -9,5 +9,6 @@ internal val maxItemsLoader: KeywordLoader = { ctx ->
 
 data class MaxItemsValidationFailure(
     override val schema: MaxItemsSchema,
-    override val instance: IJsonArray<*>
+    override val instance: IJsonArray<*>,
+    val dynamicPath: JsonPointer
 ) : ValidationFailure("expected maximum items: ${schema.maxItems}, found ${instance.length()}", schema, instance, Keyword.MAX_ITEMS)

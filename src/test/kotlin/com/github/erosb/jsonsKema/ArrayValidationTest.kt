@@ -133,4 +133,21 @@ class ArrayValidationTest {
             assertEquals(expected, actual)
         }
     }
+
+    @Test
+    fun minMaxItemsValidation() {
+        val schema = SchemaLoader(JsonParser("""
+            {
+                "minItems": 3,
+                "maxItems": 1
+            }
+        """.trimIndent())())()
+
+        val actual = Validator.forSchema(schema).validate(JsonParser("""
+            [1, 2]
+        """.trimIndent())())!!
+
+        assertEquals(JsonPointer("maxItems"), (actual.causes.filter { it.keyword == Keyword.MAX_ITEMS }.first() as MaxItemsValidationFailure).dynamicPath)
+        assertEquals(JsonPointer("minItems"), (actual.causes.filter { it.keyword == Keyword.MIN_ITEMS }.first() as MinItemsValidationFailure).dynamicPath)
+    }
 }

@@ -729,14 +729,14 @@ private class DefaultValidator(
         return if (config.readWriteContext != ReadWriteContext.WRITE)
             null
         else
-            ReadOnlyValidationFailure(readOnlySchema, instance)
+            ReadOnlyValidationFailure(readOnlySchema, instance, dynamicPath() + Keyword.READ_ONLY)
     }
 
     override fun visitWriteOnlySchema(writeOnlySchema: WriteOnlySchema): ValidationFailure? {
         return if (config.readWriteContext != ReadWriteContext.READ)
             null
         else
-            WriteOnlyValidationFailure(writeOnlySchema, instance)
+            WriteOnlyValidationFailure(writeOnlySchema, instance, dynamicPath() + Keyword.WRITE_ONLY)
     }
 
     override fun accumulate(parent: Schema, previous: ValidationFailure?, current: ValidationFailure?): ValidationFailure? {

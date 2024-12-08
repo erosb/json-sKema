@@ -16,6 +16,7 @@ internal val writeOnlyLoader: KeywordLoader = {
 data class WriteOnlyValidationFailure(
     override val schema: Schema,
     override val instance: IJsonValue,
+    val dynamicPath: JsonPointer
 ) : ValidationFailure(
     message = "write-only property \"${instance.location.pointer.segments.last()}\" should not be present in read context",
     schema = schema,

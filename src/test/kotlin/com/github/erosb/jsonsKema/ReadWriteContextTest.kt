@@ -27,12 +27,12 @@ class ReadWriteContextTest {
            {
             "id": 3
            } 
-        """)())
+        """)()) as ReadOnlyValidationFailure
 
-        println(actual?.toJSON())
-        assertEquals("read-only property \"id\" should not be present in write context", actual!!.message)
+        println(actual.toJSON())
+        assertEquals("read-only property \"id\" should not be present in write context", actual.message)
+        assertEquals("#/properties/id/readOnly", actual.dynamicPath.toString())
     }
-
 
     @Test
     fun `validation in read context succeeds on readonly prop`() {
@@ -81,10 +81,11 @@ class ReadWriteContextTest {
            {
             "id": 3
            } 
-        """)())
+        """)()) as WriteOnlyValidationFailure
 
-        println(actual?.toJSON())
-        assertEquals("write-only property \"id\" should not be present in read context", actual!!.message)
+        println(actual.toJSON())
+        assertEquals("write-only property \"id\" should not be present in read context", actual.message)
+        assertEquals("#/properties/id/writeOnly", actual.dynamicPath.toString())
     }
 
     @Test

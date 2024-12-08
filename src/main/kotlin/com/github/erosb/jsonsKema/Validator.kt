@@ -445,7 +445,7 @@ private class DefaultValidator(
     override fun visitNotSchema(schema: NotSchema): ValidationFailure? = if (schema.negatedSchema.accept(this) != null) {
         null
     } else {
-        NotValidationFailure(schema, instance)
+        NotValidationFailure(schema, instance, dynamicPath() + Keyword.NOT)
     }
 
     override fun visitEnumSchema(schema: EnumSchema): ValidationFailure? =
@@ -604,30 +604,30 @@ private class DefaultValidator(
         }
     }
 
-    override fun visitAllOfSchema(schema: AllOfSchema): ValidationFailure? {
+    override fun visitAllOfSchema(schema: AllOfSchema): ValidationFailure? = inPathSegment(Keyword.ALL_OF) {
         val subFailures = schema.subschemas.map { subschema -> subschema.accept(this) }.filterNotNull()
-        return if (subFailures.isNotEmpty()) {
-            AllOfValidationFailure(schema = schema, instance = instance, causes = subFailures.toSet())
+        if (subFailures.isNotEmpty()) {
+            AllOfValidationFailure(schema = schema, instance = instance, causes = subFailures.toSet(), dynamicPath())
         } else {
             null
         }
     }
 
-    override fun visitAnyOfSchema(schema: AnyOfSchema): ValidationFailure? {
+    override fun visitAnyOfSchema(schema: AnyOfSchema): ValidationFailure? = inPathSegment(Keyword.ANY_OF) {
         val subFailures = schema.subschemas.map { subschema -> subschema.accept(this) }.filterNotNull()
-        return if (subFailures.size == schema.subschemas.size) {
-            AnyOfValidationFailure(schema = schema, instance = instance, causes = subFailures.toSet())
+        if (subFailures.size == schema.subschemas.size) {
+            AnyOfValidationFailure(schema = schema, instance = instance, causes = subFailures.toSet(), dynamicPath())
         } else {
             null
         }
     }
 
-    override fun visitOneOfSchema(schema: OneOfSchema): ValidationFailure? {
+    override fun visitOneOfSchema(schema: OneOfSchema): ValidationFailure? = inPathSegment(Keyword.ONE_OF) {
         val subFailures = schema.subschemas.map { subschema -> subschema.accept(this) }.filterNotNull()
-        return if ((schema.subschemas.size - subFailures.size) == 1) {
+        if ((schema.subschemas.size - subFailures.size) == 1) {
             null
         } else {
-            OneOfValidationFailure(schema = schema, instance = instance, causes = subFailures.toSet())
+            OneOfValidationFailure(schema = schema, instance = instance, causes = subFailures.toSet(), dynamicPath())
         }
     }
 

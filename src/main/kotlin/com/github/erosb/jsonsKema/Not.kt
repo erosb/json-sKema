@@ -11,5 +11,6 @@ internal val notSchemaLoader: KeywordLoader = { ctx ->
 
 data class NotValidationFailure(
     override val schema: Schema,
-    override val instance: IJsonValue
+    override val instance: IJsonValue,
+    val dynamicPath: JsonPointer
 ) : ValidationFailure("negated subschema did not fail", schema, instance, Keyword.NOT)

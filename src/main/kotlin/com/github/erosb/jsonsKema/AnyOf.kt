@@ -16,7 +16,8 @@ internal val anyOfLoader: KeywordLoader = { ctx ->
 data class AnyOfValidationFailure(
     override val schema: AnyOfSchema,
     override val instance: IJsonValue,
-    override val causes: Set<ValidationFailure>
+    override val causes: Set<ValidationFailure>,
+    val dynamicPath: JsonPointer
 ) : ValidationFailure(
     message = "no subschema out of ${schema.subschemas.size} matched",
     schema = schema,

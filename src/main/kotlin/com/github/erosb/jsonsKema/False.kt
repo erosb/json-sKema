@@ -6,6 +6,7 @@ data class FalseSchema(override val location: SourceLocation) : Schema(location)
 
 data class FalseValidationFailure(
     override val schema: FalseSchema,
-    override val instance: IJsonValue
+    override val instance: IJsonValue,
+    val dynamicPath: JsonPointer
 ) : ValidationFailure("false schema always fails", schema, instance, Keyword.FALSE)
 

@@ -20,4 +20,23 @@ class IfThenElseSchemaTest {
         val subject = IfThenElseSchema(ifSchema, thenSchema, null, UnknownSource)
         assertEquals(listOf(ifSchema, thenSchema), subject.subschemas())
     }
+
+    @Test
+    fun `dynamic path for then`() {
+        val subject = IfThenElseSchema(ifSchema, thenSchema, elseSchema, UnknownSource)
+
+        val actual = Validator.forSchema(subject).validate(JsonParser("null")()) as FalseValidationFailure
+
+        assertEquals(JsonPointer("then", "false"), actual.dynamicPath)
+    }
+
+
+    @Test
+    fun `dynamic path for else`() {
+        val subject = IfThenElseSchema(FalseSchema(UnknownSource), thenSchema, elseSchema, UnknownSource)
+
+        val actual = Validator.forSchema(subject).validate(JsonParser("4")()) as ConstValidationFailure
+
+        assertEquals(JsonPointer("else", "const"), actual.dynamicPath)
+    }
 }

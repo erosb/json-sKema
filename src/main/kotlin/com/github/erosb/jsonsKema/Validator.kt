@@ -276,12 +276,12 @@ private class DefaultValidator(
         }
     }
 
-    override fun visitConstSchema(schema: ConstSchema): ValidationFailure? {
+    override fun visitConstSchema(schema: ConstSchema): ValidationFailure? = inPathSegment(Keyword.CONST) {
         val isValid = schema.constant == instance
-        return if (isValid) {
+        if (isValid) {
             null
         } else {
-            ConstValidationFailure(schema, instance)
+            ConstValidationFailure(schema, instance, dynamicPath())
         }
     }
 
@@ -342,8 +342,8 @@ private class DefaultValidator(
         }
     }
 
-    override fun visitPropertyNamesSchema(propertyNamesSchema: PropertyNamesSchema): ValidationFailure? {
-        return instance.maybeObject { obj ->
+    override fun visitPropertyNamesSchema(propertyNamesSchema: PropertyNamesSchema): ValidationFailure? = inPathSegment(Keyword.PROPERTY_NAMES) {
+        instance.maybeObject { obj ->
             val failures: Map<IJsonString, ValidationFailure> = obj.properties.keys.map {
                 it to withOtherInstance(it) {
                     propertyNamesSchema.propertyNamesSchema.accept(this)
@@ -353,7 +353,7 @@ private class DefaultValidator(
                 .map { it as Pair<IJsonString, ValidationFailure> }
                 .toMap()
             return@maybeObject if (failures.isNotEmpty()) {
-                PropertyNamesValidationFailure(schema = propertyNamesSchema, instance = obj, causesByProperties = failures)
+                PropertyNamesValidationFailure(schema = propertyNamesSchema, instance = obj, causesByProperties = failures, dynamicPath())
             } else {
                 null
             }
@@ -395,11 +395,11 @@ private class DefaultValidator(
             endResult
         }
 
-    override fun visitMaxLengthSchema(schema: MaxLengthSchema): ValidationFailure? {
-        return instance.maybeString {
+    override fun visitMaxLengthSchema(schema: MaxLengthSchema): ValidationFailure? = inPathSegment(Keyword.MAX_LENGTH) {
+        instance.maybeString {
             val length = it.value.codePointCount(0, it.value.length)
             if (length > schema.maxLength) {
-                MaxLengthValidationFailure(schema, it)
+                MaxLengthValidationFailure(schema, it, dynamicPath())
             } else {
                 null
             }
@@ -511,8 +511,9 @@ private class DefaultValidator(
         }
     }
 
-    override fun visitFalseSchema(schema: FalseSchema): ValidationFailure =
-        FalseValidationFailure(schema, instance)
+    override fun visitFalseSchema(schema: FalseSchema): ValidationFailure? = inPathSegment(Keyword.FALSE) {
+        FalseValidationFailure(schema, instance, dynamicPath())
+    }
 
     override fun visitUniqueItemsSchema(schema: UniqueItemsSchema): ValidationFailure? = inPathSegment(Keyword.UNIQUE_ITEMS) {
         if (schema.unique) {
@@ -631,11 +632,15 @@ private class DefaultValidator(
     }
 
     override fun visitIfThenElseSchema(schema: IfThenElseSchema): ValidationFailure? {
-        val ifFailure = schema.ifSchema.accept(this)
+        val ifFailure = inPathSegment(Keyword.IF) { schema.ifSchema.accept(this) }
         return if (ifFailure == null) {
-            schema.thenSchema?.accept(this)
+            inPathSegment(Keyword.THEN) {
+                schema.thenSchema?.accept(this)
+            }
         } else {
-            schema.elseSchema?.accept(this)
+            inPathSegment(Keyword.ELSE) {
+                schema.elseSchema?.accept(this)
+            }
         }
     }
 

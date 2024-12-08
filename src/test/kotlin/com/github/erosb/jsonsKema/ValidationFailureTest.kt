@@ -105,7 +105,7 @@ class ValidationFailureTest {
     @Test
     fun flattenRecursive() {
         val falseSubschema = FalseSchema(UnknownSource)
-        val falseFailure = FalseValidationFailure(falseSubschema, JsonNull(UnknownSource))
+        val falseFailure = FalseValidationFailure(falseSubschema, JsonNull(UnknownSource), JsonPointer("false"))
         val subject = AggregatingValidationFailure(
             CompositeSchema(
                 subschemas = setOf(

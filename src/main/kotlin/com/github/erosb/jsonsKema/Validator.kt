@@ -207,17 +207,17 @@ private class DefaultValidator(
 
     inner class TypeValidatingVisitor(private val schema: TypeSchema) : AbstractTypeValidatingVisitor() {
 
-        override fun checkType(actualType: String): ValidationFailure? = inPathSegment(Keyword.TYPE) {
+        override fun checkType(actualType: String): ValidationFailure? {
             if (actualType == "integer" && schema.type.value == "number") {
-                return@inPathSegment null
+                return null
             }
-            return@inPathSegment if (schema.type.value == actualType) {
+            return if (schema.type.value == actualType) {
                 null
             } else TypeValidationFailure(
                 actualType,
                 this.schema,
                 instance,
-                dynamicPath()
+                dynamicPath() + Keyword.TYPE
             )
         }
     }
@@ -234,7 +234,8 @@ private class DefaultValidator(
             } else MultiTypeValidationFailure(
                 actualType,
                 this.schema,
-                instance
+                instance,
+                dynamicPath() + Keyword.TYPE
             )
         }
     }
@@ -297,7 +298,7 @@ private class DefaultValidator(
         return instance.maybeString {
             val length = it.value.codePointCount(0, it.value.length)
             if (length < schema.minLength) {
-                MinLengthValidationFailure(schema, it)
+                MinLengthValidationFailure(schema, it, dynamicPath() + Keyword.MIN_LENGTH)
             } else {
                 null
             }
@@ -336,9 +337,9 @@ private class DefaultValidator(
         failures.firstOrNull()
     }
 
-    override fun visitPatternSchema(schema: PatternSchema): ValidationFailure? {
-        return instance.maybeString { str ->
-            schema.pattern.patternMatchingFailure(str.value)?.let { PatternValidationFailure(schema, str) }
+    override fun visitPatternSchema(schema: PatternSchema): ValidationFailure? = instance.maybeString { str ->
+        schema.pattern.patternMatchingFailure(str.value)?.let {
+            PatternValidationFailure(schema, str, dynamicPath() + Keyword.PATTERN)
         }
     }
 
@@ -605,7 +606,7 @@ private class DefaultValidator(
     }
 
     override fun visitAllOfSchema(schema: AllOfSchema): ValidationFailure? = inPathSegment(Keyword.ALL_OF) {
-        val subFailures = schema.subschemas.map { subschema -> subschema.accept(this) }.filterNotNull()
+        val subFailures = collectSubschemaFailures(schema)
         if (subFailures.isNotEmpty()) {
             AllOfValidationFailure(schema = schema, instance = instance, causes = subFailures.toSet(), dynamicPath())
         } else {
@@ -613,8 +614,13 @@ private class DefaultValidator(
         }
     }
 
+    private fun collectSubschemaFailures(schema: Schema) =
+        schema.subschemas().mapIndexed { index, subschema ->
+            inPathSegment(index.toString()) { subschema.accept(this) }
+        }.filterNotNull()
+
     override fun visitAnyOfSchema(schema: AnyOfSchema): ValidationFailure? = inPathSegment(Keyword.ANY_OF) {
-        val subFailures = schema.subschemas.map { subschema -> subschema.accept(this) }.filterNotNull()
+        val subFailures = collectSubschemaFailures(schema)
         if (subFailures.size == schema.subschemas.size) {
             AnyOfValidationFailure(schema = schema, instance = instance, causes = subFailures.toSet(), dynamicPath())
         } else {
@@ -623,7 +629,7 @@ private class DefaultValidator(
     }
 
     override fun visitOneOfSchema(schema: OneOfSchema): ValidationFailure? = inPathSegment(Keyword.ONE_OF) {
-        val subFailures = schema.subschemas.map { subschema -> subschema.accept(this) }.filterNotNull()
+        val subFailures = collectSubschemaFailures(schema)
         if ((schema.subschemas.size - subFailures.size) == 1) {
             null
         } else {

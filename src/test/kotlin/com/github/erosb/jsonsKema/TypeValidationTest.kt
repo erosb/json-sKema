@@ -2,6 +2,7 @@ package com.github.erosb.jsonsKema
 
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
@@ -61,7 +62,7 @@ class TypeValidationTest {
         )()
         val actual = Validator.forSchema(SchemaLoader(schema)()).validate(instance) as TypeValidationFailure
 
-        Assertions.assertEquals(
+        assertEquals(
             JsonParser(
                 """
                {
@@ -75,5 +76,16 @@ class TypeValidationTest {
             actual.toJSON()
         )
         assertEquals(JsonPointer("type"), actual.dynamicPath)
+    }
+
+    @Test
+    fun multiTypeDynamicPathTest() {
+        val schema = SchemaLoader(JsonParser("""
+            { "type": [ "null", "integer" ]}
+        """.trimIndent())())()
+
+        val actual = Validator.forSchema(schema).validate(JsonNumber(2.2, UnknownSource)) as MultiTypeValidationFailure
+
+        assertEquals("#/type", actual.dynamicPath.toString())
     }
 }

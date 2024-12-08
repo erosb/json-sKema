@@ -29,10 +29,10 @@ class ApplicatorValidationTest {
         println(allOfFailure)
         assertEquals("#/allOf", allOfFailure.dynamicPath.toString())
         val anyOfFailure = allOfFailure.causes.single() as AnyOfValidationFailure
-        assertEquals("#/allOf/anyOf", anyOfFailure.dynamicPath.toString())
+        assertEquals("#/allOf/0/anyOf", anyOfFailure.dynamicPath.toString())
         val oneOfFailure = anyOfFailure.causes.single() as OneOfValidationFailure
-        assertEquals("#/allOf/anyOf/oneOf", oneOfFailure.dynamicPath.toString())
+        assertEquals("#/allOf/0/anyOf/0/oneOf", oneOfFailure.dynamicPath.toString())
         val notFailure = oneOfFailure.causes.single() as NotValidationFailure
-        assertEquals("#/allOf/anyOf/oneOf/not", notFailure.dynamicPath.toString())
+        assertEquals("#/allOf/0/anyOf/0/oneOf/0/not", notFailure.dynamicPath.toString())
     }
 }

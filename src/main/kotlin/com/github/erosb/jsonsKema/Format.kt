@@ -175,7 +175,7 @@ internal val formatLoader: KeywordLoader = { ctx ->
 }
 data class FormatValidationFailure(
     override val schema: FormatSchema,
-    override val instance: IJsonValue
+    override val instance: IJsonValue,
 ) : ValidationFailure(
     message = "instance does not match format '${schema.format}'",
     keyword = Keyword.FORMAT,

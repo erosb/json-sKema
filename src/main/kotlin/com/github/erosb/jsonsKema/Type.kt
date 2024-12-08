@@ -27,7 +27,8 @@ data class TypeValidationFailure(
 data class MultiTypeValidationFailure(
     val actualInstanceType: String,
     override val schema: MultiTypeSchema,
-    override val instance: IJsonValue
+    override val instance: IJsonValue,
+    val dynamicPath: JsonPointer
 ) : ValidationFailure(
     "expected type: one of ${schema.types.elements.joinToString { ", " }}, actual: $actualInstanceType",
     schema,

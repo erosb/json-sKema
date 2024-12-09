@@ -429,7 +429,7 @@ private class DefaultValidator(
 
     override fun visitMinPropertiesSchema(schema: MinPropertiesSchema): ValidationFailure? = instance.maybeObject { obj ->
         if (obj.properties.size < schema.minProperties.toInt()) {
-            MinPropertiesValidationFailure(schema, obj)
+            MinPropertiesValidationFailure(schema, obj, dynamicPath() + Keyword.MIN_PROPERTIES)
         } else {
             null
         }
@@ -437,7 +437,7 @@ private class DefaultValidator(
 
     override fun visitMaxPropertiesSchema(schema: MaxPropertiesSchema): ValidationFailure? = instance.maybeObject { obj ->
         if (obj.properties.size > schema.maxProperties.toInt()) {
-            MaxPropertiesValidationFailure(schema, obj)
+            MaxPropertiesValidationFailure(schema, obj, dynamicPath() + Keyword.MAX_PROPERTIES)
         } else {
             null
         }
@@ -490,7 +490,7 @@ private class DefaultValidator(
 
     override fun visitExclusiveMaximumSchema(schema: ExclusiveMaximumSchema): ValidationFailure? = instance.maybeNumber {
         if (it.value.toDouble() >= schema.maximum.toDouble()) {
-            ExclusiveMaximumValidationFailure(schema, it)
+            ExclusiveMaximumValidationFailure(schema, it, dynamicPath() + Keyword.EXCLUSIVE_MAXIMUM)
         } else {
             null
         }
@@ -498,7 +498,7 @@ private class DefaultValidator(
 
     override fun visitExclusiveMinimumSchema(schema: ExclusiveMinimumSchema): ValidationFailure? = instance.maybeNumber {
         if (it.value.toDouble() <= schema.minimum.toDouble()) {
-            ExclusiveMinimumValidationFailure(schema, it)
+            ExclusiveMinimumValidationFailure(schema, it, dynamicPath() + Keyword.EXCLUSIVE_MINIMUM)
         } else {
             null
         }
@@ -508,7 +508,7 @@ private class DefaultValidator(
         if (getAsBigDecimal(it.value).remainder(getAsBigDecimal(schema.denominator)).compareTo(BigDecimal.ZERO) == 0) {
             null
         } else {
-            MultipleOfValidationFailure(schema, it)
+            MultipleOfValidationFailure(schema, it, dynamicPath() + Keyword.MULTIPLE_OF)
         }
     }
 

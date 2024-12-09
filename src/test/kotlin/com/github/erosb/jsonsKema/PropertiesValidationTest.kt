@@ -90,4 +90,23 @@ class PropertiesValidationTest {
 
         assertEquals(expected, actual)
     }
+
+    @Test
+    fun `min and maxProperties dynamicPath`() {
+        val schema = SchemaLoader(JsonParser("""
+            {
+                "minProperties": 3,
+                "maxProperties": 1
+            }
+        """.trimIndent())())()
+
+        val actual = Validator.forSchema(schema).validate(JsonParser("""
+            {"x": null, "y": 1}
+        """.trimIndent())()) as AggregatingValidationFailure
+
+        val minPropFailure = actual.causes.filterIsInstance<MinPropertiesValidationFailure>().single()
+        assertEquals("#/minProperties", minPropFailure.dynamicPath.toString())
+        val maxPropFailure = actual.causes.filterIsInstance<MaxPropertiesValidationFailure>().single()
+        assertEquals("#/maxProperties", maxPropFailure.dynamicPath.toString())
+    }
 }

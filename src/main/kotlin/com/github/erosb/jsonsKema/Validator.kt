@@ -453,7 +453,7 @@ private class DefaultValidator(
         if (schema.potentialValues.any { it == instance }) {
             null
         } else {
-            EnumValidationFailure(schema, instance)
+            EnumValidationFailure(schema, instance, dynamicPath() + Keyword.ENUM)
         }
 
     override fun visitRequiredSchema(schema: RequiredSchema): ValidationFailure? =
@@ -463,7 +463,7 @@ private class DefaultValidator(
             if (missingProps.isEmpty()) {
                 null
             } else {
-                RequiredValidationFailure(missingProps, schema, it)
+                RequiredValidationFailure(missingProps, schema, it, dynamicPath() + Keyword.REQUIRED)
             }
         }
 
@@ -675,7 +675,7 @@ private class DefaultValidator(
         null
     }
 
-    override fun visitUnevaluatedItemsSchema(schema: UnevaluatedItemsSchema): ValidationFailure? {
+    override fun visitUnevaluatedItemsSchema(schema: UnevaluatedItemsSchema): ValidationFailure? = inPathSegment(Keyword.UNEVALUATED_ITEMS) {
         val instance = this.instance
         if (instance is MarkableJsonArray<*>) {
             val failures = mutableMapOf<Int, ValidationFailure>()
@@ -687,12 +687,10 @@ private class DefaultValidator(
                 }
                 instance.markEvaluated(index)
             }
-            return if (failures.isNotEmpty()) {
-                UnevaluatedItemsValidationFailure(failures, schema, instance)
+            if (failures.isNotEmpty()) {
+                UnevaluatedItemsValidationFailure(failures, schema, instance, dynamicPath())
             } else null
-        } else {
-            return null
-        }
+        } else null
     }
 
     private val formatValidators: Map<String, FormatValidator> = mapOf(
@@ -714,7 +712,7 @@ private class DefaultValidator(
             null
         }
 
-    override fun visitUnevaluatedPropertiesSchema(schema: UnevaluatedPropertiesSchema): ValidationFailure? {
+    override fun visitUnevaluatedPropertiesSchema(schema: UnevaluatedPropertiesSchema): ValidationFailure? = inPathSegment(Keyword.UNEVALUATED_PROPERTIES) {
         val instance = this.instance
         if (instance is MarkableJsonObject<*, *>) {
             val failures = mutableMapOf<String, ValidationFailure>()
@@ -724,11 +722,10 @@ private class DefaultValidator(
                 }
                 instance.markEvaluated(propName)
             }
-            return if (failures.isNotEmpty()) {
-                UnevaluatedPropertiesValidationFailure(failures, schema, instance)
+            if (failures.isNotEmpty()) {
+                UnevaluatedPropertiesValidationFailure(failures, schema, instance, dynamicPath())
             } else null
-        }
-        return null
+        } else null
     }
 
     override fun visitReadOnlySchema(readOnlySchema: ReadOnlySchema): ValidationFailure? {

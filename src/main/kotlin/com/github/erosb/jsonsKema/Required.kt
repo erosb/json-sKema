@@ -14,7 +14,8 @@ internal val requiredLoader: KeywordLoader = { ctx ->
 data class RequiredValidationFailure(
     val missingProperties: List<String>,
     override val schema: RequiredSchema,
-    override val instance: IJsonObj
+    override val instance: IJsonObj,
+    val dynamicPath: JsonPointer
 ) : ValidationFailure(
     "required properties are missing: " + missingProperties.joinToString(),
     schema,

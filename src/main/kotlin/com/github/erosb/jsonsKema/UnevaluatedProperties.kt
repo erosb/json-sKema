@@ -12,7 +12,8 @@ data class UnevaluatedPropertiesSchema(
 data class UnevaluatedPropertiesValidationFailure(
     val propertyFailures: Map<String, ValidationFailure>,
     override val schema: UnevaluatedPropertiesSchema,
-    override val instance: IJsonObj
+    override val instance: IJsonObj,
+    val dynamicPath: JsonPointer
 ) : ValidationFailure(
     "object properties ${propertyFailures.keys.joinToString(", ")} failed to validate against \"unevaluatedProperties\" subschema",
     schema,

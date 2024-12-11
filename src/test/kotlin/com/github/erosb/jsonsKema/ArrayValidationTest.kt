@@ -150,4 +150,14 @@ class ArrayValidationTest {
         assertEquals(JsonPointer("maxItems"), (actual.causes.filter { it.keyword == Keyword.MAX_ITEMS }.first() as MaxItemsValidationFailure).dynamicPath)
         assertEquals(JsonPointer("minItems"), (actual.causes.filter { it.keyword == Keyword.MIN_ITEMS }.first() as MinItemsValidationFailure).dynamicPath)
     }
+
+    @Test
+    fun `prefixItems dynamicPath`() {
+        val schema = SchemaLoader("""
+            { "prefixItems": [{"type": "string"}]}
+        """.trimIndent())()
+
+        val actual = Validator.forSchema(schema).validate("[2]") as PrefixItemsValidationFailure
+        assertEquals("#/prefixItems", actual.dynamicPath.toString())
+    }
 }

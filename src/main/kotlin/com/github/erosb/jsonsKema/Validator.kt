@@ -554,22 +554,24 @@ private class DefaultValidator(
         }
     }
 
-    override fun visitPrefixItemsSchema(schema: PrefixItemsSchema): ValidationFailure? = instance.maybeArray { array ->
-        val failures = mutableMapOf<Int, ValidationFailure>()
-        for (index in 0 until Math.min(array.length(), schema.prefixSchemas.size)) {
-            val subschema = schema.prefixSchemas[index]
-            withOtherInstance(array.markEvaluated(index)) {
-                val failure = subschema.accept(this)
-                if (failure != null) {
-                    failures[index] = failure
-                    array.markUnevaluated(index)
+    override fun visitPrefixItemsSchema(schema: PrefixItemsSchema): ValidationFailure? = inPathSegment(Keyword.PREFIX_ITEMS) {
+        instance.maybeArray { array ->
+            val failures = mutableMapOf<Int, ValidationFailure>()
+            for (index in 0 until Math.min(array.length(), schema.prefixSchemas.size)) {
+                val subschema = schema.prefixSchemas[index]
+                withOtherInstance(array.markEvaluated(index)) {
+                    val failure = subschema.accept(this)
+                    if (failure != null) {
+                        failures[index] = failure
+                        array.markUnevaluated(index)
+                    }
                 }
             }
-        }
-        if (failures.isEmpty()) {
-            null
-        } else {
-            PrefixItemsValidationFailure(failures, schema, array)
+            if (failures.isEmpty()) {
+                null
+            } else {
+                PrefixItemsValidationFailure(failures, schema, array, dynamicPath())
+            }
         }
     }
 

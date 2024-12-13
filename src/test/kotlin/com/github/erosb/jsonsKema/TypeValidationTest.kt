@@ -68,6 +68,7 @@ class TypeValidationTest {
                {
                     "instanceRef": "#",
                     "schemaRef": "#/type",
+                    "dynamicPath": "#/type",
                     "message": "expected type: $typeKeywordValue, actual: $actualType",
                     "keyword": "type"
                } 

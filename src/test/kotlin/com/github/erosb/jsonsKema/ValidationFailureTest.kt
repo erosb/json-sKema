@@ -164,22 +164,26 @@ class ValidationFailureTest {
                   "instanceRef": "#",
                   "schemaRef": "#/additionalProperties",
                   "message": "multiple validation failures",
+                  "dynamicPath": "#/additionalProperties",
                   "causes": [
                     {
                       "instanceRef": "#/customerName",
                       "schemaRef": "#/additionalProperties",
+                      "dynamicPath": "#/additionalProperties/false",
                       "message": "false schema always fails",
                       "keyword": "false"
                     },
                     {
                       "instanceRef": "#/acquireDate",
                       "schemaRef": "#/additionalProperties",
+                      "dynamicPath": "#/additionalProperties/false",
                       "message": "false schema always fails",
                       "keyword": "false"
                     },
                     {
                       "instanceRef": "#",
                       "schemaRef": "#/required",
+                      "dynamicPath": "#/required",
                       "message": "required properties are missing: age",
                       "keyword": "required"
                     }

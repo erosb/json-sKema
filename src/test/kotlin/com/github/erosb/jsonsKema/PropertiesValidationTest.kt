@@ -55,35 +55,40 @@ class PropertiesValidationTest {
         val expected = JsonParser(
             """
             {
-                "instanceRef": "#",
-                "schemaRef": "#",
-                "message": "multiple validation failures",
-                "causes": [
-                    {
-                        "message": "expected type: array, actual: boolean",
-                        "schemaRef": "#/properties/arrProp/type",
-                        "instanceRef": "#/arrProp",
-                        "keyword": "type"
-                    },
-                    {
-                        "message": "expected type: object, actual: null",
-                        "schemaRef": "#/properties/objProp/type",
-                        "instanceRef": "#/objProp",
-                        "keyword": "type"
-                    },
-                    {
-                        "instanceRef": "#/strProp",
-                        "schemaRef": "#/properties/strProp/type",
-                        "message": "expected type: string, actual: integer",
-                        "keyword": "type"
-                    },
-                    {
-                      "instanceRef": "#/realObjProp/nestedProp",
-                      "schemaRef": "#/properties/realObjProp/properties/nestedProp/type",
-                      "message": "expected type: string, actual: integer",
-                      "keyword": "type"
-                    }
-                ]
+              "instanceRef": "#",
+              "schemaRef": "#",
+              "dynamicPath": "#",
+              "message": "multiple validation failures",
+              "causes": [
+                {
+                  "instanceRef": "#/arrProp",
+                  "schemaRef": "#/properties/arrProp/type",
+                  "dynamicPath": "#/properties/arrProp/type",
+                  "message": "expected type: array, actual: boolean",
+                  "keyword": "type"
+                },
+                {
+                  "instanceRef": "#/objProp",
+                  "schemaRef": "#/properties/objProp/type",
+                  "dynamicPath": "#/properties/objProp/type",
+                  "message": "expected type: object, actual: null",
+                  "keyword": "type"
+                },
+                {
+                  "instanceRef": "#/strProp",
+                  "schemaRef": "#/properties/strProp/type",
+                  "dynamicPath": "#/properties/strProp/type",
+                  "message": "expected type: string, actual: integer",
+                  "keyword": "type"
+                },
+                {
+                  "instanceRef": "#/realObjProp/nestedProp",
+                  "schemaRef": "#/properties/realObjProp/properties/nestedProp/type",
+                  "dynamicPath": "#/properties/realObjProp/properties/nestedProp/type",
+                  "message": "expected type: string, actual: integer",
+                  "keyword": "type"
+                }
+              ]
             }
         """
         )()

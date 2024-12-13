@@ -369,7 +369,7 @@ private class DefaultValidator(
         return rval
     }
 
-    override fun visitAdditionalPropertiesSchema(schema: AdditionalPropertiesSchema): ValidationFailure? =
+    override fun visitAdditionalPropertiesSchema(schema: AdditionalPropertiesSchema): ValidationFailure? = inPathSegment(Keyword.ADDITIONAL_PROPERTIES) {
         instance.maybeObject { obj ->
             var endResult: ValidationFailure? = null
             obj.properties
@@ -395,6 +395,7 @@ private class DefaultValidator(
                 }
             endResult
         }
+    }
 
     override fun visitMaxLengthSchema(schema: MaxLengthSchema): ValidationFailure? = inPathSegment(Keyword.MAX_LENGTH) {
         instance.maybeString {

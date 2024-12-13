@@ -4,7 +4,7 @@ data class PrefixItemsValidationFailure(
     val itemFailures: Map<Int, ValidationFailure>,
     override val schema: PrefixItemsSchema,
     override val instance: IJsonArray<*>,
-    val dynamicPath: JsonPointer
+    override val dynamicPath: JsonPointer
 ) : ValidationFailure(
     "array items ${itemFailures.keys.joinToString(", ")} failed to validate against \"prefixItems\" subschema",
     schema,

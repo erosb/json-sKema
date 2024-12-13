@@ -11,5 +11,5 @@ internal val enumLoader: KeywordLoader = { ctx ->
 class EnumValidationFailure(
     override val schema: EnumSchema,
     override val instance: IJsonValue,
-    val dynamicPath: JsonPointer
+    override val dynamicPath: JsonPointer
 ) : ValidationFailure("the instance is not equal to any enum values", schema, instance, Keyword.ENUM)

@@ -45,7 +45,8 @@ class ValidationFailureTest {
                 location = SourceLocation(1, 1, JsonPointer(listOf()), URI("http://example.com/my-json"))
             ),
             instance = JsonNumber(15, SourceLocation(70, 66, JsonPointer(listOf()), URI("http://example.com/my-json"))),
-            causes = setOf(maximumFailure(), minimumFailure())
+            causes = setOf(maximumFailure(), minimumFailure()),
+            dynamicPath = JsonPointer()
         )
 
         assertThat(subject.toString().replace("\t", "    ")).isEqualTo("""
@@ -84,7 +85,8 @@ class ValidationFailureTest {
                 location = SourceLocation(1, 1, JsonPointer(listOf()), URI("http://example.com/my-json"))
             ),
             instance = JsonNumber(15, SourceLocation(70, 66, JsonPointer(listOf()), URI("http://example.com/my-json"))),
-            causes = setOf(maximumFailure(), minimumFailure())
+            causes = setOf(maximumFailure(), minimumFailure()),
+            dynamicPath = JsonPointer()
         )
         val flattened: List<ValidationFailure> = subject.flatten()
 
@@ -120,8 +122,10 @@ class ValidationFailureTest {
                 instance = JsonNull(UnknownSource),
                 causes = setOf(
                     minimumFailure(), falseFailure
-                )
-            ))
+                ),
+                dynamicPath = JsonPointer()
+            )),
+            dynamicPath = JsonPointer()
         )
 
         assertThat(subject.flatten()).containsExactlyInAnyOrder(

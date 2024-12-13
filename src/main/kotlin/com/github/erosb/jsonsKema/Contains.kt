@@ -20,7 +20,7 @@ data class ContainsValidationFailure(
     override val message: String,
     override val schema: ContainsSchema,
     override val instance: IJsonArray<*>,
-    val dynamicPath: JsonPointer
+    override val dynamicPath: JsonPointer
 ) : ValidationFailure(
     message,
     schema,

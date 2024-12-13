@@ -19,7 +19,8 @@ internal val dependentSchemasLoader: KeywordLoader = { ctx ->
 data class DependentSchemasValidationFailure(
     override val schema: DependentSchemasSchema,
     override val instance: IJsonValue,
-    val causesByProperty: Map<String, ValidationFailure>
+    val causesByProperty: Map<String, ValidationFailure>,
+    override val dynamicPath: JsonPointer
 ) : ValidationFailure(
     message = "some dependent subschemas did not match",
     schema = schema,

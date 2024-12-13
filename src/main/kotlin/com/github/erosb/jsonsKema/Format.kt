@@ -18,7 +18,7 @@ import java.util.*
 import java.util.regex.Pattern
 
 
-typealias FormatValidator = (instance: IJsonValue, schema: FormatSchema) -> ValidationFailure?
+typealias FormatValidator = (instance: IJsonValue, schema: FormatSchema) -> FormatValidationFailure?
 
 internal val dateFormatValidator: FormatValidator = { inst, schema -> inst.maybeString { str ->
     try {
@@ -182,4 +182,6 @@ data class FormatValidationFailure(
     causes = setOf(),
     schema = schema,
     instance = instance
-)
+) {
+    override lateinit var dynamicPath: JsonPointer
+}

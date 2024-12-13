@@ -11,5 +11,5 @@ internal val exclusiveMinimumLoader: KeywordLoader = { ctx ->
 data class ExclusiveMinimumValidationFailure(
     override val schema: ExclusiveMinimumSchema,
     override val instance: IJsonNumber,
-    val dynamicPath: JsonPointer
+    override val dynamicPath: JsonPointer
 ) : ValidationFailure("${instance.value} is lower than or equal to minimum ${schema.minimum}", schema, instance, Keyword.EXCLUSIVE_MINIMUM)

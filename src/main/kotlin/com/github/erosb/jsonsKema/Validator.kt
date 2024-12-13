@@ -652,29 +652,33 @@ private class DefaultValidator(
         }
     }
 
-    override fun visitDependentSchemas(schema: DependentSchemasSchema): ValidationFailure? = instance.maybeObject { obj ->
-        val failures: MutableMap<String, ValidationFailure> = mutableMapOf()
-        schema.dependentSchemas.forEach { propName, schema ->
-            if (obj[propName] != null) {
-                schema.accept(this)?.let { failures[propName] = it }
-            }
-        }
-        if (failures.isEmpty()) null else {
-            DependentSchemasValidationFailure(schema, instance, failures)
-        }
-    }
-
-    override fun visitDependentRequiredSchema(schema: DependentRequiredSchema): ValidationFailure? = instance.maybeObject { obj ->
-        val instanceKeys = obj.properties.keys.map { it.value }
-        for (entry in schema.dependentRequired.entries) {
-            if (instanceKeys.contains(entry.key)) {
-                val missingKeys = entry.value.filter { !instanceKeys.contains(it) }
-                if (missingKeys.isNotEmpty()) {
-                    return@maybeObject DependentRequiredValidationFailure(entry.key, missingKeys.toSet(), schema, obj)
+    override fun visitDependentSchemas(schema: DependentSchemasSchema): ValidationFailure? = inPathSegment(Keyword.DEPENDENT_SCHEMAS) {
+            instance.maybeObject { obj ->
+                val failures: MutableMap<String, ValidationFailure> = mutableMapOf()
+                schema.dependentSchemas.forEach { propName, schema ->
+                    if (obj[propName] != null) {
+                        schema.accept(this)?.let { failures[propName] = it }
+                    }
+                }
+                if (failures.isEmpty()) null else {
+                    DependentSchemasValidationFailure(schema, instance, failures, dynamicPath())
                 }
             }
         }
-        null
+
+    override fun visitDependentRequiredSchema(schema: DependentRequiredSchema): ValidationFailure? = inPathSegment(Keyword.DEPENDENT_REQUIRED) {
+        instance.maybeObject { obj ->
+            val instanceKeys = obj.properties.keys.map { it.value }
+            for (entry in schema.dependentRequired.entries) {
+                if (instanceKeys.contains(entry.key)) {
+                    val missingKeys = entry.value.filter { !instanceKeys.contains(it) }
+                    if (missingKeys.isNotEmpty()) {
+                        return@maybeObject DependentRequiredValidationFailure(entry.key, missingKeys.toSet(), schema, obj, dynamicPath())
+                    }
+                }
+            }
+            null
+        }
     }
 
     override fun visitUnevaluatedItemsSchema(schema: UnevaluatedItemsSchema): ValidationFailure? = inPathSegment(Keyword.UNEVALUATED_ITEMS) {
@@ -709,7 +713,9 @@ private class DefaultValidator(
 
     override fun visitFormatSchema(schema: FormatSchema): ValidationFailure? =
         if (validateFormat) {
-            formatValidators[schema.format]?.let { it(instance, schema) }
+            formatValidators[schema.format]
+                ?.let { it(instance, schema) }
+                ?.also { it.dynamicPath = dynamicPath() + Keyword.FORMAT }
         } else {
             null
         }
@@ -751,6 +757,6 @@ private class DefaultValidator(
         if (current === null) {
             return previous
         }
-        return previous.join(parent, instance, current)
+        return previous.join(parent, instance, current, dynamicPath())
     }
 }

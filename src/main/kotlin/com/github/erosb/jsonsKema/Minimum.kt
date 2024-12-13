@@ -3,7 +3,7 @@ package com.github.erosb.jsonsKema
 data class MinimumValidationFailure(
     override val schema: MinimumSchema,
     override val instance: IJsonNumber,
-    val dynamicPath: JsonPointer
+    override val dynamicPath: JsonPointer
 ) : ValidationFailure("${instance.value} is lower than minimum ${schema.minimum}", schema, instance, Keyword.MINIMUM)
 
 internal val minimumLoader:KeywordLoader = { ctx ->

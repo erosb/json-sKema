@@ -71,6 +71,7 @@ class FormatTest {
 
         val failure = validator.validate(JsonString("asd(((asd))"))
         assertThat(failure).isInstanceOf(FormatValidationFailure::class.java)
+        assertThat((failure as FormatValidationFailure).dynamicPath).isEqualTo(JsonPointer("format"))
     }
 
     @Test

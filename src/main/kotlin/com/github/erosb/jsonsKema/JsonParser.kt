@@ -186,6 +186,12 @@ class JsonParser private constructor(
                 walker.skipWhitespaces().consume(":").skipWhitespaces()
                 val propValue = parseValue()
                 nestingPath.removeLast()
+                if (properties.keys.contains(propName)) {
+                    throw DuplicateObjectPropertyException(
+                        properties.keys.find { it.value == propName.value }!!,
+                        propName
+                    )
+                }
                 properties.put(propName, propValue)
                 if (walker.curr() == ',') {
                     commaCharFound = true

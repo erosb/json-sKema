@@ -105,7 +105,8 @@ class JsonParserTest {
         val exception = assertThrows(JsonParseException::class.java) {
             JsonParser("nil")()
         }
-        assertEquals(JsonParseException("Unexpected character found: i", TextLocation(1, 2, DEFAULT_BASE_URI)), exception)
+        assertEquals("Unexpected character found: i", exception.message)
+        assertEquals(TextLocation(1, 2, DEFAULT_BASE_URI), exception.location)
     }
 
     @Test
@@ -113,7 +114,8 @@ class JsonParserTest {
         val exception = assertThrows(JsonParseException::class.java) {
             JsonParser("nu")()
         }
-        assertEquals(JsonParseException("Unexpected EOF", TextLocation(1, 3, DEFAULT_BASE_URI)), exception)
+        assertEquals("Unexpected EOF", exception.message)
+        assertEquals(TextLocation(1, 3, DEFAULT_BASE_URI), exception.location)
     }
 
     @Test
@@ -121,7 +123,8 @@ class JsonParserTest {
         val exception = assertThrows(JsonParseException::class.java) {
             JsonParser("")()
         }
-        assertEquals(JsonParseException("Unexpected EOF", TextLocation(1, 1, DEFAULT_BASE_URI)), exception)
+        assertEquals("Unexpected EOF", exception.message)
+        assertEquals(TextLocation(1, 1, DEFAULT_BASE_URI), exception.location)
     }
 
     @Test
@@ -129,7 +132,8 @@ class JsonParserTest {
         val exception = assertThrows(JsonParseException::class.java) {
             JsonParser("{\"key1\":\"value1\", \"key2\":\"value2\" \"key3\":\"value3\"}\n")()
         }
-        assertEquals(JsonParseException("Unexpected character found: \". Expected ',', '}'", SourceLocation(1, 35, pointer())), exception)
+        assertEquals("Unexpected character found: \". Expected ',', '}'", exception.message)
+        assertEquals(SourceLocation(1, 35, pointer()), exception.location)
     }
 
     @Test
@@ -137,7 +141,8 @@ class JsonParserTest {
         val exception = assertThrows(JsonParseException::class.java) {
             JsonParser("[1, 2 3]")()
         }
-        assertEquals(JsonParseException("Unexpected character found: 3. Expected ',', ']'", SourceLocation(1, 7, pointer())), exception)
+        assertEquals("Unexpected character found: 3. Expected ',', ']'", exception.message)
+        assertEquals(SourceLocation(1, 7, pointer()), exception.location)
     }
 
     @Test
@@ -168,7 +173,8 @@ class JsonParserTest {
             val exception = assertThrows(JsonParseException::class.java) {
                 JsonParser("\"p\\u022suffix\"")()
             }
-            assertEquals(JsonParseException("invalid unicode sequence: 022s", TextLocation(1, 4, DEFAULT_BASE_URI)), exception)
+            assertEquals("invalid unicode sequence: 022s", exception.message)
+            assertEquals(TextLocation(1, 4, DEFAULT_BASE_URI), exception.location)
         }
 
         @Test
@@ -176,7 +182,8 @@ class JsonParserTest {
             val exception = assertThrows(JsonParseException::class.java) {
                 JsonParser("\"p\\u022")()
             }
-            assertEquals(JsonParseException("Unexpected EOF", TextLocation(1, 8, DEFAULT_BASE_URI)), exception)
+            assertEquals("Unexpected EOF", exception.message)
+            assertEquals(TextLocation(1, 8, DEFAULT_BASE_URI), exception.location)
         }
 
         @Test
@@ -191,7 +198,8 @@ class JsonParserTest {
         val exception = assertThrows(JsonParseException::class.java) {
             JsonParser("\r\n  \"")()
         }
-        assertEquals(JsonParseException("Unexpected EOF", SourceLocation(2, 4, pointer())), exception)
+        assertEquals("Unexpected EOF", exception.message)
+        assertEquals(SourceLocation(2, 4, pointer()), exception.location)
     }
 
     @Test
@@ -377,5 +385,41 @@ class JsonParserTest {
             .usingRecursiveComparison()
             .ignoringFieldsOfTypes(SourceLocation::class.java)
             .isEqualTo(expected)
+    }
+
+    @Test
+    fun `duplicate key causes exception`() {
+        assertThrows(JsonParseException::class.java) {
+            JsonParser(
+                """
+            {
+                "a": 2,
+                "b": 2,
+                "a": 3
+            }
+        """.trimIndent()
+            )()
+        }
+    }
+
+    @Test
+    fun `duplicate key check works only on same nesting level`() {
+            JsonParser(
+                """
+            {
+                "a": {
+                    "a": 2,
+                    "b": [ "a" ]
+                },
+                "b": 2,
+                "c": [
+                    "a",
+                    {"a": false},
+                    "a",
+                    [ "a" ]
+                ]
+            }
+        """.trimIndent()
+            )()
     }
 }

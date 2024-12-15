@@ -6,7 +6,12 @@ import java.math.BigDecimal
 import java.net.URI
 import java.util.stream.Collectors.joining
 
-data class JsonParseException(override val message: String, val location: TextLocation) : RuntimeException()
+open class JsonParseException(override val message: String, val location: TextLocation) : RuntimeException()
+
+class DuplicateObjectPropertyException(
+    firstOccurrence: JsonString,
+    secondOccurrence: JsonString
+): JsonParseException("property \"${firstOccurrence.value}\" found at multiple locations in the same object, ${firstOccurrence.location} and ${secondOccurrence.location}", secondOccurrence.location)
 
 data class JsonTypingException(
     val expectedType: String,

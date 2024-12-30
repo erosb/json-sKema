@@ -1,7 +1,5 @@
 package com.github.erosb.jsonsKema
 
-import org.yaml.snakeyaml.Yaml
-import java.io.StringReader
 import java.net.URI
 import java.net.URISyntaxException
 import java.net.URLDecoder
@@ -254,7 +252,6 @@ class SchemaLoader(
                     json.properties
                             .filter { (key, _) ->
                                 key.value != Keyword.ENUM.value && key.value != Keyword.CONST.value
-                                //        && Keyword.values().any { it.value == key.value }
                             }
                             .forEach { (_, value) -> lookupAnchors(value, loadingState.baseURI) }
                 }
@@ -307,7 +304,7 @@ class SchemaLoader(
                     return true
                 }
                 val beforeLastSegment = locationSegments[locationSegments.size - 2]
-                val beforeLastKeyword = Keyword.values().find { it.value == beforeLastSegment }
+                val beforeLastKeyword = Keyword.entries.find { it.value == beforeLastSegment }
                 if (beforeLastKeyword == null || !beforeLastKeyword.hasMapLikeSemantics) {
                     return true
                 }
@@ -316,7 +313,7 @@ class SchemaLoader(
         return false
     }
 
-    private fun isKnownKeyword(lastSegment: String) = Keyword.values().any { lastSegment == it.value }
+    private fun isKnownKeyword(lastSegment: String) = Keyword.entries.any { lastSegment == it.value }
 
     private fun adjustBaseURI(json: IJsonValue) {
         when (json) {
@@ -574,21 +571,11 @@ class SchemaLoader(
         }
     }
 
-    private fun loadPatternPropertySchemas(obj: IJsonObject<*, *>): Map<Regexp, Schema> {
-        val rval = mutableMapOf<Regexp, Schema>()
-        obj.properties.forEach { (name, value) ->
-            rval[regexpFactory.createHandler(name.value)] = loadChild(value)
-        }
-        return rval.toMap()
-    }
+    private fun loadPatternPropertySchemas(obj: IJsonObject<*, *>): Map<Regexp, Schema>
+        = obj.properties.map { regexpFactory.createHandler(it.key.value) to loadChild(it.value) }.toMap()
 
-    private fun loadPropertySchemas(schemasMap: IJsonObject<*, *>): Map<String, Schema> {
-        val rval = mutableMapOf<String, Schema>()
-        schemasMap.properties.forEach { (name, value) ->
-            rval[name.value] = loadChild(value)
-        }
-        return rval.toMap()
-    }
+    private fun loadPropertySchemas(schemasMap: IJsonObject<*, *>): Map<String, Schema>
+        = schemasMap.properties.map { it.key.value to loadChild(it.value) }.toMap()
 
     private fun loadChild(schemaJson: IJsonValue): Schema {
         val childLoader = SchemaLoader(schemaJson, config, loadingState)

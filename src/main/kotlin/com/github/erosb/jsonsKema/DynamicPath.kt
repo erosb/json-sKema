@@ -11,6 +11,15 @@ class DynamicPath {
         return rval
     }
 
+    fun <P> inSegmentPath(seg: List<String>, cb: () -> P?): P? {
+        path.addAll(seg)
+        val rval = cb()
+        val count = seg.size
+        for (i in 1..count) path.removeLast()
+        return rval
+    }
+
+
     fun asPointer(): JsonPointer = JsonPointer(path.toList())
 
 

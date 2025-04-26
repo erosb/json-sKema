@@ -306,7 +306,7 @@ private class DefaultValidator(
     }
 
     override fun visitPropertySchema(property: String, schema: Schema): ValidationFailure? =
-        inPathSegment("properties/" + property) {
+        inPathSegment(listOf("properties", property)) {
             if (instance !is IJsonObject<*, *>) {
                 return@inPathSegment null
             }

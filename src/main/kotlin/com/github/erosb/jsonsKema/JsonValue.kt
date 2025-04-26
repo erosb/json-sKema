@@ -25,7 +25,9 @@ data class JsonPointer(val segments: List<String>) {
 
     constructor(vararg segments: String): this(listOf(*segments))
 
-    override fun toString() = "#" + (if (segments.isEmpty()) "" else "/") + segments.stream().collect(joining("/"))
+    override fun toString() = "#" + (if (segments.isEmpty()) "" else "/") + segments.joinToString("/") {
+        it.replace("~", "~0").replace("/", "~1")
+    }
 
     operator fun plus(additionalSegment: String): JsonPointer = JsonPointer(segments + additionalSegment)
 

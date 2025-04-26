@@ -88,6 +88,10 @@ abstract class SchemaVisitor<P> {
         return dynamicPath.inSegmentPath(seg, cb)
     }
 
+    protected fun inPathSegment(seg: List<String>, cb: () -> P?): P? {
+        return dynamicPath.inSegmentPath(seg, cb)
+    }
+
     protected fun dynamicPath(): JsonPointer = dynamicPath.asPointer()
 
     protected fun inPathSegment(seg: Keyword, cb: () -> P?): P? = inPathSegment(seg.value, cb)
@@ -105,7 +109,7 @@ abstract class SchemaVisitor<P> {
     open fun visitEnumSchema(schema: EnumSchema): P? = visitChildren(schema)
     open fun visitTypeSchema(schema: TypeSchema): P? = visitChildren(schema)
     open fun visitMultiTypeSchema(schema: MultiTypeSchema): P? = visitChildren(schema)
-    open fun visitPropertySchema(property: String, schema: Schema): P? = inPathSegment("properties/" + property) { visitChildren(schema) }
+    open fun visitPropertySchema(property: String, schema: Schema): P? = inPathSegment(listOf("properties", property)) { visitChildren(schema) }
     open fun visitPatternPropertySchema(pattern: Regexp, schema: Schema): P? = visitChildren(schema)
     open fun visitPatternSchema(schema: PatternSchema): P? = visitChildren(schema)
     open fun visitNotSchema(schema: NotSchema): P? = visitChildren(schema)

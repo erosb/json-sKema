@@ -28,4 +28,9 @@ class JsonValueTest {
         }
         assertEquals("can not remove 3 segment from pointer #/seg1/seg2", thrown.message)
     }
+
+    @Test
+    fun `segments are escaped`() {
+        assertEquals("#/~1seg1/seg2~0", JsonPointer("/seg1", "seg2~").toString())
+    }
 }

@@ -8,7 +8,7 @@ abstract class ValidationFailure(
     open val causes: Set<ValidationFailure> = setOf()
 ) {
 
-    abstract val dynamicPath: JsonPointer
+    abstract val dynamicPath: SourceLocation
 
     private fun appendTo(sb: StringBuilder, linePrefix: String) {
         sb.append("${linePrefix}${instance.location.getLocation()}: $message\n" +
@@ -48,7 +48,7 @@ abstract class ValidationFailure(
         )
     }
 
-    internal open fun join(parent: Schema, instance: IJsonValue, other: ValidationFailure, dynamicPath: JsonPointer): ValidationFailure {
+    internal open fun join(parent: Schema, instance: IJsonValue, other: ValidationFailure, dynamicPath: SourceLocation): ValidationFailure {
         return AggregatingValidationFailure(parent, instance, setOf(this, other), dynamicPath)
     }
 
@@ -62,7 +62,7 @@ internal class AggregatingValidationFailure(
     schema: Schema,
     instance: IJsonValue,
     causes: Set<ValidationFailure>,
-    override val dynamicPath: JsonPointer
+    override val dynamicPath: SourceLocation
 ) : ValidationFailure("multiple validation failures", schema, instance, null, causes) {
 
     private var _causes = causes.toMutableSet()
@@ -71,7 +71,7 @@ internal class AggregatingValidationFailure(
             return _causes
         }
 
-    override fun join(parent: Schema, instance: IJsonValue, other: ValidationFailure, dynamicPath: JsonPointer): ValidationFailure {
+    override fun join(parent: Schema, instance: IJsonValue, other: ValidationFailure, dynamicPath: SourceLocation): ValidationFailure {
         if (instance != this.instance) {
             return AggregatingValidationFailure(parent, instance, _causes + other, dynamicPath)
         }

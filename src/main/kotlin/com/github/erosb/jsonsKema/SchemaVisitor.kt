@@ -142,6 +142,7 @@ abstract class SchemaVisitor<P> {
     open fun accumulate(parent: Schema, previous: P?, current: P?): P? = current ?: previous
 
     open fun visitChildren(parent: Schema): P? {
+        dynamicPath.setRootLoc(parent.location.documentSource)
         var product: P? = identity(parent)
         for (subschema in parent.subschemas()) {
             val current = subschema.accept(this)

@@ -26,7 +26,7 @@ class DynamicPathTest {
             {"id": 0}
         """.trimIndent())()) as MinimumValidationFailure
 
-        Assertions.assertEquals("#/properties/id/$ref/minimum", actual.dynamicPath.toString())
+        Assertions.assertEquals("mem://input#/properties/id/$ref/minimum", actual.dynamicPath.toString())
         println(actual.toJSON())
     }
 

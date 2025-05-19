@@ -116,6 +116,12 @@ open class SourceLocation(
     }
 
     fun withPointer(pointer: JsonPointer): SourceLocation = SourceLocation(lineNumber, position, pointer, documentSource)
+
+    internal operator fun plus(additionalSegment: String): SourceLocation =
+        SourceLocation(lineNumber, position, pointer + additionalSegment, documentSource)
+
+    internal operator fun plus(additionalSegment: Keyword): SourceLocation =
+        SourceLocation(lineNumber, position, pointer + additionalSegment, documentSource)
 }
 
 object UnknownSource : SourceLocation(0, 0, JsonPointer(emptyList()), URI("UNKNOWN")) {

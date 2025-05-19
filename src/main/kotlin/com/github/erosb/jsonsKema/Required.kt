@@ -15,7 +15,7 @@ data class RequiredValidationFailure(
     val missingProperties: List<String>,
     override val schema: RequiredSchema,
     override val instance: IJsonObj,
-    override val dynamicPath: JsonPointer
+    override val dynamicPath: SourceLocation
 ) : ValidationFailure(
     "required properties are missing: " + missingProperties.joinToString(),
     schema,

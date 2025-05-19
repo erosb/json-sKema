@@ -25,13 +25,13 @@ class ValidationFailureTest {
     private fun maximumFailure() = MaximumValidationFailure(
         MaximumSchema(12, SourceLocation(10, 5, JsonPointer(listOf("properties", "numProp", "maximum")), URI("test-uri"))),
         JsonNumber(15, SourceLocation(70, 66, JsonPointer(listOf("numProp")), URI("http://example.com/my-json"))),
-        JsonPointer(Keyword.MAXIMUM.value)
+        UnknownSource + Keyword.MAXIMUM.value
     )
 
     private fun minimumFailure() = MinimumValidationFailure(
         MinimumSchema(22, SourceLocation(20, 5, JsonPointer(listOf("properties", "numProp", "minimum")), URI("test-uri"))),
         JsonNumber(15, SourceLocation(70, 66, JsonPointer(listOf("numProp")), URI("http://example.com/my-json"))),
-        JsonPointer(Keyword.MINIMUM.value)
+        UnknownSource + Keyword.MINIMUM.value
     )
 
     @Test
@@ -46,7 +46,7 @@ class ValidationFailureTest {
             ),
             instance = JsonNumber(15, SourceLocation(70, 66, JsonPointer(listOf()), URI("http://example.com/my-json"))),
             causes = setOf(maximumFailure(), minimumFailure()),
-            dynamicPath = JsonPointer()
+            dynamicPath = UnknownSource
         )
 
         assertThat(subject.toString().replace("\t", "    ")).isEqualTo("""
@@ -86,7 +86,7 @@ class ValidationFailureTest {
             ),
             instance = JsonNumber(15, SourceLocation(70, 66, JsonPointer(listOf()), URI("http://example.com/my-json"))),
             causes = setOf(maximumFailure(), minimumFailure()),
-            dynamicPath = JsonPointer()
+            dynamicPath = UnknownSource
         )
         val flattened: List<ValidationFailure> = subject.flatten()
 
@@ -107,7 +107,7 @@ class ValidationFailureTest {
     @Test
     fun flattenRecursive() {
         val falseSubschema = FalseSchema(UnknownSource)
-        val falseFailure = FalseValidationFailure(falseSubschema, JsonNull(UnknownSource), JsonPointer("false"))
+        val falseFailure = FalseValidationFailure(falseSubschema, JsonNull(UnknownSource), UnknownSource + "false")
         val subject = AggregatingValidationFailure(
             CompositeSchema(
                 subschemas = setOf(
@@ -123,9 +123,9 @@ class ValidationFailureTest {
                 causes = setOf(
                     minimumFailure(), falseFailure
                 ),
-                dynamicPath = JsonPointer()
+                dynamicPath = UnknownSource
             )),
-            dynamicPath = JsonPointer()
+            dynamicPath = UnknownSource
         )
 
         assertThat(subject.flatten()).containsExactlyInAnyOrder(

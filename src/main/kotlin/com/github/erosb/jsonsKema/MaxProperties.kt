@@ -10,5 +10,5 @@ internal val maxPropertiesLoader: KeywordLoader = { ctx ->
 data class MaxPropertiesValidationFailure(
     override val schema: MaxPropertiesSchema,
     override val instance: IJsonObj,
-    override val dynamicPath: JsonPointer
+    override val dynamicPath: SourceLocation
 ) : ValidationFailure("expected maximum properties: ${schema.maxProperties}, found ${instance.properties.size}", schema, instance, Keyword.MIN_PROPERTIES)

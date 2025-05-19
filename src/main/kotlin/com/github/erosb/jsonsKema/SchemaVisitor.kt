@@ -92,7 +92,7 @@ abstract class SchemaVisitor<P> {
         return dynamicPath.inSegmentPath(seg, cb)
     }
 
-    protected fun dynamicPath(): JsonPointer = dynamicPath.asPointer()
+    protected fun dynamicPath(): SourceLocation = dynamicPath.asSourceLocation()
 
     protected fun inPathSegment(seg: Keyword, cb: () -> P?): P? = inPathSegment(seg.value, cb)
 

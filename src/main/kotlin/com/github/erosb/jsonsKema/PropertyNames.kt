@@ -16,7 +16,7 @@ data class PropertyNamesValidationFailure(
     override val schema: PropertyNamesSchema,
     override val instance: IJsonObj,
     val causesByProperties: Map<IJsonString, ValidationFailure>,
-    override val dynamicPath: JsonPointer
+    override val dynamicPath: SourceLocation
 ) : ValidationFailure(
     message = "",
     schema = schema,

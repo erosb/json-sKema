@@ -20,7 +20,7 @@ data class DependentSchemasValidationFailure(
     override val schema: DependentSchemasSchema,
     override val instance: IJsonValue,
     val causesByProperty: Map<String, ValidationFailure>,
-    override val dynamicPath: JsonPointer
+    override val dynamicPath: SourceLocation
 ) : ValidationFailure(
     message = "some dependent subschemas did not match",
     schema = schema,

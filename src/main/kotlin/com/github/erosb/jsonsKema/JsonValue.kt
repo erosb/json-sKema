@@ -95,7 +95,9 @@ open class SourceLocation(
     }
 
     override fun toString(): String {
-        return "line $lineNumber, character $position, pointer: $pointer"
+        return "$documentSource$pointer" + (
+                if (lineNumber > -1 && position> -1) " (Line $lineNumber, character $position)"
+                else "")
     }
 
     internal fun trimPointerSegments(leadingSegmentsToBeRemoved: Int): SourceLocation {

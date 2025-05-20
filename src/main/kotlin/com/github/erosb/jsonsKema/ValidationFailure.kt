@@ -36,7 +36,7 @@ abstract class ValidationFailure(
         val json = mutableMapOf<JsonString, JsonValue>(
             JsonString("instanceRef") to instanceRef,
             JsonString("schemaRef") to JsonString(schema.location.pointer.toString()),
-            JsonString("dynamicPath") to JsonString(dynamicPath.toString()),
+            JsonString("dynamicPath") to JsonString(dynamicPath.pointer.toString()),
             JsonString("message") to JsonString(message)
         )
         keyword?.let { json[JsonString("keyword")] = JsonString(it.value) }

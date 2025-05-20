@@ -31,7 +31,7 @@ class ReadWriteContextTest {
 
         println(actual.toJSON())
         assertEquals("read-only property \"id\" should not be present in write context", actual.message)
-        assertEquals("#/properties/id/readOnly", actual.dynamicPath.toString())
+        assertEquals("#/properties/id/readOnly", actual.dynamicPath.pointer.toString())
     }
 
     @Test
@@ -85,7 +85,7 @@ class ReadWriteContextTest {
 
         println(actual.toJSON())
         assertEquals("write-only property \"id\" should not be present in read context", actual.message)
-        assertEquals("#/properties/id/writeOnly", actual.dynamicPath.toString())
+        assertEquals("#/properties/id/writeOnly", actual.dynamicPath.pointer.toString())
     }
 
     @Test

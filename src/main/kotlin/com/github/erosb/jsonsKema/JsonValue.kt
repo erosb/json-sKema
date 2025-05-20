@@ -39,10 +39,8 @@ fun pointer(vararg segments: String) = JsonPointer(segments.toList())
 open class TextLocation(val lineNumber: Int, val position: Int, val documentSource: URI) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
 
         other as TextLocation
-
         if (lineNumber != other.lineNumber) return false
         if (position != other.position) return false
 
@@ -68,15 +66,12 @@ open class SourceLocation(
 ) : TextLocation(lineNumber, position, documentSource) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
         if (!super.equals(other)) return false
-
         other as SourceLocation
 
-        if (lineNumber != other.lineNumber) return false
-        if (position != other.position) return false
         if (pointer != other.pointer) return false
-        if (documentSource != other.documentSource) return false
+
+        if (documentSource.toString() != other.documentSource.toString()) return false
 
         return true
     }
@@ -124,7 +119,7 @@ open class SourceLocation(
         SourceLocation(lineNumber, position, pointer + additionalSegment, documentSource)
 }
 
-object UnknownSource : SourceLocation(0, 0, JsonPointer(emptyList()), URI("UNKNOWN")) {
+object UnknownSource : SourceLocation(-1, -1, JsonPointer(emptyList()), URI("UNKNOWN")) {
     override fun toString(): String = "UNKNOWN"
 }
 

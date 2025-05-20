@@ -147,8 +147,8 @@ class ArrayValidationTest {
             [1, 2]
         """.trimIndent())())!!
 
-        assertEquals(JsonPointer("maxItems"), (actual.causes.filter { it.keyword == Keyword.MAX_ITEMS }.first() as MaxItemsValidationFailure).dynamicPath)
-        assertEquals(JsonPointer("minItems"), (actual.causes.filter { it.keyword == Keyword.MIN_ITEMS }.first() as MinItemsValidationFailure).dynamicPath)
+        assertEquals(JsonPointer("maxItems"), (actual.causes.filter { it.keyword == Keyword.MAX_ITEMS }.first() as MaxItemsValidationFailure).dynamicPath.pointer)
+        assertEquals(JsonPointer("minItems"), (actual.causes.filter { it.keyword == Keyword.MIN_ITEMS }.first() as MinItemsValidationFailure).dynamicPath.pointer)
     }
 
     @Test
@@ -158,6 +158,6 @@ class ArrayValidationTest {
         """.trimIndent())()
 
         val actual = Validator.forSchema(schema).validate("[2]") as PrefixItemsValidationFailure
-        assertEquals("#/prefixItems", actual.dynamicPath.toString())
+        assertEquals("#/prefixItems", actual.dynamicPath.pointer.toString())
     }
 }

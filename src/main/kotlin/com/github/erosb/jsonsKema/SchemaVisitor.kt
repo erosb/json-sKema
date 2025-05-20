@@ -82,7 +82,7 @@ abstract class SchemaVisitor<P> {
     }
 
 
-    private var dynamicPath: DynamicPath = DynamicPath()
+    protected var dynamicPath: DynamicPath = DynamicPath()
 
     protected fun inPathSegment(seg: String, cb: () -> P?): P? {
         return dynamicPath.inSegmentPath(seg, cb)

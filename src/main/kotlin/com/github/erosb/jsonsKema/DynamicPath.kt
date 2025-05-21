@@ -5,7 +5,7 @@ import java.net.URI
 class DynamicPath {
     private val path = mutableListOf<String>()
 
-    lateinit var rootDocURI: URI
+    internal lateinit var rootDocumentSource: URI
 
     fun <P> inSegmentPath(
         seg: String,
@@ -30,9 +30,5 @@ class DynamicPath {
 
     fun asPointer(): JsonPointer = JsonPointer(path.toList())
 
-    fun setRootLoc(documentSource: URI) {
-        rootDocURI = documentSource
-    }
-
-    fun asSourceLocation(): SourceLocation = SourceLocation(-1, -1, asPointer(), rootDocURI)
+    fun asSourceLocation(): SourceLocation = SourceLocation(-1, -1, asPointer(), rootDocumentSource)
 }

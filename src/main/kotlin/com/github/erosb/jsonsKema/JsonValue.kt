@@ -71,7 +71,7 @@ open class SourceLocation(
 
         if (pointer != other.pointer) return false
 
-        if (documentSource.toString() != other.documentSource.toString()) return false
+        if (documentSource != other.documentSource) return false
 
         return true
     }

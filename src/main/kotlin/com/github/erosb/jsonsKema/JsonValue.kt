@@ -40,7 +40,8 @@ open class TextLocation(val lineNumber: Int, val position: Int, val documentSour
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
 
-        other as TextLocation
+        if (other !is TextLocation) return false
+
         if (lineNumber != other.lineNumber) return false
         if (position != other.position) return false
 
@@ -67,10 +68,9 @@ open class SourceLocation(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (!super.equals(other)) return false
-        other as SourceLocation
+        if (other !is SourceLocation) return false
 
         if (pointer != other.pointer) return false
-
         if (documentSource != other.documentSource) return false
 
         return true

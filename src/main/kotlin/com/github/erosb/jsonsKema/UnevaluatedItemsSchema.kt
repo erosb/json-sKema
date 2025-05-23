@@ -12,7 +12,7 @@ data class UnevaluatedItemsValidationFailure(
     val itemFailures: Map<Int, ValidationFailure>,
     override val schema: UnevaluatedItemsSchema,
     override val instance: IJsonArray<*>,
-    override val dynamicPath: SourceLocation
+    override val dynamicPath: DynamicPath
 ) : ValidationFailure(
     "array items ${itemFailures.keys.joinToString(", ")} failed to validate against \"unevaluatedItems\" subschema",
     schema,

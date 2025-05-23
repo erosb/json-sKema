@@ -11,7 +11,7 @@ internal val maxLengthLoader: KeywordLoader = { ctx ->
 data class MaxLengthValidationFailure(
     override val schema: MaxLengthSchema,
     override val instance: IJsonString,
-    override val dynamicPath: SourceLocation
+    override val dynamicPath: DynamicPath
 ) : ValidationFailure(
     "actual string length ${instance.value.length} exceeds maxLength ${schema.maxLength}",
     schema,

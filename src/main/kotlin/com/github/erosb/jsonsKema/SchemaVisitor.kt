@@ -92,7 +92,7 @@ abstract class SchemaVisitor<P> {
         return dynamicPath.inSegmentPath(seg, cb)
     }
 
-    protected fun dynamicPath(): SourceLocation = dynamicPath.asSourceLocation()
+    protected fun dynamicPath(): DynamicPath = dynamicPath.copy()
 
     protected fun inPathSegment(seg: Keyword, cb: () -> P?): P? = inPathSegment(seg.value, cb)
 

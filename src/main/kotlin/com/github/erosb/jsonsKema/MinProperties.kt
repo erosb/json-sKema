@@ -10,5 +10,5 @@ internal val minPropertiesLoader: KeywordLoader = { ctx ->
 data class MinPropertiesValidationFailure(
     override val schema: MinPropertiesSchema,
     override val instance: IJsonObj,
-    override val dynamicPath: SourceLocation
+    override val dynamicPath: DynamicPath
 ) : ValidationFailure("expected minimum properties: ${schema.minProperties}, found only ${instance.properties.size}", schema, instance, Keyword.MIN_PROPERTIES)

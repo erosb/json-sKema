@@ -14,7 +14,7 @@ internal val patternLoader: KeywordLoader = { ctx ->
 data class PatternValidationFailure(
     override val schema: PatternSchema,
     override val instance: IJsonValue,
-    override val dynamicPath: SourceLocation
+    override val dynamicPath: DynamicPath
 ) : ValidationFailure(
     message = "instance value did not match pattern ${schema.pattern}",
     schema = schema,

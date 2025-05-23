@@ -11,5 +11,5 @@ internal val exclusiveMaximumLoader: KeywordLoader = { ctx ->
 data class ExclusiveMaximumValidationFailure(
     override val schema: ExclusiveMaximumSchema,
     override val instance: IJsonNumber,
-    override val dynamicPath: SourceLocation
+    override val dynamicPath: DynamicPath
 ) : ValidationFailure("${instance.value} is greater than or equal to maximum ${schema.maximum}", schema, instance, Keyword.EXCLUSIVE_MAXIMUM)

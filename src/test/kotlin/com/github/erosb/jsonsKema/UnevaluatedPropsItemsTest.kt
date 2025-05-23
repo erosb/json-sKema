@@ -25,10 +25,10 @@ class UnevaluatedPropsItemsTest {
             }
         """.trimIndent()) as UnevaluatedPropertiesValidationFailure
 
-        assertEquals("#/unevaluatedProperties", actual.dynamicPath.toString())
+        assertEquals("#/unevaluatedProperties", actual.dynamicPath.pointer.toString())
 
         val cause = actual.causes.single() as RequiredValidationFailure
-        assertEquals("#/unevaluatedProperties/required", cause.dynamicPath.toString())
+        assertEquals("#/unevaluatedProperties/required", cause.dynamicPath.pointer.toString())
     }
 
     @Test
@@ -48,9 +48,9 @@ class UnevaluatedPropsItemsTest {
             ["a", "b"]
         """.trimIndent()) as UnevaluatedItemsValidationFailure
 
-        assertEquals("#/unevaluatedItems", actual.dynamicPath.toString())
+        assertEquals("#/unevaluatedItems", actual.dynamicPath.pointer.toString())
 
         val cause = actual.causes.single() as EnumValidationFailure
-        assertEquals("#/unevaluatedItems/enum", cause.dynamicPath.toString())
+        assertEquals("#/unevaluatedItems/enum", cause.dynamicPath.pointer.toString())
     }
 }

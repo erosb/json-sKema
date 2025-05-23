@@ -260,6 +260,7 @@ private class DefaultValidator(
 
     override fun validate(instance: IJsonValue): ValidationFailure? {
         this.instance = instance
+        dynamicPath.rootDocumentSource = rootSchema.location.documentSource
         return rootSchema.accept(this)
     }
 

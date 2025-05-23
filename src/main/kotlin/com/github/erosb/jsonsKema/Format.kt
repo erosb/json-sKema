@@ -183,5 +183,5 @@ data class FormatValidationFailure(
     schema = schema,
     instance = instance
 ) {
-    override lateinit var dynamicPath: JsonPointer
+    override lateinit var dynamicPath: DynamicPath
 }

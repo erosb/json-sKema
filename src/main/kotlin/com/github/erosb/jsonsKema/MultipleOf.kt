@@ -11,5 +11,5 @@ internal val multipleOfLoader: KeywordLoader = { ctx ->
 data class MultipleOfValidationFailure(
     override val schema: MultipleOfSchema,
     override val instance: IJsonNumber,
-    override val dynamicPath: JsonPointer
+    override val dynamicPath: DynamicPath
 ) : ValidationFailure("${instance.value} is not a multiple of ${schema.denominator}", schema, instance, Keyword.MULTIPLE_OF)

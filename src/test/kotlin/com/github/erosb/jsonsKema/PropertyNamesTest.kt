@@ -16,8 +16,8 @@ class PropertyNamesTest {
         val actual = Validator.forSchema(schema).validate(JsonParser("""
             {"aaa":"x"}
         """.trimIndent())()) as PropertyNamesValidationFailure
-        assertEquals("#/propertyNames", actual.dynamicPath.toString())
+        assertEquals("#/propertyNames", actual.dynamicPath.pointer.toString())
         val cause = actual.causesByProperties.values.first() as MaxLengthValidationFailure
-        assertEquals("#/propertyNames/maxLength", cause.dynamicPath.toString())
+        assertEquals("#/propertyNames/maxLength", cause.dynamicPath.pointer.toString())
     }
 }

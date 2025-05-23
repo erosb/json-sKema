@@ -76,7 +76,7 @@ class TypeValidationTest {
             )(),
             actual.toJSON()
         )
-        assertEquals(JsonPointer("type"), actual.dynamicPath)
+        assertEquals(JsonPointer("type"), actual.dynamicPath.pointer)
     }
 
     @Test
@@ -87,6 +87,6 @@ class TypeValidationTest {
 
         val actual = Validator.forSchema(schema).validate(JsonNumber(2.2, UnknownSource)) as MultiTypeValidationFailure
 
-        assertEquals("#/type", actual.dynamicPath.toString())
+        assertEquals("#/type", actual.dynamicPath.pointer.toString())
     }
 }

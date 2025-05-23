@@ -18,6 +18,7 @@ class ValidationFailureTest {
             Schema location: Line 10, character 5
             Instance pointer: #/numProp
             Instance location: http://example.com/my-json: Line 70, character 66
+            Dynamic path: UNKNOWN#/maximum
         """.trimIndent()
         )
     }
@@ -25,13 +26,13 @@ class ValidationFailureTest {
     private fun maximumFailure() = MaximumValidationFailure(
         MaximumSchema(12, SourceLocation(10, 5, JsonPointer(listOf("properties", "numProp", "maximum")), URI("test-uri"))),
         JsonNumber(15, SourceLocation(70, 66, JsonPointer(listOf("numProp")), URI("http://example.com/my-json"))),
-        JsonPointer(Keyword.MAXIMUM.value)
+        dynamicPath(UnknownSource) + Keyword.MAXIMUM.value
     )
 
     private fun minimumFailure() = MinimumValidationFailure(
         MinimumSchema(22, SourceLocation(20, 5, JsonPointer(listOf("properties", "numProp", "minimum")), URI("test-uri"))),
         JsonNumber(15, SourceLocation(70, 66, JsonPointer(listOf("numProp")), URI("http://example.com/my-json"))),
-        JsonPointer(Keyword.MINIMUM.value)
+        dynamicPath(UnknownSource) + Keyword.MINIMUM.value
     )
 
     @Test
@@ -46,7 +47,7 @@ class ValidationFailureTest {
             ),
             instance = JsonNumber(15, SourceLocation(70, 66, JsonPointer(listOf()), URI("http://example.com/my-json"))),
             causes = setOf(maximumFailure(), minimumFailure()),
-            dynamicPath = JsonPointer()
+            dynamicPath = dynamicPath(UnknownSource)
         )
 
         assertThat(subject.toString().replace("\t", "    ")).isEqualTo("""
@@ -56,6 +57,7 @@ class ValidationFailureTest {
             Schema location: Line 1, character 1
             Instance pointer: #
             Instance location: http://example.com/my-json: Line 70, character 66
+            Dynamic path: UNKNOWN#
             Causes:
             
                 http://example.com/my-json: Line 70, character 66: 15 is greater than maximum 12
@@ -64,6 +66,7 @@ class ValidationFailureTest {
                 Schema location: Line 10, character 5
                 Instance pointer: #/numProp
                 Instance location: http://example.com/my-json: Line 70, character 66
+                Dynamic path: UNKNOWN#/maximum
 
                 http://example.com/my-json: Line 70, character 66: 15 is lower than minimum 22
                 Keyword: minimum
@@ -71,6 +74,7 @@ class ValidationFailureTest {
                 Schema location: Line 20, character 5
                 Instance pointer: #/numProp
                 Instance location: http://example.com/my-json: Line 70, character 66
+                Dynamic path: UNKNOWN#/minimum
         """.trimIndent())
     }
 
@@ -86,7 +90,7 @@ class ValidationFailureTest {
             ),
             instance = JsonNumber(15, SourceLocation(70, 66, JsonPointer(listOf()), URI("http://example.com/my-json"))),
             causes = setOf(maximumFailure(), minimumFailure()),
-            dynamicPath = JsonPointer()
+            dynamicPath = dynamicPath(UnknownSource)
         )
         val flattened: List<ValidationFailure> = subject.flatten()
 
@@ -107,7 +111,7 @@ class ValidationFailureTest {
     @Test
     fun flattenRecursive() {
         val falseSubschema = FalseSchema(UnknownSource)
-        val falseFailure = FalseValidationFailure(falseSubschema, JsonNull(UnknownSource), JsonPointer("false"))
+        val falseFailure = FalseValidationFailure(falseSubschema, JsonNull(UnknownSource), dynamicPath(UnknownSource) + "false")
         val subject = AggregatingValidationFailure(
             CompositeSchema(
                 subschemas = setOf(
@@ -123,9 +127,9 @@ class ValidationFailureTest {
                 causes = setOf(
                     minimumFailure(), falseFailure
                 ),
-                dynamicPath = JsonPointer()
+                dynamicPath = dynamicPath(UnknownSource)
             )),
-            dynamicPath = JsonPointer()
+            dynamicPath = dynamicPath(UnknownSource)
         )
 
         assertThat(subject.flatten()).containsExactlyInAnyOrder(

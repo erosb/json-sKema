@@ -39,9 +39,8 @@ fun pointer(vararg segments: String) = JsonPointer(segments.toList())
 open class TextLocation(val lineNumber: Int, val position: Int, val documentSource: URI) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
 
-        other as TextLocation
+        if (other !is TextLocation) return false
 
         if (lineNumber != other.lineNumber) return false
         if (position != other.position) return false
@@ -68,13 +67,9 @@ open class SourceLocation(
 ) : TextLocation(lineNumber, position, documentSource) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
         if (!super.equals(other)) return false
+        if (other !is SourceLocation) return false
 
-        other as SourceLocation
-
-        if (lineNumber != other.lineNumber) return false
-        if (position != other.position) return false
         if (pointer != other.pointer) return false
         if (documentSource != other.documentSource) return false
 
@@ -100,7 +95,9 @@ open class SourceLocation(
     }
 
     override fun toString(): String {
-        return "line $lineNumber, character $position, pointer: $pointer"
+        return "$documentSource$pointer" + (
+                if (lineNumber > -1 && position> -1) " (Line $lineNumber, character $position)"
+                else "")
     }
 
     internal fun trimPointerSegments(leadingSegmentsToBeRemoved: Int): SourceLocation {
@@ -116,9 +113,15 @@ open class SourceLocation(
     }
 
     fun withPointer(pointer: JsonPointer): SourceLocation = SourceLocation(lineNumber, position, pointer, documentSource)
+
+    internal operator fun plus(additionalSegment: String): SourceLocation =
+        SourceLocation(lineNumber, position, pointer + additionalSegment, documentSource)
+
+    internal operator fun plus(additionalSegment: Keyword): SourceLocation =
+        SourceLocation(lineNumber, position, pointer + additionalSegment, documentSource)
 }
 
-object UnknownSource : SourceLocation(0, 0, JsonPointer(emptyList()), URI("UNKNOWN")) {
+object UnknownSource : SourceLocation(-1, -1, JsonPointer(emptyList()), URI("UNKNOWN")) {
     override fun toString(): String = "UNKNOWN"
 }
 

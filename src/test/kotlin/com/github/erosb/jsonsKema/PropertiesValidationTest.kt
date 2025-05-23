@@ -110,8 +110,8 @@ class PropertiesValidationTest {
         """.trimIndent())()) as AggregatingValidationFailure
 
         val minPropFailure = actual.causes.filterIsInstance<MinPropertiesValidationFailure>().single()
-        assertEquals("#/minProperties", minPropFailure.dynamicPath.toString())
+        assertEquals("#/minProperties", minPropFailure.dynamicPath.pointer.toString())
         val maxPropFailure = actual.causes.filterIsInstance<MaxPropertiesValidationFailure>().single()
-        assertEquals("#/maxProperties", maxPropFailure.dynamicPath.toString())
+        assertEquals("#/maxProperties", maxPropFailure.dynamicPath.pointer.toString())
     }
 }

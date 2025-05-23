@@ -5,6 +5,10 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
+internal fun dynamicPath(sourceLocation: SourceLocation): DynamicPath {
+    return DynamicPath(sourceLocation.documentSource, sourceLocation.pointer.segments)
+}
+
 class ArrayValidationTest {
 
     @Test
@@ -12,7 +16,7 @@ class ArrayValidationTest {
         val schema = UniqueItemsSchema(true, UnknownSource)
         val instance = JsonArray(listOf(JsonNumber(1), JsonNumber(2), JsonNumber(1)))
         val actual = Validator.forSchema(schema).validate(instance)
-        val expected = UniqueItemsValidationFailure(listOf(0, 2), schema, instance, JsonPointer("uniqueItems"))
+        val expected = UniqueItemsValidationFailure(listOf(0, 2), schema, instance, dynamicPath(UnknownSource) + "uniqueItems")
         assertEquals(expected, actual)
         assertEquals("the same array element occurs at positions 0, 2", actual?.message)
     }
@@ -34,12 +38,12 @@ class ArrayValidationTest {
         val instance = JsonArray(listOf(JsonBoolean(true), first, second))
         val expected = ItemsValidationFailure(
             mapOf(
-                1 to TypeValidationFailure("string", itemsSchema, first, JsonPointer(listOf("items", "type"))),
-                2 to TypeValidationFailure("string", itemsSchema, second, JsonPointer(listOf("items", "type")))
+                1 to TypeValidationFailure("string", itemsSchema, first, dynamicPath(UnknownSource) + "items" + "type"),
+                2 to TypeValidationFailure("string", itemsSchema, second, dynamicPath(UnknownSource) + "items" + "type")
             ),
             schema,
             instance,
-            JsonPointer("items")
+            dynamicPath(UnknownSource) + "items"
         )
         val actual = Validator.forSchema(schema).validate(instance)
         assertEquals(expected, actual)
@@ -61,7 +65,7 @@ class ArrayValidationTest {
                 "no array items are valid against \"contains\" subschema, expected minimum is 1",
                 schema = schema,
                 instance = instance,
-                dynamicPath = JsonPointer("contains")
+                dynamicPath = dynamicPath(UnknownSource) + "contains"
             )
             assertEquals(expected, actual)
         }
@@ -76,7 +80,7 @@ class ArrayValidationTest {
             val expected = ContainsValidationFailure("only 1 array item is valid against \"contains\" subschema, expected minimum is 2",
                 schema,
                 instance,
-                JsonPointer("contains")
+                dynamicPath(UnknownSource) + "contains"
             )
             assertEquals(expected, actual)
         }
@@ -111,7 +115,7 @@ class ArrayValidationTest {
             val expected = ContainsValidationFailure("no array items are valid against \"contains\" subschema, expected minimum is 1",
                 schema,
                 instance,
-                JsonPointer("contains")
+                dynamicPath(UnknownSource) + "contains"
             )
 
             assertEquals(expected, actual)
@@ -127,7 +131,7 @@ class ArrayValidationTest {
             val expected = ContainsValidationFailure("2 array items are valid against \"contains\" subschema, expected maximum is 1",
                 schema,
                 instance,
-                JsonPointer("contains")
+                dynamicPath(UnknownSource) + "contains"
             )
 
             assertEquals(expected, actual)
@@ -147,8 +151,8 @@ class ArrayValidationTest {
             [1, 2]
         """.trimIndent())())!!
 
-        assertEquals(JsonPointer("maxItems"), (actual.causes.filter { it.keyword == Keyword.MAX_ITEMS }.first() as MaxItemsValidationFailure).dynamicPath)
-        assertEquals(JsonPointer("minItems"), (actual.causes.filter { it.keyword == Keyword.MIN_ITEMS }.first() as MinItemsValidationFailure).dynamicPath)
+        assertEquals(JsonPointer("maxItems"), (actual.causes.filter { it.keyword == Keyword.MAX_ITEMS }.first() as MaxItemsValidationFailure).dynamicPath.pointer)
+        assertEquals(JsonPointer("minItems"), (actual.causes.filter { it.keyword == Keyword.MIN_ITEMS }.first() as MinItemsValidationFailure).dynamicPath.pointer)
     }
 
     @Test
@@ -158,6 +162,6 @@ class ArrayValidationTest {
         """.trimIndent())()
 
         val actual = Validator.forSchema(schema).validate("[2]") as PrefixItemsValidationFailure
-        assertEquals("#/prefixItems", actual.dynamicPath.toString())
+        assertEquals("#/prefixItems", actual.dynamicPath.pointer.toString())
     }
 }

@@ -82,7 +82,7 @@ abstract class SchemaVisitor<P> {
     }
 
 
-    private var dynamicPath: DynamicPath = DynamicPath()
+    protected var dynamicPath: DynamicPath = DynamicPath()
 
     protected fun inPathSegment(seg: String, cb: () -> P?): P? {
         return dynamicPath.inSegmentPath(seg, cb)
@@ -92,7 +92,7 @@ abstract class SchemaVisitor<P> {
         return dynamicPath.inSegmentPath(seg, cb)
     }
 
-    protected fun dynamicPath(): JsonPointer = dynamicPath.asPointer()
+    protected fun dynamicPath(): DynamicPath = dynamicPath.copy()
 
     protected fun inPathSegment(seg: Keyword, cb: () -> P?): P? = inPathSegment(seg.value, cb)
 

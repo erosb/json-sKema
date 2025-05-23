@@ -9,7 +9,7 @@ internal val constLoader: KeywordLoader = { ctx -> ConstSchema(ctx.keywordValue,
 data class ConstValidationFailure(
     override val schema: ConstSchema,
     override val instance: IJsonValue,
-    override val dynamicPath: JsonPointer
+    override val dynamicPath: DynamicPath
 ) : ValidationFailure(
     "actual instance is not the same as expected constant value",
     schema,

@@ -21,14 +21,14 @@ data class TypeValidationFailure(
     val actualInstanceType: String,
     override val schema: TypeSchema,
     override val instance: IJsonValue,
-    override val dynamicPath: JsonPointer
+    override val dynamicPath: DynamicPath
 ) : ValidationFailure("expected type: ${schema.type.value}, actual: $actualInstanceType", schema, instance, Keyword.TYPE)
 
 data class MultiTypeValidationFailure(
     val actualInstanceType: String,
     override val schema: MultiTypeSchema,
     override val instance: IJsonValue,
-    override val dynamicPath: JsonPointer
+    override val dynamicPath: DynamicPath
 ) : ValidationFailure(
     "expected type: one of ${schema.types.elements.joinToString { ", " }}, actual: $actualInstanceType",
     schema,

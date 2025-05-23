@@ -26,18 +26,14 @@ class StringValidationTest {
 
         val actual = Validator.forSchema(schema).validate(JsonString("bbbb", UnknownSource))!!
 
-        println(actual)
         val detailsFailure = actual.causes.single()
         val minLengthFailure = detailsFailure.causes.filterIsInstance<MinLengthValidationFailure>().single()
-        assertEquals("#/allOf/1/$ref/minLength", minLengthFailure.dynamicPath.toString())
+        assertEquals("#/allOf/1/$ref/minLength", minLengthFailure.dynamicPath.pointer.toString())
 
         val maxLengthFailure = detailsFailure.causes.filterIsInstance<MaxLengthValidationFailure>().single()
-        assertEquals("#/allOf/1/$ref/maxLength", maxLengthFailure.dynamicPath.toString())
+        assertEquals("#/allOf/1/$ref/maxLength", maxLengthFailure.dynamicPath.pointer.toString())
 
         val patternFailure = detailsFailure.causes.filterIsInstance<PatternValidationFailure>().single()
-        assertEquals("#/allOf/1/$ref/pattern", patternFailure.dynamicPath.toString())
-
-//        val emailFailure = detailsFailure.causes.filterIsInstance<FormatValidationFailure>().single()
-//        assertEquals("#/allOf/1/$ref/pattern", emailFailure.dynamicPath.toString())
+        assertEquals("#/allOf/1/$ref/pattern", patternFailure.dynamicPath.pointer.toString())
     }
 }

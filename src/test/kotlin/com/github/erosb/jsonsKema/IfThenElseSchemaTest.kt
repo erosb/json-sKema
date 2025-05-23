@@ -27,7 +27,7 @@ class IfThenElseSchemaTest {
 
         val actual = Validator.forSchema(subject).validate(JsonParser("null")()) as FalseValidationFailure
 
-        assertEquals(JsonPointer("then", "false"), actual.dynamicPath)
+        assertEquals(JsonPointer("then", "false"), actual.dynamicPath.pointer)
     }
 
 
@@ -37,6 +37,6 @@ class IfThenElseSchemaTest {
 
         val actual = Validator.forSchema(subject).validate(JsonParser("4")()) as ConstValidationFailure
 
-        assertEquals(JsonPointer("else", "const"), actual.dynamicPath)
+        assertEquals(JsonPointer("else", "const"), actual.dynamicPath.pointer)
     }
 }

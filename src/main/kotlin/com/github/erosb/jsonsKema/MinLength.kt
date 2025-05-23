@@ -12,7 +12,7 @@ internal val minLengthLoader: KeywordLoader = { ctx ->
 data class MinLengthValidationFailure(
     override val schema: MinLengthSchema,
     override val instance: IJsonString,
-    override val dynamicPath: JsonPointer
+    override val dynamicPath: DynamicPath
 ) : ValidationFailure(
     "actual string length ${instance.value.length} is lower than minLength ${schema.minLength}",
     schema,

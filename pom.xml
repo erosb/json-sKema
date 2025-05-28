@@ -5,7 +5,7 @@
 
     <groupId>com.github.erosb</groupId>
     <artifactId>json-sKema</artifactId>
-    <version>0.23.0-RC2</version>
+    <version>0.23.0-RC3</version>
 
     <name>json-sKema</name>
     <description>JSON Schema Parser and Validator</description>
@@ -237,6 +237,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>central.sonatype.com</publishingServerId>
+                    <autoPublish>true</autoPublish>
                 </configuration>
             </plugin>
         </plugins>

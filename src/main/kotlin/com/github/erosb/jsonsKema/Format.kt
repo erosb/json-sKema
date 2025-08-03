@@ -1,7 +1,7 @@
 package com.github.erosb.jsonsKema
 
-import org.apache.commons.validator.routines.EmailValidator
-import org.apache.commons.validator.routines.InetAddressValidator
+import com.sanctionco.jmail.JMail
+import com.sanctionco.jmail.net.InternetProtocolAddress
 import java.net.URI
 import java.net.URISyntaxException
 import java.text.ParsePosition
@@ -75,7 +75,7 @@ internal val uriFormatValidator: FormatValidator = {inst, schema -> inst.maybeSt
 }}
 
 internal val emailFormatValidator: FormatValidator = {inst, schema -> inst.maybeString { str ->
-    if (EmailValidator.getInstance(false, true).isValid(str.value)) {
+    if (JMail.isValid(str.value)) {
         null
     } else {
         FormatValidationFailure(schema, str)
@@ -83,7 +83,7 @@ internal val emailFormatValidator: FormatValidator = {inst, schema -> inst.maybe
 }}
 
 internal val ipv4FormatValidator: FormatValidator = {inst, schema -> inst.maybeString { str ->
-    if (InetAddressValidator.getInstance().isValidInet4Address(str.value)) {
+    if (InternetProtocolAddress.validateIpv4(str.value).isPresent) {
         null
     } else {
         FormatValidationFailure(schema, str)
@@ -93,7 +93,7 @@ internal val ipv4FormatValidator: FormatValidator = {inst, schema -> inst.maybeS
 private val allowedIpv6Chars = setOf('.', ':') + ('0'..'9') + ('a'..'f') + ('A'..'F')
 
 internal val ipv6FormatValidator: FormatValidator = {inst, schema -> inst.maybeString { str ->
-    if (InetAddressValidator.getInstance().isValidInet6Address(str.value)
+    if (InternetProtocolAddress.validateIpv6(str.value).isPresent
         && str.value.toCharArray().all { it in allowedIpv6Chars }) {
         null
     } else {

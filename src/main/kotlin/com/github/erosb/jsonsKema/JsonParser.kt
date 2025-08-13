@@ -15,6 +15,8 @@ private class SourceWalker(
     private val documentSource: URI
 ) {
 
+    private val buf: CharArray = CharArray(1)
+
     private val reader = inputReader.let { if (it.markSupported()) it else BufferedReader(it) }
 
     constructor(input: InputStream, documentSource: URI) : this(
@@ -38,23 +40,23 @@ private class SourceWalker(
     }
 
     private fun currInt(): Int {
-        reader.mark(1)
-        val c = reader.read()
-        reader.reset()
-        return c
+        mark()
+        val c = reader.read(buf)
+        reset()
+        return if (c == -1) -1 else buf[0].code
     }
 
     fun skipWhitespaces(): SourceWalker {
         while (true) {
-            reader.mark(1)
-            val c = reader.read()
-            val char = c.toChar()
+            mark()
+            val c = reader.read(buf)
+            val char = buf[0]
             if (c == -1 || !(char == ' ' || char == '\t' || char == '\n' || char == '\r')) {
-                reader.reset()
+                reset()
                 break
             }
 
-            if (char == '\r' && currInt() == '\n'.toInt()) {
+            if (char == '\r' && currInt() == '\n'.code) {
                 reader.read()
             }
 
@@ -68,39 +70,32 @@ private class SourceWalker(
         return this
     }
 
+    private fun reset() {
+        reader.reset()
+    }
+
+    private fun mark() {
+        reader.mark(1)
+    }
+
     fun reachedEOF(): Boolean {
         return currInt() == -1
     }
 
     fun consume(token: String): SourceWalker {
         token.chars().forEach { i ->
-            val ch = curr()
-            val toChar = i.toChar()
-            if (toChar != ch) {
+            val ch = currInt()
+            if (i != ch) {
                 throw JsonParseException("Unexpected character found: $ch", location)
             }
-            reader.read()
-            ++position
+            forward()
         }
         return this
     }
 
     fun forward() {
-        reader.read()
+        reader.skip(1)
         ++position
-    }
-
-    fun readUntil(terminator: Char): String {
-        val buffer = StringBuilder()
-        while (true) {
-            val ch = curr()
-            forward()
-            if (ch == terminator) {
-                break
-            }
-            buffer.append(ch)
-        }
-        return buffer.toString()
     }
 
     val location: TextLocation

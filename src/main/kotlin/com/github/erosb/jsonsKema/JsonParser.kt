@@ -45,13 +45,10 @@ private abstract class SourceWalker(
     }
 
     fun consume(token: String): SourceWalker {
-        token.chars().forEach { i ->
-            val ch = currInt()
+        for (i in token.toCharArray()) {
+            val ch = curr()
             if (i != ch) {
-                throw if (ch == -1)
-                    JsonParseException("Unexpected EOF", location)
-                else
-                    JsonParseException("Unexpected character found: ${ch.toChar()}", location)
+                throw JsonParseException("Unexpected character found: $ch", location)
             }
             forward()
         }

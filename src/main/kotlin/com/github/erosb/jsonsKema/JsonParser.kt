@@ -190,7 +190,7 @@ class JsonParser private constructor(
     )
             : this(BufferReadingSourceWalker(schemaInputStream, documentSource), documentSource, maxNestingDepth)
 
-    private val nestingPath: MutableList<String> = mutableListOf()
+    private var pathElem = PathElem(null, "")
 
     fun parse(): JsonValue {
         val jsonValue = parseValue()
@@ -220,10 +220,10 @@ class JsonParser private constructor(
             val elements = mutableListOf<JsonValue>()
             while (walker.curr() != ']') {
                 var commaCharFound = false
-                nestingPath.add(elements.size.toString())
+                pathElem = PathElem(pathElem, elements.size.toString())
                 val element = parseValue()
                 elements.add(element)
-                nestingPath.removeLast()
+                pathElem = pathElem.parent!!
                 if (walker.curr() == ',') {
                     commaCharFound = true
                     walker.forward()
@@ -245,7 +245,7 @@ class JsonParser private constructor(
                 val propName = parseString(true)
                 walker.skipWhitespaces().consume(":").skipWhitespaces()
                 val propValue = parseValue()
-                nestingPath.removeLast()
+                pathElem = pathElem.parent!!
                 if (properties.keys.contains(propName)) {
                     throw DuplicateObjectPropertyException(
                         properties.keys.find { it.value == propName.value }!!,
@@ -287,10 +287,41 @@ class JsonParser private constructor(
         val sourceLocation = SourceLocation(
             walker.location.lineNumber,
             walker.location.position,
-            JsonPointer(nestingPath.toList()),
+            JsonPointer(PathElemBackedList(pathElem)),
             documentSource,
         )
         return sourceLocation
+    }
+
+    private class PathElemBackedList(private val last: PathElem): AbstractList<String>() {
+
+        var backingList: List<String>? = null
+
+        private fun backingList(): List<String> {
+            if (backingList != null) {
+                return backingList!!
+            }
+            val lst = mutableListOf<String>()
+            backingList = if (last.parent == null)  emptyList()
+            else {
+                var curr = last
+                while (curr.parent != null) {
+                    lst.add(curr.value)
+                    curr = curr.parent
+                }
+                lst.reverse()
+                lst
+            }
+            return backingList!!
+        }
+
+
+
+        override val size: Int
+            get() = backingList().size
+
+        override fun get(index: Int): String = backingList().get(index)
+
     }
 
     private fun toNumber(str: String, location: SourceLocation): JsonNumber {
@@ -413,8 +444,8 @@ class JsonParser private constructor(
         val literal = sb.toString()
         sb.clear()
         if (putReadLiteralToNestingPath) {
-            nestingPath.add(literal)
-            loc = SourceLocation(loc.lineNumber, loc.position, JsonPointer(nestingPath.toList()), documentSource)
+            pathElem = PathElem(pathElem, literal)
+            loc = SourceLocation(loc.lineNumber, loc.position, JsonPointer(PathElemBackedList(pathElem)), documentSource)
             // no removal from nestingPath, call-site responsibility
         }
         return JsonString(literal, loc)
@@ -424,3 +455,4 @@ class JsonParser private constructor(
 }
 
 
+private class PathElem(val parent: PathElem?, val value: String)

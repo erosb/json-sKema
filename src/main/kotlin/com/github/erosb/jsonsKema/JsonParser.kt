@@ -20,6 +20,29 @@ internal abstract class SourceWalker(
 
 
     fun skipWhitespaces(): SourceWalker {
+        while (hasAtLeastNRemainingChars(64)) {
+            var ctr = 63
+            while(ctr-- > 0) {
+                mark()
+                val c = readCharInto()
+                val char = buf[0]
+                if (c == -1 || !(char == ' ' || char == '\t' || char == '\n' || char == '\r')) {
+                    reset()
+                    return this
+                }
+
+                if (char == '\r' && currInt() == '\n'.code) {
+                    forward()
+                }
+
+                if (char == '\n' || char == '\r') {
+                    position = 1
+                    ++lineNumber
+                } else {
+                    ++position
+                }
+            }
+        }
         while (true) {
             mark()
             val c = readCharInto()
@@ -70,6 +93,8 @@ internal abstract class SourceWalker(
     abstract fun mark()
     abstract fun reset()
     abstract fun reachedEOF(): Boolean
+    abstract fun hasAtLeastNRemainingChars(n: Int): Boolean
+    abstract fun unsafeNext(): Char
 
     val location: TextLocation
         get() = TextLocation(lineNumber, position, documentSource)
@@ -126,6 +151,15 @@ private class BufferReadingSourceWalker(
 
     override fun reachedEOF(): Boolean {
         return currInt() == -1
+    }
+
+    override fun hasAtLeastNRemainingChars(n: Int): Boolean = false
+    override fun unsafeNext(): Char {
+        mark()
+        val c = reader.read()
+        reset()
+        if (c == -1) TODO()
+        return c.toChar()
     }
 }
 
@@ -243,7 +277,7 @@ class JsonParser private constructor(
         }
 
         if (jsonValue == null) {
-            throw JsonParseException("unexpected character $curr", sourceLocation())
+            throw JsonParseException("unexpected character '$curr'", sourceLocation())
         }
         --currentNestingDepth
         walker.skipWhitespaces()

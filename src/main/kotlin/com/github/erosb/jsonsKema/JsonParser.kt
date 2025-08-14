@@ -360,11 +360,13 @@ class JsonParser private constructor(
         }
     }
 
+    private val sb = StringBuilder().also {it.ensureCapacity(100000)}
+
     private fun parseString(putReadLiteralToNestingPath: Boolean = false): JsonString {
         var loc = sourceLocation()
         walker.consume("\"")
         var nextCharIsEscaped = false
-        val sb = StringBuilder()
+
         var reachedClosingQuote = false
         while (!walker.reachedEOF()) {
             val ch = walker.curr()
@@ -408,7 +410,8 @@ class JsonParser private constructor(
         if (!reachedClosingQuote) {
             throw JsonParseException("Unexpected EOF", sourceLocation())
         }
-        val literal = sb.toString() // walker.readUntil('"').intern()
+        val literal = sb.toString()
+        sb.clear()
         if (putReadLiteralToNestingPath) {
             nestingPath.add(literal)
             loc = SourceLocation(loc.lineNumber, loc.position, JsonPointer(nestingPath.toList()), documentSource)

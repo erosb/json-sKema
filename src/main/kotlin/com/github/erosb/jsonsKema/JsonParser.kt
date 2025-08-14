@@ -9,7 +9,7 @@ import java.math.BigInteger
 import java.net.URI
 import kotlin.RuntimeException
 
-private abstract class SourceWalker(
+internal abstract class SourceWalker(
     private val documentSource: URI
 ) {
 
@@ -127,51 +127,6 @@ private class BufferReadingSourceWalker(
     override fun reachedEOF(): Boolean {
         return currInt() == -1
     }
-}
-
-private class StringReadingSourceWalker(
-    private val input: CharArray,
-    documentSource: URI
-) : SourceWalker(documentSource) {
-    private val inputSize = input.size
-    private var mark = 0
-    private var pos = 0
-    private var reachedEOF: Boolean = pos == inputSize
-    override fun readCharInto(): Int {
-        if (reachedEOF) return -1
-        buf[0] = input[pos++]
-        reachedEOF = pos == inputSize
-        return 1
-    }
-
-    override fun forward() {
-        ++pos
-        ++position
-        reachedEOF = pos == inputSize
-    }
-
-    override fun curr(): Char {
-        if (reachedEOF) throw JsonParseException("Unexpected EOF", location)
-        return input[pos]
-    }
-
-    override fun currInt(): Int {
-        if (reachedEOF()) return -1
-        return input[pos].code
-    }
-
-    override fun mark() {
-        mark = pos
-    }
-
-    override fun reset() {
-        pos = mark
-        reachedEOF = pos == inputSize
-    }
-
-    override fun reachedEOF(): Boolean = reachedEOF
-
-
 }
 
 private val DEFAULT_MAX_NESTING_DEPTH = 100_000

@@ -23,15 +23,13 @@ internal abstract class SourceWalker(
         while (hasAtLeastNRemainingChars(64)) {
             var ctr = 63
             while(ctr-- > 0) {
-                mark()
-                val c = readCharInto()
-                val char = buf[0]
-                if (c == -1 || !(char == ' ' || char == '\t' || char == '\n' || char == '\r')) {
-                    reset()
+                val char = unsafeCurr()
+                if (!(char == ' ' || char == '\t' || char == '\n' || char == '\r')) {
                     return this
                 }
+                forward()
 
-                if (char == '\r' && currInt() == '\n'.code) {
+                if (char == '\r' && unsafeCurr() == '\n') {
                     forward()
                 }
 
@@ -94,7 +92,7 @@ internal abstract class SourceWalker(
     abstract fun reset()
     abstract fun reachedEOF(): Boolean
     abstract fun hasAtLeastNRemainingChars(n: Int): Boolean
-    abstract fun unsafeNext(): Char
+    abstract fun unsafeCurr(): Char
 
     val location: TextLocation
         get() = TextLocation(lineNumber, position, documentSource)
@@ -154,7 +152,7 @@ private class BufferReadingSourceWalker(
     }
 
     override fun hasAtLeastNRemainingChars(n: Int): Boolean = false
-    override fun unsafeNext(): Char {
+    override fun unsafeCurr(): Char {
         mark()
         val c = reader.read()
         reset()
@@ -164,6 +162,10 @@ private class BufferReadingSourceWalker(
 }
 
 private val DEFAULT_MAX_NESTING_DEPTH = 100_000
+
+private val NULL_TOKEN = "null"//.toCharArray()
+private val TRUE_TOKEN = "true"//.toCharArray()
+private val FALSE_TOKEN = "false"//.toCharArray()
 
 class TooDeeplyNestedValueException(loc: TextLocation, maxDepth: Int) :
     RuntimeException("too deeply nested json value at line ${loc.lineNumber}, character ${loc.position}. Maximum nesting level in json structures is $maxDepth.")
@@ -211,7 +213,7 @@ class JsonParser private constructor(
         val location = sourceLocation()
         var jsonValue: JsonValue? = null
         if (curr == 'n') {
-            walker.consume("null")
+            walker.consume(NULL_TOKEN)
             jsonValue = JsonNull(location)
         } else if (curr == '"') {
             jsonValue = parseString()
@@ -267,10 +269,10 @@ class JsonParser private constructor(
             walker.forward()
             jsonValue = JsonObject(properties, location)
         } else if (curr == 't') {
-            walker.consume("true")
+            walker.consume(TRUE_TOKEN)
             jsonValue = JsonBoolean(true, location)
         } else if (curr == 'f') {
-            walker.consume("false")
+            walker.consume(FALSE_TOKEN)
             jsonValue = JsonBoolean(false, location)
         } else if (curr == '-' || (curr in '0'..'9')) {
             jsonValue = parseNumber()

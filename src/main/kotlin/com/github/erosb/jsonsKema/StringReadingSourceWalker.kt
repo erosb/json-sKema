@@ -46,7 +46,7 @@ internal class StringReadingSourceWalker(
         return inputSize - pos > n
     }
 
-    override fun unsafeNext(): Char = input[pos + 1]
+    override fun unsafeCurr(): Char = input[pos]
 
 
 }

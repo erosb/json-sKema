@@ -23,7 +23,7 @@ private abstract class SourceWalker(
     fun skipWhitespaces(): SourceWalker {
         while (true) {
             mark()
-            val c = readCharInto(buf)
+            val c = readCharInto()
             val char = buf[0]
             if (c == -1 || !(char == ' ' || char == '\t' || char == '\n' || char == '\r')) {
                 reset()
@@ -55,7 +55,7 @@ private abstract class SourceWalker(
         return this
     }
 
-    abstract fun readCharInto(buf: CharArray): Int
+    abstract fun readCharInto(): Int
     abstract fun forward()
     abstract fun curr(): Char
     abstract fun currInt(): Int
@@ -99,7 +99,7 @@ private class BufferReadingSourceWalker(
         return if (c == -1) -1 else buf[0].code
     }
 
-    override fun readCharInto(buf: CharArray): Int {
+    override fun readCharInto(): Int {
         return reader.read(buf)
     }
 
@@ -128,7 +128,7 @@ private class StringReadingSourceWalker(
     private val inputSize = input.size
     private var mark = 0
     private var pos = 0
-    override fun readCharInto(buf: CharArray): Int {
+    override fun readCharInto(): Int {
         if (reachedEOF()) return -1
         buf[0] = input[pos++]
         return 1
@@ -422,3 +422,5 @@ class JsonParser private constructor(
 
     operator fun invoke(): JsonValue = parse()
 }
+
+

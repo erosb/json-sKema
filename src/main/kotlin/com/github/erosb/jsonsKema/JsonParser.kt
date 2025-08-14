@@ -10,46 +10,20 @@ import java.math.BigInteger
 import java.net.URI
 import kotlin.RuntimeException
 
-private class SourceWalker(
-    inputReader: Reader,
+private abstract class SourceWalker(
     private val documentSource: URI
 ) {
 
-    private val buf: CharArray = CharArray(1)
+    protected val buf: CharArray = CharArray(1)
 
-    private val reader = inputReader.let { if (it.markSupported()) it else BufferedReader(it) }
+    protected var lineNumber = 1
+    protected var position = 1
 
-    constructor(input: InputStream, documentSource: URI) : this(
-        BufferedReader(InputStreamReader(input)),
-        documentSource
-    )
-
-    init {
-        reader.markSupported()
-    }
-
-    private var lineNumber = 1
-    private var position = 1
-
-    fun curr(): Char {
-        val currInt = currInt()
-        if (currInt == -1) {
-            throw JsonParseException("Unexpected EOF", location)
-        }
-        return currInt.toChar()
-    }
-
-    private fun currInt(): Int {
-        mark()
-        val c = reader.read(buf)
-        reset()
-        return if (c == -1) -1 else buf[0].code
-    }
 
     fun skipWhitespaces(): SourceWalker {
         while (true) {
             mark()
-            val c = reader.read(buf)
+            val c = readCharInto(buf)
             val char = buf[0]
             if (c == -1 || !(char == ' ' || char == '\t' || char == '\n' || char == '\r')) {
                 reset()
@@ -57,7 +31,7 @@ private class SourceWalker(
             }
 
             if (char == '\r' && currInt() == '\n'.code) {
-                reader.read()
+                forward()
             }
 
             if (char == '\n' || char == '\r') {
@@ -70,60 +44,154 @@ private class SourceWalker(
         return this
     }
 
-    private fun reset() {
-        reader.reset()
-    }
-
-    private fun mark() {
-        reader.mark(1)
-    }
-
-    fun reachedEOF(): Boolean {
-        return currInt() == -1
-    }
-
     fun consume(token: String): SourceWalker {
         token.chars().forEach { i ->
             val ch = currInt()
             if (i != ch) {
-                throw JsonParseException("Unexpected character found: $ch", location)
+                throw if (ch == -1)
+                    JsonParseException("Unexpected EOF", location)
+                else
+                    JsonParseException("Unexpected character found: ${ch.toChar()}", location)
             }
             forward()
         }
         return this
     }
 
-    fun forward() {
-        reader.skip(1)
-        ++position
-    }
+    abstract fun readCharInto(buf: CharArray): Int
+    abstract fun forward()
+    abstract fun curr(): Char
+    abstract fun currInt(): Int
+    abstract fun mark()
+    abstract fun reset()
+    abstract fun reachedEOF(): Boolean
 
     val location: TextLocation
         get() = TextLocation(lineNumber, position, documentSource)
 }
 
+private class BufferReadingSourceWalker(
+    inputReader: Reader,
+    private val documentSource: URI
+) : SourceWalker(documentSource) {
+
+    constructor(input: InputStream, documentSource: URI) : this(
+        BufferedReader(InputStreamReader(input)),
+        documentSource
+    )
+
+
+    private val reader = inputReader.let { if (it.markSupported()) it else BufferedReader(it) }
+
+    init {
+        reader.markSupported()
+    }
+
+    override fun curr(): Char {
+        val currInt = currInt()
+        if (currInt == -1) {
+            throw JsonParseException("Unexpected EOF", location)
+        }
+        return currInt.toChar()
+    }
+
+    override fun currInt(): Int {
+        mark()
+        val c = reader.read(buf)
+        reset()
+        return if (c == -1) -1 else buf[0].code
+    }
+
+    override fun readCharInto(buf: CharArray): Int {
+        return reader.read(buf)
+    }
+
+    override fun forward() {
+        reader.skip(1)
+        ++position
+    }
+
+    override fun reset() {
+        reader.reset()
+    }
+
+    override fun mark() {
+        reader.mark(1)
+    }
+
+    override fun reachedEOF(): Boolean {
+        return currInt() == -1
+    }
+}
+
+private class StringReadingSourceWalker(
+    private val input: CharArray,
+    documentSource: URI
+) : SourceWalker(documentSource) {
+    private val inputSize = input.size
+    private var mark = 0
+    private var pos = 0
+    override fun readCharInto(buf: CharArray): Int {
+        if (reachedEOF()) return -1
+        buf[0] = input[pos++]
+        return 1
+    }
+
+    override fun forward() {
+        ++pos
+        ++position
+    }
+
+    override fun curr(): Char {
+        if (reachedEOF()) throw JsonParseException("Unexpected EOF", location)
+        return input[pos]
+    }
+
+    override fun currInt(): Int {
+        if (reachedEOF()) return -1
+        return input[pos].code
+    }
+
+    override fun mark() {
+        mark = pos
+    }
+
+    override fun reset() {
+        pos = mark
+    }
+
+    override fun reachedEOF(): Boolean = pos == inputSize
+
+
+}
+
 private val DEFAULT_MAX_NESTING_DEPTH = 100_000
 
-class TooDeeplyNestedValueException(loc: TextLocation, maxDepth: Int): RuntimeException("too deeply nested json value at line ${loc.lineNumber}, character ${loc.position}. Maximum nesting level in json structures is $maxDepth.")
+class TooDeeplyNestedValueException(loc: TextLocation, maxDepth: Int) :
+    RuntimeException("too deeply nested json value at line ${loc.lineNumber}, character ${loc.position}. Maximum nesting level in json structures is $maxDepth.")
 
 class JsonParser private constructor(
     private val walker: SourceWalker,
     private val documentSource: URI,
     private val maxNestingDepth: Int
-){
+) {
     private var currentNestingDepth = 0
 
     @JvmOverloads
     constructor(schemaJson: String, documentSource: URI = DEFAULT_BASE_URI, maxNestingDepth: Int = DEFAULT_MAX_NESTING_DEPTH)
-    : this(SourceWalker(ByteArrayInputStream(schemaJson.toByteArray()), documentSource), documentSource, maxNestingDepth)
+            : this(StringReadingSourceWalker(schemaJson.toCharArray(), documentSource), documentSource, maxNestingDepth)
 
     @JvmOverloads
     constructor(schemaJson: Reader, documentSource: URI = DEFAULT_BASE_URI, maxNestingDepth: Int = DEFAULT_MAX_NESTING_DEPTH)
-    : this(SourceWalker(schemaJson, documentSource), documentSource, maxNestingDepth)
+            : this(BufferReadingSourceWalker(schemaJson, documentSource), documentSource, maxNestingDepth)
 
     @JvmOverloads
-    constructor(schemaInputStream: InputStream, documentSource: URI = DEFAULT_BASE_URI, maxNestingDepth: Int = DEFAULT_MAX_NESTING_DEPTH)
-    : this(SourceWalker(schemaInputStream, documentSource), documentSource, maxNestingDepth)
+    constructor(
+        schemaInputStream: InputStream,
+        documentSource: URI = DEFAULT_BASE_URI,
+        maxNestingDepth: Int = DEFAULT_MAX_NESTING_DEPTH
+    )
+            : this(BufferReadingSourceWalker(schemaInputStream, documentSource), documentSource, maxNestingDepth)
 
     private val nestingPath: MutableList<String> = mutableListOf()
 
@@ -155,7 +223,7 @@ class JsonParser private constructor(
             val elements = mutableListOf<JsonValue>()
             while (walker.curr() != ']') {
                 var commaCharFound = false
-                nestingPath.add(elements.size.toString().intern())
+                nestingPath.add(elements.size.toString())
                 val element = parseValue()
                 elements.add(element)
                 nestingPath.removeLast()
@@ -199,7 +267,7 @@ class JsonParser private constructor(
                 }
             }
             walker.forward()
-            jsonValue = JsonObject(properties.toMap(), location)
+            jsonValue = JsonObject(properties, location)
         } else if (curr == 't') {
             walker.consume("true")
             jsonValue = JsonBoolean(true, location)
@@ -343,7 +411,7 @@ class JsonParser private constructor(
         if (!reachedClosingQuote) {
             throw JsonParseException("Unexpected EOF", sourceLocation())
         }
-        val literal = sb.toString().intern() // walker.readUntil('"').intern()
+        val literal = sb.toString() // walker.readUntil('"').intern()
         if (putReadLiteralToNestingPath) {
             nestingPath.add(literal)
             loc = SourceLocation(loc.lineNumber, loc.position, JsonPointer(nestingPath.toList()), documentSource)

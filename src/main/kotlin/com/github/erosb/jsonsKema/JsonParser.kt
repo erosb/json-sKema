@@ -287,9 +287,10 @@ class JsonParser private constructor(
     }
 
     private fun sourceLocation(): SourceLocation {
+        val textLocation = walker.location
         val sourceLocation = SourceLocation(
-            walker.location.lineNumber,
-            walker.location.position,
+            textLocation.lineNumber,
+            textLocation.position,
             JsonPointer(PathElemBackedList(pathElem)),
             documentSource,
         )

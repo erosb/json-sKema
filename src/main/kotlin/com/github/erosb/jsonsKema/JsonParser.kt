@@ -1,7 +1,6 @@
 package com.github.erosb.jsonsKema
 
 import java.io.BufferedReader
-import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.io.Reader
@@ -45,13 +44,22 @@ private abstract class SourceWalker(
     }
 
     fun consume(token: String): SourceWalker {
-        for (i in token.toCharArray()) {
+        for (expected in token.toCharArray()) {
             val ch = curr()
-            if (i != ch) {
+            if (expected != ch) {
                 throw JsonParseException("Unexpected character found: $ch", location)
             }
             forward()
         }
+        return this
+    }
+
+    fun consume(expected: Char): SourceWalker {
+        val ch = curr()
+        if (expected != ch) {
+            throw JsonParseException("Unexpected character found: $ch", location)
+        }
+        forward()
         return this
     }
 
@@ -243,7 +251,7 @@ class JsonParser private constructor(
             while (walker.curr() != '}') {
                 var commaCharFound = false
                 val propName = parseString(true)
-                walker.skipWhitespaces().consume(":").skipWhitespaces()
+                walker.skipWhitespaces().consume(':').skipWhitespaces()
                 val propValue = parseValue()
                 pathElem = pathElem.parent!!
                 if (properties.keys.contains(propName)) {
@@ -395,7 +403,7 @@ class JsonParser private constructor(
 
     private fun parseString(putReadLiteralToNestingPath: Boolean = false): JsonString {
         var loc = sourceLocation()
-        walker.consume("\"")
+        walker.consume('"')
         var nextCharIsEscaped = false
 
         var reachedClosingQuote = false

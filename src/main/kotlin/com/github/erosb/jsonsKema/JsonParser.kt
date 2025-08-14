@@ -136,19 +136,22 @@ private class StringReadingSourceWalker(
     private val inputSize = input.size
     private var mark = 0
     private var pos = 0
+    private var reachedEOF: Boolean = pos == inputSize
     override fun readCharInto(): Int {
-        if (reachedEOF()) return -1
+        if (reachedEOF) return -1
         buf[0] = input[pos++]
+        reachedEOF = pos == inputSize
         return 1
     }
 
     override fun forward() {
         ++pos
         ++position
+        reachedEOF = pos == inputSize
     }
 
     override fun curr(): Char {
-        if (reachedEOF()) throw JsonParseException("Unexpected EOF", location)
+        if (reachedEOF) throw JsonParseException("Unexpected EOF", location)
         return input[pos]
     }
 
@@ -163,9 +166,10 @@ private class StringReadingSourceWalker(
 
     override fun reset() {
         pos = mark
+        reachedEOF = pos == inputSize
     }
 
-    override fun reachedEOF(): Boolean = pos == inputSize
+    override fun reachedEOF(): Boolean = reachedEOF
 
 
 }

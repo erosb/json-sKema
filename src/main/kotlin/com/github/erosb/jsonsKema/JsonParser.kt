@@ -19,13 +19,13 @@ internal abstract class SourceWalker(
     protected var position = 1
 
 
-    fun skipWhitespaces(): SourceWalker {
+    fun skipWhitespaces() {
         while (hasAtLeastNRemainingChars(64)) {
             var ctr = 63
             while(ctr-- > 0) {
                 val char = unsafeCurr()
                 if (!(char == ' ' || char == '\t' || char == '\n' || char == '\r')) {
-                    return this
+                    return
                 }
                 forward()
 
@@ -61,10 +61,9 @@ internal abstract class SourceWalker(
                 ++position
             }
         }
-        return this
     }
 
-    fun consume(token: String): SourceWalker {
+    fun consume(token: String) {
         for (expected in token.toCharArray()) {
             val ch = curr()
             if (expected != ch) {
@@ -72,16 +71,14 @@ internal abstract class SourceWalker(
             }
             forward()
         }
-        return this
     }
 
-    fun consume(expected: Char): SourceWalker {
+    fun consume(expected: Char) {
         val ch = curr()
         if (expected != ch) {
             throw JsonParseException("Unexpected character found: $ch", location)
         }
         forward()
-        return this
     }
 
     abstract fun readCharInto(): Int
@@ -246,16 +243,18 @@ class JsonParser private constructor(
             while (walker.curr() != '}') {
                 var commaCharFound = false
                 val propName = parseString(true)
-                walker.skipWhitespaces().consume(':').skipWhitespaces()
+                walker.skipWhitespaces()
+                walker.consume(':')
+                walker.skipWhitespaces()
                 val propValue = parseValue()
                 pathElem = pathElem.parent!!
-                if (properties.keys.contains(propName)) {
+                val previous = properties.put(propName, propValue)
+                if (previous != null) {
                     throw DuplicateObjectPropertyException(
                         properties.keys.find { it.value == propName.value }!!,
                         propName
                     )
                 }
-                properties.put(propName, propValue)
                 if (walker.curr() == ',') {
                     commaCharFound = true
                     walker.forward()

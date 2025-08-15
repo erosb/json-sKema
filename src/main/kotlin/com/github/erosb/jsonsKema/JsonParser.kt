@@ -350,35 +350,35 @@ class JsonParser private constructor(
 
     private fun parseNumber(): JsonNumber {
         val location = sourceLocation()
-        val buffer = StringBuilder()
-        optParseSign(buffer)
+        sb.clear()
+        optParseSign()
         while (walker.curr() in '0'..'9' && !walker.reachedEOF()) {
-            buffer.append(walker.curr())
+            sb.append(walker.curr())
             walker.forward()
             if (walker.reachedEOF()) {
-                return toNumber(buffer.toString(), location)
+                return toNumber(sb.toString(), location)
             }
         }
         if (walker.curr() != '.' && walker.curr().lowercaseChar() != 'e') {
-            return toNumber(buffer.toString(), location)
+            return toNumber(sb.toString(), location)
         }
-        buffer.append(walker.curr())
+        sb.append(walker.curr())
         walker.forward()
-        optParseSign(buffer)
-        if (appendDigits(buffer)) return toDouble(buffer.toString(), location)
+        optParseSign()
+        if (appendDigits()) return toDouble(sb.toString(), location)
         if (!(walker.curr() == 'e' || walker.curr() == 'E')) {
-            return toDouble(buffer.toString(), location)
+            return toDouble(sb.toString(), location)
         }
-        buffer.append(walker.curr())
+        sb.append(walker.curr())
         walker.forward()
-        optParseSign(buffer)
-        if (appendDigits(buffer)) return toDouble(buffer.toString(), location)
-        return toDouble(buffer.toString(), location)
+        optParseSign()
+        if (appendDigits()) return toDouble(sb.toString(), location)
+        return toDouble(sb.toString(), location)
     }
 
-    private fun appendDigits(buffer: StringBuilder): Boolean {
+    private fun appendDigits(): Boolean {
         while (walker.curr() in '0'..'9') {
-            buffer.append(walker.curr())
+            sb.append(walker.curr())
             walker.forward()
             if (walker.reachedEOF()) {
                 return true
@@ -387,10 +387,10 @@ class JsonParser private constructor(
         return false
     }
 
-    private fun optParseSign(buffer: StringBuilder) {
+    private fun optParseSign() {
         val curr = walker.curr()
         if (curr == '-' || curr == '+') {
-            buffer.append(curr)
+            sb.append(curr)
             walker.forward()
         }
     }
@@ -401,7 +401,7 @@ class JsonParser private constructor(
         var loc = sourceLocation()
         walker.consume('"')
         var nextCharIsEscaped = false
-
+        sb.clear()
         var reachedClosingQuote = false
         while (!walker.reachedEOF()) {
             val ch = walker.curr()
@@ -446,7 +446,6 @@ class JsonParser private constructor(
             throw JsonParseException("Unexpected EOF", sourceLocation())
         }
         val literal = sb.toString()
-        sb.clear()
         if (putReadLiteralToNestingPath) {
             pathElem = PathElem(pathElem, literal)
             loc = SourceLocation(loc.lineNumber, loc.position, JsonPointer(PathElemBackedList(pathElem)), documentSource)

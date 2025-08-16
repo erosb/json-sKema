@@ -43,7 +43,10 @@ internal abstract class SourceWalker(
             mark()
             val c = readCharInto()
             val char = buf[0]
-            if (c == -1 || !(char == ' ' || char == '\t' || char == '\n' || char == '\r')) {
+            if (c == -1) {
+                break
+            }
+            if (!(char == ' ' || char == '\t' || char == '\n' || char == '\r')) {
                 reset()
                 break
             }

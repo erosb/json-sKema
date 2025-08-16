@@ -7,7 +7,6 @@ internal class StringReadingSourceWalker(
     documentSource: URI
 ) : SourceWalker(documentSource) {
     private val inputSize = input.size
-    private var mark = 0
     private var pos = 0
     override fun readCharInto(): Int {
         if (reachedEOF()) return -1
@@ -32,12 +31,12 @@ internal class StringReadingSourceWalker(
     }
 
     override fun mark() {
-        mark = pos
+
     }
 
     override fun reset() {
-        position -= (pos - mark)
-        pos = mark
+        --position
+        --pos
     }
 
     override fun reachedEOF(): Boolean = pos == inputSize

@@ -12,7 +12,7 @@ internal class StringReadingSourceWalker(
     override fun readCharInto(): Int {
         if (reachedEOF()) return -1
         buf[0] = input[pos++]
-//        ++position
+        ++position
         return 1
     }
 
@@ -36,7 +36,7 @@ internal class StringReadingSourceWalker(
     }
 
     override fun reset() {
-//        position -= (pos - mark)
+        position -= (pos - mark)
         pos = mark
     }
 

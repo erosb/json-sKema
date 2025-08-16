@@ -36,8 +36,6 @@ internal abstract class SourceWalker(
                 if (char == '\n' || char == '\r') {
                     position = 1
                     ++lineNumber
-                } else {
-                    ++position
                 }
             }
         }
@@ -57,8 +55,6 @@ internal abstract class SourceWalker(
             if (char == '\n' || char == '\r') {
                 position = 1
                 ++lineNumber
-            } else {
-                ++position
             }
         }
     }

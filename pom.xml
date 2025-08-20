@@ -5,7 +5,7 @@
 
     <groupId>com.github.erosb</groupId>
     <artifactId>json-sKema</artifactId>
-    <version>0.25.0</version>
+    <version>0.0.0-SNAPSHOT</version>
 
     <name>json-sKema</name>
     <description>JSON Schema Parser and Validator</description>

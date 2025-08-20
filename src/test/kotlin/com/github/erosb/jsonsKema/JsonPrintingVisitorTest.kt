@@ -16,7 +16,9 @@ class JsonPrintingVisitorTest {
               "arr": [
                 1,
                 2,
-                null
+                null,
+                {},
+                []
               ]
             }
         """.trimIndent()

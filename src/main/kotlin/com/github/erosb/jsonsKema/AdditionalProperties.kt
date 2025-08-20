@@ -19,3 +19,13 @@ data class AdditionalPropertiesSchema(
     override fun <P> accept(visitor: SchemaVisitor<P>) = visitor.visitAdditionalPropertiesSchema(this)
     override fun subschemas() = listOf(subschema)
 }
+
+data class AdditionalPropertiesValidationFailure(
+    val cause: ValidationFailure,
+    override val schema: AdditionalPropertiesSchema,
+    override val instance: IJsonValue,
+    override val dynamicPath: DynamicPath
+) : ValidationFailure(
+    "additional properties do not match subschema",
+    schema, instance, Keyword.ADDITIONAL_PROPERTIES, if (cause is AggregatingValidationFailure) cause.causes else setOf(cause)
+)

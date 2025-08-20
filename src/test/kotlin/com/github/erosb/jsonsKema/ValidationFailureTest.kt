@@ -162,27 +162,38 @@ class ValidationFailureTest {
         val schemaJson = JsonParser(userSchema).parse()
         val loadedSchema = SchemaLoader(schemaJson).load()
         val validator = Validator.forSchema(loadedSchema)
+        val actual = validator.validate(jsonValue)?.toJSON().toString()
+        println(actual)
         JSONAssert.assertEquals(
             """
                 {
                   "instanceRef": "#",
-                  "schemaRef": "#/additionalProperties",
+                  "schemaRef": "#",
+                  "dynamicPath": "#",
                   "message": "multiple validation failures",
-                  "dynamicPath": "#/additionalProperties",
                   "causes": [
                     {
-                      "instanceRef": "#/customerName",
+                      "instanceRef": "#",
                       "schemaRef": "#/additionalProperties",
-                      "dynamicPath": "#/additionalProperties/false",
-                      "message": "false schema always fails",
-                      "keyword": "false"
-                    },
-                    {
-                      "instanceRef": "#/acquireDate",
-                      "schemaRef": "#/additionalProperties",
-                      "dynamicPath": "#/additionalProperties/false",
-                      "message": "false schema always fails",
-                      "keyword": "false"
+                      "dynamicPath": "#/additionalProperties",
+                      "message": "additional properties do not match subschema",
+                      "keyword": "additionalProperties",
+                      "causes": [
+                        {
+                          "instanceRef": "#/customerName",
+                          "schemaRef": "#/additionalProperties",
+                          "dynamicPath": "#/additionalProperties/false",
+                          "message": "false schema always fails",
+                          "keyword": "false"
+                        },
+                        {
+                          "instanceRef": "#/acquireDate",
+                          "schemaRef": "#/additionalProperties",
+                          "dynamicPath": "#/additionalProperties/false",
+                          "message": "false schema always fails",
+                          "keyword": "false"
+                        }
+                      ]
                     },
                     {
                       "instanceRef": "#",
@@ -194,7 +205,7 @@ class ValidationFailureTest {
                   ]
                 }
             """.trimIndent(),
-            validator.validate(jsonValue)?.toJSON().toString(),
+            actual,
             false
         )
     }

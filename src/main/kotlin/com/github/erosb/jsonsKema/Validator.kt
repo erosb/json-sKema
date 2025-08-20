@@ -394,7 +394,12 @@ private class DefaultValidator(
                         failure
                     )
                 }
-            endResult
+            endResult?.let { AdditionalPropertiesValidationFailure(
+                cause = it,
+                schema = schema,
+                instance = instance,
+                dynamicPath = dynamicPath()
+            ) }
         }
     }
 

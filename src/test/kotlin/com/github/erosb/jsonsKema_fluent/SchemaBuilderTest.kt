@@ -96,7 +96,7 @@ class SchemaBuilderTest {
         actual.causes.find { it.message.contains("instance value did not match pattern \\d{2}.*") }!!
         actual.causes.find { it.schema.location.pointer.toString() == "#/properties/propB" }!!
             .let {
-                it.causes.find { it.message == "false schema always fails" } !!
+                it.causes.find { it.causes.any { it.message == "false schema always fails" }} !!
                 it.causes.find { it.message == "expected type: string, actual: integer" } !!
             }
     }

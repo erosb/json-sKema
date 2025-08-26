@@ -70,4 +70,9 @@ class DynamicPathTest {
 
         println(actual.toJSON())
     }
+
+    @Test
+    fun `patternProperties dyn path`() {
+
+    }
 }

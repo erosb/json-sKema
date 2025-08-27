@@ -1,5 +1,6 @@
 package com.github.erosb.jsonsKema
 
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
@@ -7,7 +8,7 @@ import org.junit.jupiter.api.Test
 class LenientModeTest {
 
     @Test
-    fun test() {
+    fun `expected boolean, actual string`() {
         val schema = SchemaLoader("""
             {
                 "type": "array",
@@ -23,6 +24,7 @@ class LenientModeTest {
             ["true", "No"]
         """.trimIndent()))
     }
+
 
     @Test
     fun numberTest() {
@@ -60,10 +62,43 @@ class LenientModeTest {
             }
         """.trimIndent())()
 
-        assertNotNull(Validator.create(schema, ValidatorConfig(
-            primitiveValidationStrategy = PrimitiveValidationStrategy.LENIENT
-        )).validate("""
+        val actual = Validator.create(
+            schema, ValidatorConfig(
+                primitiveValidationStrategy = PrimitiveValidationStrategy.LENIENT
+            )
+        ).validate(
+            """
             "50"
-        """.trimIndent()))
+        """.trimIndent()
+        )
+        assertThat(actual!!.causes).hasSize(2)
+    }
+
+    @Test
+    fun `expected string, actual boolean, validation happens`() {
+        val schema = SchemaLoader("""
+            {
+               "type": "string",
+               "minLength": 8,
+               "maxLength": 3
+            }
+        """.trimIndent())()
+
+        val actual = Validator.create(schema, ValidatorConfig(
+            primitiveValidationStrategy = PrimitiveValidationStrategy.LENIENT
+        )).validate("false".trimIndent())
+
+        println(actual)
+        assertThat(actual!!.causes).hasSize(2)
+    }
+
+    @Test
+    fun `expected string, actual number`() {
+        TODO()
+    }
+
+    @Test
+    fun `expected integer, actual string`() {
+        TODO()
     }
 }

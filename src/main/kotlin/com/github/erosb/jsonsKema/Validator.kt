@@ -340,6 +340,9 @@ private class DefaultValidator(
                             }
                         }
                     }
+                } else if (actualType == "boolean" && schema.type.value == "string") {
+                    instance = JsonString(instance.toString(), instance.location)
+                    return null
                 }
             }
             return if (schema.type.value == actualType) {

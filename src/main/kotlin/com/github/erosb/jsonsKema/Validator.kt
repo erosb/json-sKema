@@ -316,6 +316,7 @@ private class DefaultValidator(
                 return null
             }
             if (config.primitiveValidationStrategy == PrimitiveValidationStrategy.LENIENT) {
+                println(actualType)
                 if (actualType == "string") {
                     val stringInstance = instance.requireString().value
                     if (schema.type.value == "boolean") {
@@ -340,7 +341,7 @@ private class DefaultValidator(
                             }
                         }
                     }
-                } else if (actualType == "boolean" && schema.type.value == "string") {
+                } else if ((actualType == "boolean" || actualType == "number" || actualType == "integer") && schema.type.value == "string") {
                     instance = JsonString(instance.toString(), instance.location)
                     return null
                 }

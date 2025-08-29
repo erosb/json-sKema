@@ -17,6 +17,73 @@ internal fun getAsBigDecimal(number: Any): BigDecimal {
     }
 }
 
+
+private fun isDecimalNotation(value: String): Boolean {
+    return value.indexOf('.') > -1 || value.indexOf('e') > -1 || value.indexOf('E') > -1 || "-0" == value
+}
+
+private fun stringToNumber(value: String): Number {
+    val initial = value.get(0)
+    if ((initial >= '0' && initial <= '9') || initial == '-') {
+        // decimal representation
+        if (isDecimalNotation(value)) {
+            // Use a BigDecimal all the time so we keep the original
+            // representation. BigDecimal doesn't support -0.0, ensure we
+            // keep that by forcing a decimal.
+            try {
+                val bd = BigDecimal(value)
+                if (initial == '-' && BigDecimal.ZERO.compareTo(bd) == 0) {
+                    return -0.0
+                }
+                return bd
+            } catch (retryAsDouble: NumberFormatException) {
+                // this is to support "Hex Floats" like this: 0x1.0P-1074
+                try {
+                    val d = value.toDouble()
+                    if (d.isNaN() || d.isInfinite()) {
+                        throw NumberFormatException("val [" + value + "] is not a valid number.")
+                    }
+                    return d
+                } catch (ignore: NumberFormatException) {
+                    throw NumberFormatException("val [" + value + "] is not a valid number.")
+                }
+            }
+        }
+        // block items like 00 01 etc. Java number parsers treat these as Octal.
+        if (initial == '0' && value.length > 1) {
+            val at1 = value.get(1)
+            if (at1 >= '0' && at1 <= '9') {
+                throw NumberFormatException("val [" + value + "] is not a valid number.")
+            }
+        } else if (initial == '-' && value.length > 2) {
+            val at1 = value.get(1)
+            val at2 = value.get(2)
+            if (at1 == '0' && at2 >= '0' && at2 <= '9') {
+                throw NumberFormatException("val [" + value + "] is not a valid number.")
+            }
+        }
+
+        // integer representation.
+        // This will narrow any values to the smallest reasonable Object representation
+        // (Integer, Long, or BigInteger)
+
+        // BigInteger down conversion: We use a similar bitLenth compare as
+        // BigInteger#intValueExact uses. Increases GC, but objects hold
+        // only what they need. i.e. Less runtime overhead if the value is
+        // long lived.
+        val bi = BigInteger(value)
+        if (bi.bitLength() <= 31) {
+            return bi.toInt()
+        }
+        if (bi.bitLength() <= 63) {
+            return bi.toLong()
+        }
+        return bi
+    }
+    throw NumberFormatException("val [" + value + "] is not a valid number.")
+}
+
+
 enum class FormatValidationPolicy {
     /**
      * Validation against the "format" keyword is always enabled, irrespective of
@@ -46,10 +113,15 @@ enum class ReadWriteContext {
     READ, WRITE, NONE
 }
 
+enum class PrimitiveValidationStrategy {
+    STRICT, LENIENT
+}
+
 data class ValidatorConfig @JvmOverloads constructor(
     val validateFormat: FormatValidationPolicy = FormatValidationPolicy.DEPENDS_ON_VOCABULARY,
     val readWriteContext: ReadWriteContext = ReadWriteContext.NONE,
-    val additionalFormatValidators: Map<String, FormatValidator> = emptyMap()
+    val additionalFormatValidators: Map<String, FormatValidator> = emptyMap(),
+    val primitiveValidationStrategy: PrimitiveValidationStrategy = PrimitiveValidationStrategy.STRICT
 ) {
     companion object {
 
@@ -207,9 +279,72 @@ private class DefaultValidator(
 
     inner class TypeValidatingVisitor(private val schema: TypeSchema) : AbstractTypeValidatingVisitor() {
 
+        private val YAML_BOOLEAN_TRUE_LITERALS: MutableSet<String?> = HashSet<String?>(
+            mutableListOf<String?>(
+                "y",
+                "Y",
+                "yes",
+                "Yes",
+                "YES",
+                "true",
+                "True",
+                "TRUE",
+                "on",
+                "On",
+                "ON"
+            )
+        )
+
+        private val YAML_BOOLEAN_FALSE_LITERALS: MutableSet<String?> = HashSet<String?>(
+            mutableListOf<String?>(
+                "n",
+                "N",
+                "no",
+                "No",
+                "NO",
+                "false",
+                "False",
+                "FALSE",
+                "off",
+                "Off",
+                "OFF"
+            )
+        )
+
         override fun checkType(actualType: String): ValidationFailure? {
             if (actualType == "integer" && schema.type.value == "number") {
                 return null
+            }
+            if (config.primitiveValidationStrategy == PrimitiveValidationStrategy.LENIENT) {
+                println(actualType)
+                if (actualType == "string") {
+                    val stringInstance = instance.requireString().value
+                    if (schema.type.value == "boolean") {
+                        if (YAML_BOOLEAN_TRUE_LITERALS.contains(stringInstance)) {
+                            return null
+                        }
+                        if (YAML_BOOLEAN_FALSE_LITERALS.contains(stringInstance)) {
+                            return null
+                        }
+                    }
+                    if (schema.type.value == "number" || schema.type.value == "integer") {
+                        /*
+                         * If it might be a number, try converting it. If a number cannot be
+                         * produced, then the value will just be a string.
+                         */
+                        val initial: Char = stringInstance.get(0)
+                        if ((initial >= '0' && initial <= '9') || initial == '-') {
+                            try {
+                                instance = JsonNumber(stringToNumber(stringInstance), instance.location)
+                                return null
+                            } catch (ignore: NumberFormatException) {
+                            }
+                        }
+                    }
+                } else if ((actualType == "boolean" || actualType == "number" || actualType == "integer") && schema.type.value == "string") {
+                    instance = JsonString(instance.toString(), instance.location)
+                    return null
+                }
             }
             return if (schema.type.value == actualType) {
                 null

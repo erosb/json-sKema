@@ -3,6 +3,7 @@ package com.github.erosb.jsonsKema
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class LenientModeTest {
@@ -154,5 +155,51 @@ class LenientModeTest {
         """.trimIndent())
 
         assertNull(actual)
+    }
+
+    @Test
+    fun `non-required string property with array value fails validation`() {
+        val schema = SchemaLoader("""
+            {
+                "type": "object",
+                "properties": {
+                    "stringProp": {
+                        "type": "string"
+                    }
+                }
+            }
+        """.trimIndent())()
+
+        val actual = Validator.create(schema, ValidatorConfig(
+            primitiveValidationStrategy = PrimitiveValidationStrategy.LENIENT
+        )).validate("""
+            {"stringProp": ["array", "value"]}
+        """.trimIndent())
+
+        assertNotNull(actual)
+    }
+
+    @Test
+    fun `required string property with null value fails with TypeValidationFailure`() {
+        val schema = SchemaLoader("""
+            {
+                "type": "object",
+                "required": ["stringProp"],
+                "properties": {
+                    "stringProp": {
+                        "type": "string"
+                    }
+                }
+            }
+        """.trimIndent())()
+
+        val actual = Validator.create(schema, ValidatorConfig(
+            primitiveValidationStrategy = PrimitiveValidationStrategy.LENIENT
+        )).validate("""
+            {"stringProp": null}
+        """.trimIndent())
+
+        assertNotNull(actual)
+        assertThat(actual).isInstanceOf(TypeValidationFailure::class.java)
     }
 }

@@ -129,4 +129,30 @@ class LenientModeTest {
         )
         assertThat(actual!!.causes).hasSize(2)
     }
+
+    @Test
+    fun `optional properties can be null`() {
+        val schema = SchemaLoader("""
+            {
+                "type": "object",
+                "required": ["x"],
+                "properties": {
+                    "x": {
+                        "type": "number"
+                    },
+                    "y": {
+                      "type": "string"  
+                    }
+                }
+            }
+        """.trimIndent())()
+
+        val actual = Validator.create(schema, ValidatorConfig(
+            primitiveValidationStrategy = PrimitiveValidationStrategy.LENIENT
+        )).validate("""
+            {"x": 2, "y": null}
+        """.trimIndent())
+
+        assertNull(actual)
+    }
 }

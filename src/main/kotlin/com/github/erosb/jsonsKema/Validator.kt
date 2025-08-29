@@ -316,7 +316,6 @@ private class DefaultValidator(
                 return null
             }
             if (config.primitiveValidationStrategy == PrimitiveValidationStrategy.LENIENT) {
-                println(actualType)
                 if (actualType == "string") {
                     val stringInstance = instance.requireString().value
                     if (schema.type.value == "boolean") {
@@ -441,7 +440,7 @@ private class DefaultValidator(
         }
     }
 
-    override fun visitPropertySchema(property: String, schema: Schema): ValidationFailure? =
+    override fun visitPropertySchema(property: String, schema: Schema, context: CompositeSchema): ValidationFailure? =
         inPathSegment(listOf("properties", property)) {
             if (instance !is IJsonObject<*, *>) {
                 return@inPathSegment null
@@ -449,8 +448,20 @@ private class DefaultValidator(
             if (instance.requireObject()[property] === null) {
                 return@inPathSegment null
             }
-            val propFailure = withOtherInstance(instance.requireObject().get(property)!!) {
+            var propFailure = withOtherInstance(instance.requireObject().get(property)!!) {
                 schema.accept(this)
+            }
+            if (config.primitiveValidationStrategy == PrimitiveValidationStrategy.LENIENT) {
+                if (propFailure != null && propFailure is TypeValidationFailure) {
+                    if (instance.requireObject().get(property)!! is IJsonNull) {
+                        val requiredProps = context.subschemas().filterIsInstance(RequiredSchema::class.java)
+                            .map { it.requiredProperties }
+                            .firstOrNull() ?: emptyList()
+                        if (property !in requiredProps) {
+                            propFailure = null
+                        }
+                    }
+                }
             }
             if (propFailure === null) {
                 (instance as IJsonObj).markEvaluated(property)

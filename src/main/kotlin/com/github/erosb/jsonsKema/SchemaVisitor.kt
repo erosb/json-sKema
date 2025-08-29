@@ -67,7 +67,7 @@ abstract class SchemaVisitor<P> {
         val propSchemaProduct: P? = if (schema.propertySchemas.isEmpty()) {
             null
         } else schema.propertySchemas
-            .map { visitPropertySchema(it.key, it.value) }
+            .map { visitPropertySchema(it.key, it.value, schema) }
             .reduce { a, b -> accumulate(schema, a, b) }
         var result = accumulate(schema, subschemaProduct, propSchemaProduct)
         val patternSchemaProduct: P? = if (schema.patternPropertySchemas.isEmpty()) {
@@ -109,7 +109,7 @@ abstract class SchemaVisitor<P> {
     open fun visitEnumSchema(schema: EnumSchema): P? = visitChildren(schema)
     open fun visitTypeSchema(schema: TypeSchema): P? = visitChildren(schema)
     open fun visitMultiTypeSchema(schema: MultiTypeSchema): P? = visitChildren(schema)
-    open fun visitPropertySchema(property: String, schema: Schema): P? = inPathSegment(listOf("properties", property)) { visitChildren(schema) }
+    open fun visitPropertySchema(property: String, schema: Schema, context: CompositeSchema): P? = inPathSegment(listOf("properties", property)) { visitChildren(schema) }
     open fun visitPatternPropertySchema(pattern: Regexp, schema: Schema): P? = visitChildren(schema)
     open fun visitPatternSchema(schema: PatternSchema): P? = visitChildren(schema)
     open fun visitNotSchema(schema: NotSchema): P? = visitChildren(schema)

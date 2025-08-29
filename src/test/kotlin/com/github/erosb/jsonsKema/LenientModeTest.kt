@@ -110,6 +110,23 @@ class LenientModeTest {
 
     @Test
     fun `expected integer, actual string`() {
-        TODO()
+            val schema = SchemaLoader("""
+            {
+                "type": "integer",
+                "minimum": 5,
+                "maximum": 3
+            }
+        """.trimIndent())()
+
+        val actual = Validator.create(
+            schema, ValidatorConfig(
+                primitiveValidationStrategy = PrimitiveValidationStrategy.LENIENT
+            )
+        ).validate(
+            """
+            "4"
+        """.trimIndent()
+        )
+        assertThat(actual!!.causes).hasSize(2)
     }
 }

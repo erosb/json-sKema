@@ -327,7 +327,7 @@ private class DefaultValidator(
                             return null
                         }
                     }
-                    if (schema.type.value == "number") {
+                    if (schema.type.value == "number" || schema.type.value == "integer") {
                         /*
                          * If it might be a number, try converting it. If a number cannot be
                          * produced, then the value will just be a string.

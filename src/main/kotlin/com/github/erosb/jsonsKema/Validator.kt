@@ -130,6 +130,7 @@ data class ValidatorConfig @JvmOverloads constructor(
             var readWriteContext: ReadWriteContext = ReadWriteContext.NONE
             var validateFormat: FormatValidationPolicy = FormatValidationPolicy.DEPENDS_ON_VOCABULARY
             val additionalFormatValidators: MutableMap<String, FormatValidator> = mutableMapOf()
+            var primitiveValidationStrategy: PrimitiveValidationStrategy = PrimitiveValidationStrategy.STRICT
 
             fun readWriteContext(readWriteContext: ReadWriteContext): ValidatorConfigBuilder {
                 this.readWriteContext = readWriteContext
@@ -141,12 +142,17 @@ data class ValidatorConfig @JvmOverloads constructor(
                 return this
             }
 
+            fun primitiveValidationStrategy(primitiveValidationStrategy: PrimitiveValidationStrategy): ValidatorConfigBuilder {
+                this.primitiveValidationStrategy = primitiveValidationStrategy
+                return this
+            }
+
             fun additionalFormatValidator(formatName: String, formatValidator: FormatValidator): ValidatorConfigBuilder {
                 additionalFormatValidators[formatName] = formatValidator
                 return this;
             }
 
-            fun build() = ValidatorConfig(validateFormat, readWriteContext, additionalFormatValidators)
+            fun build() = ValidatorConfig(validateFormat, readWriteContext, additionalFormatValidators, primitiveValidationStrategy)
         }
 
         @JvmStatic

@@ -15,6 +15,7 @@ Are you new to JSON Schema? Get started with [Understanding JSON Schema](https:/
     * [Pre-registering schemas by URI before schema loading](#pre-registering-schemas-by-uri-before-schema-loading)
     * [Validating in Read or Write context](#validating-in-read-or-write-context)
     * [SchemaBuilder for dynamic (programmatic) schema construction](#schemabuilder-for-dynamic-programmatic-schema-construction)
+    * [YAML Support](#yaml-support)
   * [Compatibility notes](#compatibility-notes)
     * [`"format"` support](#format-support)
     * [Support for older JSON Schema drafts](#support-for-older-json-schema-drafts)
@@ -238,6 +239,38 @@ typeObject()
         ))
     )
 ```
+
+### YAML Support
+
+[Complete source](https://github.com/erosb/json-sKema-examples/blob/master/src/main/java/com/github/erosb/jsonsKema/examples/YamlSupport.java)
+
+The library supports YAML format for both schemas and validation instances. You can use YAML syntax directly in your schema definitions and instance data:
+
+```java
+// Loading a schema defined in YAML format
+var schema = new SchemaLoader("""
+    $schema: http://json-schema.org/draft-07/schema
+    properties:
+      intProp:
+        type: integer
+      name:
+        $ref: classpath://example.yaml#/Name
+    """).load();
+
+// Validating an instance defined in YAML format
+var instance = JsonValue.parse("""
+    intProp: 42
+    name: John Doe
+    """);
+
+ValidationFailure failures = Validator.forSchema(schema).validate(instance);
+System.out.println(failures);
+```
+
+YAML support includes:
+ - Schema definitions in YAML
+ - Instance data in YAML
+ - Referencing external schemas which are in YAML
 
 ## Compatibility notes
 

@@ -29,21 +29,14 @@ internal val dateFormatValidator: FormatValidator = { inst, schema -> inst.maybe
     }
 }}
 
-private val DATE_TIME_FORMATTER: DateTimeFormatter = run {
-    val secondsFractionFormatter = DateTimeFormatterBuilder()
-        .appendFraction(ChronoField.NANO_OF_SECOND, 1, 9, true)
-        .toFormatter()
-    DateTimeFormatterBuilder()
-        .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
-        .appendOptional(secondsFractionFormatter)
-        .appendPattern("XXX")
-        .toFormatter()
-        .withResolverStyle(ResolverStyle.STRICT)
-}
+private val dateTimeRegex: Regex =
+    "^((\\d{4}-\\d{2}-\\d{2})[Tt](\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?)([Zz]|[+-]\\d{2}:\\d{2})?)$".toRegex()
 
 private fun validateDateTime(str: IJsonString, schema: FormatSchema): FormatValidationFailure? {
+    if(!dateTimeRegex.matches(str.value)) {
+        return FormatValidationFailure(schema, str)
+    }
     try {
-        DATE_TIME_FORMATTER.parse(str.value.uppercase())
         ZonedDateTime.parse(str.value)
     } catch (e: DateTimeParseException) {
         if ((e.message?.indexOf("Invalid value for SecondOfMinute") ?: -1) > -1) {

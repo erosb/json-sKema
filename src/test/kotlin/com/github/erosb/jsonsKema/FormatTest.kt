@@ -30,6 +30,16 @@ class FormatTest {
     }
 
     @Test
+    fun date_time_extendedYear() {
+        val instance = JsonString("+11990-03-31T15:59:59.123-08:00")
+
+        val actual = Validator.create(DATE_TIME_SCHEMA, ValidatorConfig(validateFormat = FormatValidationPolicy.ALWAYS))
+            .validate(instance)
+
+        assertThat(actual).isNotNull()
+    }
+
+    @Test
     @Disabled
     fun `date-time valid leap second at UTC`() {
         val instance = JsonString("1990-02-31T15:59:59.123-08:00")

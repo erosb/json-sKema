@@ -44,7 +44,7 @@ fun interface SchemaClient {
     fun getParsed(uri: URI): IJsonValue {
         try {
             val reader = BufferedReader(InputStreamReader(get(uri)))
-            return JsonValue.parse(reader.readText(), uri)
+            return reader.use { JsonValue.parse(it.readText(), uri) }
         } catch (ex: UncheckedIOException) {
             throw SchemaDocumentLoadingException(uri, ex)
         } catch (ex: JsonParseException) {

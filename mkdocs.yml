@@ -1,0 +1,40 @@
+site_name: json-sKema: JSON Schema Validator for the JVM
+repo_url: https://github.com/erosb/json-sKema
+repo_name: Kappa
+theme:
+  name: material
+  icon:
+    annotation: material/arrow-right-circle-outline
+  color_mode: dark
+  palette:
+    scheme: slate
+    primary: black
+    accent: light blue
+  features:
+    - content.code.annotate
+    - content.code.copy
+markdown_extensions:
+  - toc:
+      permalink: true
+  - def_list
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - attr_list
+  # - md_in_html
+  # - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+nav:
+  - 'Welcome to json-sKema': 'index.md'
+#  - 'Spring Boot':
+#      - 'spring-boot/contract-testing.md'
+#      - 'spring-boot/request-validation.md'
+extra:
+  lib_version: 0.26.0
+plugins:
+  - macros

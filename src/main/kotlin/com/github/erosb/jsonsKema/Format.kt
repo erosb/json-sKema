@@ -143,8 +143,11 @@ internal val timeFormatValidator: FormatValidator = {inst, schema -> inst.maybeS
     }
 }}
 
+internal val uuidRegex: Regex =
+    "^[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{12}\$".toRegex()
+
 internal val uuidFormatValidator: FormatValidator = {inst, schema -> inst.maybeString { str ->
-    if (str.value.length == 36)
+    if (uuidRegex.matches(str.value))
     try {
         UUID.fromString(str.value)
         null

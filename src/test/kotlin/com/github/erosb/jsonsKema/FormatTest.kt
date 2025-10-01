@@ -41,6 +41,18 @@ class FormatTest {
     }
 
     @Test
+    fun uuid_shiftedDashes() {
+        val instance = JsonString("2eb8aa0-8aa98-11e-ab4aa7-3b441d16380")
+
+        val uuidSchema = FormatSchema("uuid", UnknownSource)
+
+        val actual = Validator.create(uuidSchema, ValidatorConfig(validateFormat = FormatValidationPolicy.ALWAYS))
+            .validate(instance)
+
+        assertThat(actual).isNotNull()
+    }
+
+    @Test
     fun `custom format`() {
         val validator = Validator.create(SchemaLoader("""
             {

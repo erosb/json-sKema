@@ -388,7 +388,7 @@ private class DefaultValidator(
         }
     }
 
-    private fun markableObject(original: IJsonObj): MarkableJsonObject {
+    private fun markableObject(original: IJsonObject): MarkableJsonObject {
         return if (original is MarkableJsonObject) {
             original
         } else {
@@ -409,8 +409,8 @@ private class DefaultValidator(
             return withOtherInstance(markableArray(instance as IJsonArray)) {
                 return@withOtherInstance super.visitCompositeSchema(schema)
             }
-        } else if (schema.unevaluatedPropertiesSchema != null && instance is IJsonObj) {
-            return withOtherInstance(markableObject(instance as IJsonObj)) {
+        } else if (schema.unevaluatedPropertiesSchema != null && instance is IJsonObject) {
+            return withOtherInstance(markableObject(instance as IJsonObject)) {
                 return@withOtherInstance super.visitCompositeSchema(schema)
             }
         } else {
@@ -470,7 +470,7 @@ private class DefaultValidator(
                 }
             }
             if (propFailure === null) {
-                (instance as IJsonObj).markEvaluated(property)
+                (instance as IJsonObject).markEvaluated(property)
             }
             return@inPathSegment propFailure
         }

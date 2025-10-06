@@ -14,7 +14,7 @@ internal val propertyNamesLoader: KeywordLoader = {ctx ->
 
 data class PropertyNamesValidationFailure(
     override val schema: PropertyNamesSchema,
-    override val instance: IJsonObj,
+    override val instance: IJsonObject,
     val causesByProperties: Map<IJsonString, ValidationFailure>,
     override val dynamicPath: DynamicPath
 ) : ValidationFailure(

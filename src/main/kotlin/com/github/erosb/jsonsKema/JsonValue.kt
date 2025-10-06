@@ -203,8 +203,6 @@ interface IJsonObject : IJsonValue {
     fun markEvaluated(propName: String)
 }
 
-typealias IJsonObj = IJsonObject
-
 interface JsonVisitor<P> {
     fun identity(): P? = null
     fun accumulate(previous: P?, current: P?): P? = current ?: previous

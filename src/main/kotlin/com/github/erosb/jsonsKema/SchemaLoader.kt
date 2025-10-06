@@ -106,7 +106,7 @@ internal data class LoadingState(
 }
 
 internal data class LoadingContext(
-    val containingObject: IJsonObj,
+    val containingObject: IJsonObject,
     val keywordValue: IJsonValue,
     val location: SourceLocation,
     val subschemaLoader: (IJsonValue) -> Schema,
@@ -206,7 +206,7 @@ class SchemaLoader(
     private fun findVocabulariesInMetaSchema(schemaJson: IJsonValue): List<String> {
         return when (schemaJson) {
             is IJsonBoolean -> emptyList()
-            is IJsonObj -> {
+            is IJsonObject -> {
                 return schemaJson[Keyword.SCHEMA.value]
                     ?.requireString()
                     ?.let { config.schemaClient.getParsed(URI(it.value))
@@ -229,7 +229,7 @@ class SchemaLoader(
     private fun lookupAnchors(json: IJsonValue, baseURI: URI) {
         if (shouldStopAnchorLookup(json)) return
         when (json) {
-            is IJsonObj -> {
+            is IJsonObject -> {
                 enterScope(json) {
                     when (val id = json[Keyword.ID.value]) {
                         is IJsonString -> {
@@ -317,7 +317,7 @@ class SchemaLoader(
 
     private fun adjustBaseURI(json: IJsonValue) {
         when (json) {
-            is IJsonObj -> {
+            is IJsonObject -> {
                 when (val id = json[Keyword.ID.value]) {
                     is IJsonString -> {
                         if (!loadingState.baseURI.toString().endsWith(id.value)) {

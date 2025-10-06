@@ -136,13 +136,13 @@ interface IJsonValue {
     fun requireInt(): Int = requireNumber().value.toInt()
 
     fun requireNull(): IJsonNull = throw unexpectedType("null")
-    fun requireObject(): IJsonObject<*, *> = throw unexpectedType("object")
+    fun requireObject(): IJsonObject = throw unexpectedType("object")
     fun requireArray(): IJsonArray<*> = throw unexpectedType("array")
 
     fun <P> maybeString(fn: (IJsonString) -> P?): P? = null
     fun <P> maybeNumber(fn: (IJsonNumber) -> P?): P? = null
     fun <P> maybeArray(fn: (IJsonArray<*>) -> P?): P? = null
-    fun <P> maybeObject(fn: (IJsonObject<*, *>) -> P?): P? = null
+    fun <P> maybeObject(fn: (IJsonObject) -> P?): P? = null
 
     fun <P> accept(visitor: JsonVisitor<P>): P?
 
@@ -191,19 +191,19 @@ interface IJsonArray<T : IJsonValue> : IJsonValue {
     fun markAllEvaluated()
 }
 
-interface IJsonObject<P : IJsonString, V : IJsonValue> : IJsonValue {
-    val properties: Map<P, V>
+interface IJsonObject : IJsonValue {
+    val properties: Map<IJsonString, IJsonValue>
     override fun jsonTypeAsString() = "object"
-    override fun requireObject(): IJsonObject<P, V> = this
-    override fun <P> maybeObject(fn: (IJsonObject<*, *>) -> P?): P? = fn(this)
+    override fun requireObject(): IJsonObject = this
+    override fun <P> maybeObject(fn: (IJsonObject) -> P?): P? = fn(this)
     override fun <P> accept(visitor: JsonVisitor<P>): P? = visitor.visitObject(this)
 
-    operator fun get(key: String) = properties[JsonString(key) as P]
+    operator fun get(key: String) = properties[JsonString(key)]
     fun markUnevaluated(propName: String)
     fun markEvaluated(propName: String)
 }
 
-typealias IJsonObj = IJsonObject<*, *>
+typealias IJsonObj = IJsonObject
 
 interface JsonVisitor<P> {
     fun identity(): P? = null
@@ -213,7 +213,7 @@ interface JsonVisitor<P> {
     fun visitNumber(num: IJsonNumber): P?
     fun visitNull(nil: IJsonNull): P?
     fun visitArray(arr: IJsonArray<*>): P?
-    fun visitObject(obj: IJsonObject<*, *>): P?
+    fun visitObject(obj: IJsonObject): P?
 }
 
 abstract class JsonValue(override val location: SourceLocation = UnknownSource) : IJsonValue {
@@ -314,9 +314,9 @@ data class JsonArray @JvmOverloads constructor(
 }
 
 data class JsonObject @JvmOverloads constructor(
-    override val properties: Map<JsonString, JsonValue>,
+    override val properties: Map<IJsonString, IJsonValue>,
     override val location: SourceLocation = UnknownSource
-) : JsonValue(location), IJsonObject<JsonString, JsonValue> {
+) : JsonValue(location), IJsonObject {
     override fun unwrap() = properties
     override fun markUnevaluated(propName: String) {}
 

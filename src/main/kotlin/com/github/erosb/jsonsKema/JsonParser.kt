@@ -236,7 +236,7 @@ class JsonParser private constructor(
             walker.forward()
             jsonValue = JsonArray(elements.toList(), location)
         } else if (curr == '{') {
-            val properties = mutableMapOf<JsonString, JsonValue>()
+            val properties = mutableMapOf<IJsonString, IJsonValue>()
             walker.forward()
             walker.skipWhitespaces()
             while (walker.curr() != '}') {
@@ -250,7 +250,7 @@ class JsonParser private constructor(
                 val previous = properties.put(propName, propValue)
                 if (previous != null) {
                     throw DuplicateObjectPropertyException(
-                        properties.keys.find { it.value == propName.value }!!,
+                        properties.keys.find { it.value == propName.value }!! as JsonString,
                         propName
                     )
                 }

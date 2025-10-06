@@ -93,7 +93,7 @@ internal data class LoadingState(
         return if (effectiveUri.endsWith("#")) effectiveUri.substring(0, effectiveUri.length - 1) else effectiveUri
     }
 
-    fun registerRawSchemaByDynAnchor(dynAnchor: String, json: IJsonObject<*, *>) {
+    fun registerRawSchemaByDynAnchor(dynAnchor: String, json: IJsonObject) {
         anchors.getOrPut(normalizeUri(dynAnchor)) {Knot(dynamic = true)}.json = json
     }
 
@@ -419,7 +419,7 @@ class SchemaLoader(
                 }
                 val segment = unescape(segments.poll())
                 when (root) {
-                    is IJsonObject<*, *> -> {
+                    is IJsonObject -> {
                         val child = root[segment]
                         if (child === null) {
                             throw RefResolutionException(
@@ -452,7 +452,7 @@ class SchemaLoader(
         }
 
         val idKeywordValue: String? = when (root) {
-            is IJsonObject<*, *> -> root[Keyword.ID.value]?.requireString()?.value
+            is IJsonObject -> root[Keyword.ID.value]?.requireString()?.value
             else -> null
         }
         val baseURIofRoot: URI = idKeywordValue?.let { URI(it) }
@@ -483,7 +483,7 @@ class SchemaLoader(
                         FalseSchema(schemaJson.location)
                     }
 
-                    is IJsonObject<*, *> -> createCompositeSchema(schemaJson)
+                    is IJsonObject -> createCompositeSchema(schemaJson)
                     else -> throw JsonTypingException("boolean or object",
                         schemaJson.jsonTypeAsString(), schemaJson.location)
                 }
@@ -492,7 +492,7 @@ class SchemaLoader(
 
     private val collectedExceptions = mutableListOf<SchemaLoadingException>()
 
-    private fun createCompositeSchema(schemaJson: IJsonObject<*, *>): Schema {
+    private fun createCompositeSchema(schemaJson: IJsonObject): Schema {
         val subschemas = mutableSetOf<Schema>()
         var title: IJsonString? = null
         var description: IJsonString? = null
@@ -571,10 +571,10 @@ class SchemaLoader(
         }
     }
 
-    private fun loadPatternPropertySchemas(obj: IJsonObject<*, *>): Map<Regexp, Schema>
+    private fun loadPatternPropertySchemas(obj: IJsonObject): Map<Regexp, Schema>
         = obj.properties.map { regexpFactory.createHandler(it.key.value) to loadChild(it.value) }.toMap()
 
-    private fun loadPropertySchemas(schemasMap: IJsonObject<*, *>): Map<String, Schema>
+    private fun loadPropertySchemas(schemasMap: IJsonObject): Map<String, Schema>
         = schemasMap.properties.map { it.key.value to loadChild(it.value) }.toMap()
 
     private fun loadChild(schemaJson: IJsonValue): Schema {

@@ -30,7 +30,7 @@ internal class JsonPrintingVisitor(private val indentation: String = "  ") : Jso
         return rval
     }
 
-    override fun visitObject(obj: IJsonObject<*, *>): String? {
+    override fun visitObject(obj: IJsonObject): String? {
         if (obj.properties.isEmpty()) return "{}"
         val baseIndent = indentation.repeat(indentLevel)
         val nestedIndent = baseIndent + indentation

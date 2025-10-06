@@ -16,7 +16,7 @@ internal val itemsSchemaLoader: KeywordLoader = { ctx ->
 data class ItemsValidationFailure(
     val itemFailures: Map<Int, ValidationFailure>,
     override val schema: ItemsSchema,
-    override val instance: IJsonArray<*>,
+    override val instance: IJsonArray,
     override val dynamicPath: DynamicPath
 ) : ValidationFailure(
     "array items ${itemFailures.keys.joinToString(", ")} failed to validate against \"items\" subschema",

@@ -14,7 +14,7 @@ internal class JsonPrintingVisitor(private val indentation: String = "  ") : Jso
 
     override fun visitNull(nil: IJsonNull) = "null"
 
-    override fun visitArray(arr: IJsonArray<*>): String {
+    override fun visitArray(arr: IJsonArray): String {
         if (arr.elements.isEmpty()) return "[]"
         val baseIndent = indentation.repeat(indentLevel)
         val nestedIndent = baseIndent + indentation

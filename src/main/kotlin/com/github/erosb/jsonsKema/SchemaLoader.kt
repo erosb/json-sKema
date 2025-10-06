@@ -256,7 +256,7 @@ class SchemaLoader(
                             .forEach { (_, value) -> lookupAnchors(value, loadingState.baseURI) }
                 }
             }
-            is IJsonArray<*> -> {
+            is IJsonArray -> {
                 json.elements.forEach { lookupAnchors(it, loadingState.baseURI) }
             }
         }
@@ -431,7 +431,7 @@ class SchemaLoader(
                         return@enterScope lookupNext(child, segments)
                     }
 
-                    is IJsonArray<*> -> {
+                    is IJsonArray -> {
                         try {
                             val child = root[Integer.parseInt(segment)]
                             return@enterScope lookupNext(child, segments)
@@ -585,7 +585,7 @@ class SchemaLoader(
     }
 }
 
-internal fun arrayToSubschemaList(subschemas: IJsonArray<*>, subschemaLoader: (IJsonValue) -> Schema): List<Schema> =
+internal fun arrayToSubschemaList(subschemas: IJsonArray, subschemaLoader: (IJsonValue) -> Schema): List<Schema> =
     subschemas.elements.stream()
         .map { subschemaLoader(it) }
         .collect(toList())

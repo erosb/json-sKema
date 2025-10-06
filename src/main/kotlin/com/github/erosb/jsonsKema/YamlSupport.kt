@@ -38,7 +38,7 @@ internal fun loadFromYaml(node: Node, ptr: JsonPointer = JsonPointer(), document
                 val nextPtr = ptr + (it.keyNode as ScalarNode).value
                 val jsonPropName = loadFromYaml(it.keyNode, ptr, documentSource).requireString() as JsonString
                 val jsonPropValue = loadFromYaml(it.valueNode, nextPtr, documentSource)
-                jsonPropName to jsonPropValue
+                jsonPropName as IJsonString to jsonPropValue as IJsonValue
             }.toMap()
             return JsonObject(props, location)
         }

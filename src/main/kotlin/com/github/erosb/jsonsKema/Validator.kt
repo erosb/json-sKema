@@ -181,8 +181,8 @@ interface Validator {
         validate(JsonParser(instanceJson, documentSource)())
 }
 
-private class MarkableJsonArray<I : IJsonValue>(private val original: IJsonArray<I>) :
-    IJsonArray<I> by original {
+private class MarkableJsonArray(private val original: IJsonArray) :
+    IJsonArray by original {
 
     val evaluatedIndexes: MutableList<Int> = mutableListOf()
 
@@ -210,18 +210,18 @@ private class MarkableJsonArray<I : IJsonValue>(private val original: IJsonArray
         return rval.toMap()
     }
 
-    override fun requireArray(): IJsonArray<I> = this
+    override fun requireArray(): IJsonArray = this
 
-    override fun <P> maybeArray(fn: (IJsonArray<*>) -> P?): P? = fn(this)
+    override fun <P> maybeArray(fn: (IJsonArray) -> P?): P? = fn(this)
 
     override fun markUnevaluated(idx: Int) {
         evaluatedIndexes.remove(idx)
     }
 }
 
-private class MarkableJsonObject<P : IJsonString, V : IJsonValue>(
-    private val original: IJsonObject<P, V>
-) : IJsonObject<P, V> by original {
+private class MarkableJsonObject(
+    private val original: IJsonObject
+) : IJsonObject by original {
 
     val evaluatedProperties: MutableList<String> = mutableListOf()
 
@@ -238,8 +238,8 @@ private class MarkableJsonObject<P : IJsonString, V : IJsonValue>(
         .filter { it.key !in evaluatedProperties }
         .toMap()
 
-    override fun requireObject(): IJsonObject<P, V> = this
-    override fun <P> maybeObject(fn: (IJsonObject<*, *>) -> P?): P? = fn(this)
+    override fun requireObject(): IJsonObject = this
+    override fun <P> maybeObject(fn: (IJsonObject) -> P?): P? = fn(this)
 }
 
 private class DefaultValidator(
@@ -265,8 +265,8 @@ private class DefaultValidator(
         override fun visitBoolean(bool: IJsonBoolean): ValidationFailure? = checkType("boolean")
         override fun visitNumber(num: IJsonNumber): ValidationFailure? = checkType(findActualNumberType(num))
         override fun visitNull(nil: IJsonNull): ValidationFailure? = checkType("null")
-        override fun visitArray(arr: IJsonArray<*>): ValidationFailure? = checkType("array")
-        override fun visitObject(obj: IJsonObject<*, *>): ValidationFailure? = checkType("object")
+        override fun visitArray(arr: IJsonArray): ValidationFailure? = checkType("array")
+        override fun visitObject(obj: IJsonObject): ValidationFailure? = checkType("object")
 
         private fun findActualNumberType(num: IJsonNumber): String {
             val numAsString = num.value.toString()
@@ -380,19 +380,19 @@ private class DefaultValidator(
         }
     }
 
-    private fun markableArray(original: IJsonArray<IJsonValue>): MarkableJsonArray<*> {
-        return if (original is MarkableJsonArray<*>) {
+    private fun markableArray(original: IJsonArray): MarkableJsonArray {
+        return if (original is MarkableJsonArray) {
             original
         } else {
-            MarkableJsonArray(instance as IJsonArray<IJsonValue>)
+            MarkableJsonArray(original)
         }
     }
 
-    private fun markableObject(original: IJsonObj): MarkableJsonObject<*, *> {
-        return if (original is MarkableJsonObject<*, *>) {
+    private fun markableObject(original: IJsonObj): MarkableJsonObject {
+        return if (original is MarkableJsonObject) {
             original
         } else {
-            MarkableJsonObject(instance as IJsonObj)
+            MarkableJsonObject(original)
         }
     }
 
@@ -405,8 +405,8 @@ private class DefaultValidator(
     }
 
     override fun visitCompositeSchema(schema: CompositeSchema): ValidationFailure? {
-        if (instance is IJsonArray<*> && schema.unevaluatedItemsSchema != null) {
-            return withOtherInstance(markableArray(instance as IJsonArray<IJsonValue>)) {
+        if (instance is IJsonArray && schema.unevaluatedItemsSchema != null) {
+            return withOtherInstance(markableArray(instance as IJsonArray)) {
                 return@withOtherInstance super.visitCompositeSchema(schema)
             }
         } else if (schema.unevaluatedPropertiesSchema != null && instance is IJsonObj) {
@@ -448,7 +448,7 @@ private class DefaultValidator(
 
     override fun visitPropertySchema(property: String, schema: Schema, context: CompositeSchema): ValidationFailure? =
         inPathSegment(listOf("properties", property)) {
-            if (instance !is IJsonObject<*, *>) {
+            if (instance !is IJsonObject) {
                 return@inPathSegment null
             }
             if (instance.requireObject()[property] === null) {
@@ -842,7 +842,7 @@ private class DefaultValidator(
 
     override fun visitUnevaluatedItemsSchema(schema: UnevaluatedItemsSchema): ValidationFailure? = inPathSegment(Keyword.UNEVALUATED_ITEMS) {
         val instance = this.instance
-        if (instance is MarkableJsonArray<*>) {
+        if (instance is MarkableJsonArray) {
             val failures = mutableMapOf<Int, ValidationFailure>()
             instance.unevaluatedItems().forEach { (index, item) ->
                 withOtherInstance(item) {
@@ -881,7 +881,7 @@ private class DefaultValidator(
 
     override fun visitUnevaluatedPropertiesSchema(schema: UnevaluatedPropertiesSchema): ValidationFailure? = inPathSegment(Keyword.UNEVALUATED_PROPERTIES) {
         val instance = this.instance
-        if (instance is MarkableJsonObject<*, *>) {
+        if (instance is MarkableJsonObject) {
             val failures = mutableMapOf<String, ValidationFailure>()
             instance.getUnevaluated().forEach { propName, value ->
                 withOtherInstance(value) {

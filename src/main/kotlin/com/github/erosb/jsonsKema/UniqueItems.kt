@@ -11,6 +11,6 @@ internal val uniqueItemsLoader: KeywordLoader = { ctx ->
 data class UniqueItemsValidationFailure(
     val arrayPositions: List<Int>,
     override val schema: UniqueItemsSchema,
-    override val instance: IJsonArray<*>,
+    override val instance: IJsonArray,
     override val dynamicPath: DynamicPath
 ) : ValidationFailure("the same array element occurs at positions " + arrayPositions.joinToString(", "), schema, instance, Keyword.UNIQUE_ITEMS)

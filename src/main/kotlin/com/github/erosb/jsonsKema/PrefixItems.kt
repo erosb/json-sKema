@@ -3,7 +3,7 @@ package com.github.erosb.jsonsKema
 data class PrefixItemsValidationFailure(
     val itemFailures: Map<Int, ValidationFailure>,
     override val schema: PrefixItemsSchema,
-    override val instance: IJsonArray<*>,
+    override val instance: IJsonArray,
     override val dynamicPath: DynamicPath
 ) : ValidationFailure(
     "array items ${itemFailures.keys.joinToString(", ")} failed to validate against \"prefixItems\" subschema",

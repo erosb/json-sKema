@@ -18,7 +18,7 @@ internal fun loadTests(input: InputStream): JsonArray {
     return JsonParser(input, DEFAULT_BASE_URI)().requireArray() as JsonArray
 }
 
-private fun <T : JsonValue> trimLeadingPointer(obj: T, pointerPrefixLength: Int): T {
+private fun trimLeadingPointer(obj: IJsonValue, pointerPrefixLength: Int): IJsonValue {
     val pointerSegments = obj.location.pointer.segments
     if (pointerSegments.size < pointerPrefixLength) {
         throw IllegalStateException("$pointerSegments")
@@ -40,7 +40,7 @@ private fun <T : JsonValue> trimLeadingPointer(obj: T, pointerPrefixLength: Int)
         )
 
         else -> TODO()
-    } as T
+    }
 }
 
 internal val SUPPORTED_FORMATS: List<String> = listOf(
@@ -83,7 +83,7 @@ internal fun loadParamsFromPackage(packageName: String, vararg fileFilters: Stri
         val arr: JsonArray = loadTests(TestSuiteTest::class.java.getResourceAsStream("/$path"))
         for (i in 0 until arr.length()) {
             val schemaTest: JsonObject = arr[i].requireObject() as JsonObject
-            val testcaseInputs: IJsonArray<*> = schemaTest["tests"]!!.requireArray()
+            val testcaseInputs: IJsonArray = schemaTest["tests"]!!.requireArray()
             for (j in 0 until testcaseInputs.length()) {
                 val input: JsonObject = testcaseInputs[j].requireObject() as JsonObject
                 val testcase = TestCase(input, schemaTest, fileName, path.contains("optional/format/"))

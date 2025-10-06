@@ -19,7 +19,7 @@ internal val containsLoader: KeywordLoader = { ctx ->
 data class ContainsValidationFailure(
     override val message: String,
     override val schema: ContainsSchema,
-    override val instance: IJsonArray<*>,
+    override val instance: IJsonArray,
     override val dynamicPath: DynamicPath
 ) : ValidationFailure(
     message,

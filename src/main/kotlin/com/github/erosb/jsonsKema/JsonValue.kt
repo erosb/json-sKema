@@ -137,11 +137,11 @@ interface IJsonValue {
 
     fun requireNull(): IJsonNull = throw unexpectedType("null")
     fun requireObject(): IJsonObject = throw unexpectedType("object")
-    fun requireArray(): IJsonArray<*> = throw unexpectedType("array")
+    fun requireArray(): IJsonArray = throw unexpectedType("array")
 
     fun <P> maybeString(fn: (IJsonString) -> P?): P? = null
     fun <P> maybeNumber(fn: (IJsonNumber) -> P?): P? = null
-    fun <P> maybeArray(fn: (IJsonArray<*>) -> P?): P? = null
+    fun <P> maybeArray(fn: (IJsonArray) -> P?): P? = null
     fun <P> maybeObject(fn: (IJsonObject) -> P?): P? = null
 
     fun <P> accept(visitor: JsonVisitor<P>): P?
@@ -178,11 +178,11 @@ interface IJsonNull : IJsonValue {
     override fun <P> accept(visitor: JsonVisitor<P>): P? = visitor.visitNull(this)
 }
 
-interface IJsonArray<T : IJsonValue> : IJsonValue {
-    val elements: List<T>
+interface IJsonArray : IJsonValue {
+    val elements: List<IJsonValue>
     override fun jsonTypeAsString() = "array"
-    override fun requireArray(): IJsonArray<T> = this
-    override fun <P> maybeArray(fn: (IJsonArray<*>) -> P?): P? = fn(this)
+    override fun requireArray(): IJsonArray = this
+    override fun <P> maybeArray(fn: (IJsonArray) -> P?): P? = fn(this)
     override fun <P> accept(visitor: JsonVisitor<P>): P? = visitor.visitArray(this)
     operator fun get(index: Int) = elements[index]
     fun length() = elements.size
@@ -212,7 +212,7 @@ interface JsonVisitor<P> {
     fun visitBoolean(bool: IJsonBoolean): P?
     fun visitNumber(num: IJsonNumber): P?
     fun visitNull(nil: IJsonNull): P?
-    fun visitArray(arr: IJsonArray<*>): P?
+    fun visitArray(arr: IJsonArray): P?
     fun visitObject(obj: IJsonObject): P?
 }
 
@@ -302,9 +302,9 @@ data class JsonString @JvmOverloads constructor(
 }
 
 data class JsonArray @JvmOverloads constructor(
-    override val elements: List<JsonValue>,
+    override val elements: List<IJsonValue>,
     override val location: SourceLocation = UnknownSource
-) : JsonValue(location), IJsonArray<JsonValue> {
+) : JsonValue(location), IJsonArray {
     override fun unwrap() = elements
     override fun markEvaluated(idx: Int): IJsonValue = get(idx)
     override fun markAllEvaluated() {

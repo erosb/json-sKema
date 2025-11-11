@@ -187,47 +187,39 @@ class JsonParserTest {
         assertEquals(expected, actual)
     }
 
-//    @Nested
-//    inner class UnicodeEscapeSequenceTest {
-//
-//        companion object {
-//            @JvmStatic
-//            fun parsers() = JsonParserTest.parsers()
-//        }
+    @ParameterizedTest
+    @MethodSource("parsers")
+    fun `escaped unicode codepoint`() {
+        val actual = JsonParser("\"\\u00E1\"")().requireString().value
+        assertEquals("á", actual)
+    }
 
-        @ParameterizedTest
-        @MethodSource("parsers")
-        fun `escaped unicode codepoint`() {
-            val actual = JsonParser("\"\\u00E1\"")().requireString().value
-            assertEquals("á", actual)
+    @ParameterizedTest
+    @MethodSource("parsers")
+    fun `invalid unicode escape - invalid hex chars`() {
+        val exception = assertThrows(JsonParseException::class.java) {
+            JsonParser("\"p\\u022suffix\"")()
         }
+        assertEquals("invalid unicode sequence: 022s", exception.message)
+        assertEquals(TextLocation(1, 4, DEFAULT_BASE_URI), exception.location)
+    }
 
-        @ParameterizedTest
-        @MethodSource("parsers")
-        fun `invalid unicode escape - invalid hex chars`() {
-            val exception = assertThrows(JsonParseException::class.java) {
-                JsonParser("\"p\\u022suffix\"")()
-            }
-            assertEquals("invalid unicode sequence: 022s", exception.message)
-            assertEquals(TextLocation(1, 4, DEFAULT_BASE_URI), exception.location)
+    @ParameterizedTest
+    @MethodSource("parsers")
+    fun `invalid unicode escape - not enough hex chars`() {
+        val exception = assertThrows(JsonParseException::class.java) {
+            JsonParser("\"p\\u022")()
         }
+        assertEquals("Unexpected EOF", exception.message)
+        assertEquals(TextLocation(1, 8, DEFAULT_BASE_URI), exception.location)
+    }
 
-        @ParameterizedTest
-        @MethodSource("parsers")
-        fun `invalid unicode escape - not enough hex chars`() {
-            val exception = assertThrows(JsonParseException::class.java) {
-                JsonParser("\"p\\u022")()
-            }
-            assertEquals("Unexpected EOF", exception.message)
-            assertEquals(TextLocation(1, 8, DEFAULT_BASE_URI), exception.location)
-        }
-
-        @ParameterizedTest
-        @MethodSource("parsers")
-        fun `supplementary codepoint`() {
-            val str = JsonParser("\"\\uD83D\\uDCA9\"")().requireString().value
-            assertEquals("💩", str)
-        }
+    @ParameterizedTest
+    @MethodSource("parsers")
+    fun `supplementary codepoint`() {
+        val str = JsonParser("\"\\uD83D\\uDCA9\"")().requireString().value
+        assertEquals("💩", str)
+    }
 //    }
 
     @ParameterizedTest

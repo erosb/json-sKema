@@ -132,6 +132,51 @@ class LenientModeTest {
     }
 
     @Test
+    fun `expected integer, actual positive fractional string`() {
+        val schema = SchemaLoader("""
+            {
+                "type": "integer",
+                "minimum": 5,
+                "maximum": 3
+            }
+        """.trimIndent())()
+
+        val rawActual = Validator.create(
+            schema, ValidatorConfig(primitiveValidationStrategy = PrimitiveValidationStrategy.LENIENT)
+        ).validate(
+            """
+            "+4.4"
+        """.trimIndent()
+        )!!
+        println(rawActual)
+        assertThat(rawActual.causes.filterIsInstance<MinimumValidationFailure>()).hasSize(1)
+        assertThat(rawActual.causes.filterIsInstance<MaximumValidationFailure>()).hasSize(1)
+        assertThat(rawActual.causes.filterIsInstance<TypeValidationFailure>().single().message).isEqualTo("expected type: integer, actual: number")
+    }
+
+    @Test
+    fun `expected integer, actual empty string`() {
+        val schema = SchemaLoader("""
+            {
+                "type": "integer",
+                "minimum": 5,
+                "maximum": 3
+            }
+        """.trimIndent())()
+
+        val actual = Validator.create(
+            schema, ValidatorConfig(
+                primitiveValidationStrategy = PrimitiveValidationStrategy.LENIENT
+            )
+        ).validate(
+            """
+            ""
+        """.trimIndent()
+        )
+        assertThat(actual).isInstanceOf(TypeValidationFailure::class.java)
+    }
+
+    @Test
     fun `optional properties can be null`() {
         val schema = SchemaLoader("""
             {

@@ -3,6 +3,7 @@ package com.github.erosb.jsonsKema
 import org.yaml.snakeyaml.Yaml
 import java.io.StringReader
 import java.math.BigDecimal
+import java.math.BigInteger
 import java.net.URI
 import java.util.stream.Collectors.joining
 
@@ -289,6 +290,8 @@ data class JsonNumber @JvmOverloads constructor(
         if (other !is IJsonNumber) return false
         return BigDecimal(value.toString()).compareTo(BigDecimal(other.value.toString())) == 0
     }
+
+    internal fun isInteger() = value is Int || value is Long || value is Short || value is BigInteger || value is Byte
 }
 
 data class JsonString @JvmOverloads constructor(

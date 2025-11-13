@@ -24,7 +24,7 @@ private fun isDecimalNotation(value: String): Boolean {
 
 private fun stringToNumber(value: String): Number {
     val initial = value.get(0)
-    if ((initial >= '0' && initial <= '9') || initial == '-') {
+    if ((initial >= '0' && initial <= '9') || initial == '-' || initial == '+') {
         // decimal representation
         if (isDecimalNotation(value)) {
             // Use a BigDecimal all the time so we keep the original
@@ -333,16 +333,28 @@ private class DefaultValidator(
                         }
                     }
                     if (schema.type.value == "number" || schema.type.value == "integer") {
-                        /*
-                         * If it might be a number, try converting it. If a number cannot be
-                         * produced, then the value will just be a string.
-                         */
-                        val initial: Char = stringInstance.get(0)
-                        if ((initial >= '0' && initial <= '9') || initial == '-') {
-                            try {
-                                instance = JsonNumber(stringToNumber(stringInstance), instance.location)
-                                return null
-                            } catch (ignore: NumberFormatException) {
+                        if (stringInstance.isNotEmpty()) {
+                            /*
+                             * If it might be a number, try converting it. If a number cannot be
+                             * produced, then the value will just be a string.
+                             */
+                            val initial: Char = stringInstance.get(0)
+
+                            if ((initial >= '0' && initial <= '9') || initial == '-' || initial == '+') {
+                                try {
+                                    val num = JsonNumber(stringToNumber(stringInstance), instance.location)
+                                    instance = num
+                                    return if (schema.type.value == "integer" && !num.isInteger())
+                                        TypeValidationFailure(
+                                            "number",
+                                            this.schema,
+                                            instance,
+                                            dynamicPath() + Keyword.TYPE
+                                        )
+                                    else null
+                                } catch (ignore: NumberFormatException) {
+                                    println(ignore)
+                                }
                             }
                         }
                     }

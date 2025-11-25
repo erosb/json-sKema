@@ -276,7 +276,8 @@ class SchemaLoader(
     }
 
     private fun resolveAgainstBaseURI(ref: String): URI {
-        if (loadingState.baseURI.toString().startsWith("urn:")) {
+        val scheme = loadingState.baseURI.scheme ?: ""
+        if (scheme == "urn" || scheme == "tag") {
             return URI(loadingState.baseURI.toString() + ref)
         }
         return loadingState.baseURI.resolve(ref)

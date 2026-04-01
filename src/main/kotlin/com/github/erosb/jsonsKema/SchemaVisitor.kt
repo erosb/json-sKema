@@ -76,8 +76,8 @@ abstract class SchemaVisitor<P> {
             .map { visitPatternPropertySchema(it.key, it.value) }
             .reduce { a, b -> accumulate(schema, a, b) }
         result = accumulate(schema, result, patternSchemaProduct)
-            ?: schema.unevaluatedItemsSchema?.accept(this)?.let { accumulate(schema, result, it) }
-            ?: schema.unevaluatedPropertiesSchema?.accept(this)?.let { accumulate(schema, result, it) }
+        schema.unevaluatedItemsSchema?.accept(this)?.let { result = accumulate(schema, result, it) }
+        schema.unevaluatedPropertiesSchema?.accept(this)?.let { result = accumulate(schema, result, it) }
         return result
     }
 

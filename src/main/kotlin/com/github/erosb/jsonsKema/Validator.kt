@@ -416,6 +416,8 @@ private class DefaultValidator(
         return rootSchema.accept(this)
     }
 
+    override fun shouldVisitUnevaluatedSchemas(result: ValidationFailure?): Boolean = result == null
+
     override fun visitCompositeSchema(schema: CompositeSchema): ValidationFailure? {
         if (instance is IJsonArray<*> && schema.unevaluatedItemsSchema != null) {
             return withOtherInstance(markableArray(instance as IJsonArray<IJsonValue>)) {

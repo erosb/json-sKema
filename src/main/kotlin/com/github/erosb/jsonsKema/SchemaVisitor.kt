@@ -83,7 +83,7 @@ abstract class SchemaVisitor<P> {
         return result
     }
 
-    protected open fun shouldVisitUnevaluatedSchemas(result: P?): Boolean = true
+    open fun shouldVisitUnevaluatedSchemas(result: P?): Boolean = true
 
     protected var dynamicPath: DynamicPath = DynamicPath()
 

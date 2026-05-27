@@ -89,4 +89,16 @@ class TypeValidationTest {
 
         assertEquals("#/type", actual.dynamicPath.pointer.toString())
     }
+
+    @Test
+    fun multiTypeValidationMessageTest() {
+        val schema = SchemaLoader(JsonParser("""
+            { "type": [ "string", "null" ] }
+        """.trimIndent())())()
+
+        val actual = Validator.forSchema(schema)
+            .validate(JsonNumber(123, UnknownSource)) as MultiTypeValidationFailure
+
+        assertEquals("expected type: one of string, null, actual: integer", actual.message)
+    }
 }

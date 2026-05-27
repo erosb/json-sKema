@@ -30,7 +30,7 @@ data class MultiTypeValidationFailure(
     override val instance: IJsonValue,
     override val dynamicPath: DynamicPath
 ) : ValidationFailure(
-    "expected type: one of ${schema.types.elements.joinToString { ", " }}, actual: $actualInstanceType",
+    "expected type: one of ${schema.types.elements.joinToString(", ") { (it as IJsonString).value }}, actual: $actualInstanceType",
     schema,
     instance,
     Keyword.TYPE

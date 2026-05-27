@@ -150,4 +150,10 @@ class SchemaLoaderTest {
             }
         """.trimIndent())()
     }
+
+    @Test
+    fun `handles tag URI id`() {
+        SchemaLoader("""{ "$id": "tag:foo.example.2025:bar/baz" }""")()
+    }
+
 }

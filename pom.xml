@@ -5,7 +5,7 @@
 
     <groupId>com.github.erosb</groupId>
     <artifactId>json-sKema</artifactId>
-    <version>0.0.0-SNAPSHOT</version>
+    <version>0.32.0</version>
 
     <name>json-sKema</name>
     <description>JSON Schema Parser and Validator</description>
@@ -34,7 +34,7 @@
     </developers>
 
     <properties>
-        <kotlin.version>2.3.10</kotlin.version>
+        <kotlin.version>2.4.20</kotlin.version>
         <project.encoding>UTF-8</project.encoding>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>

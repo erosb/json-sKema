@@ -14,6 +14,7 @@ Are you new to JSON Schema? Get started with [Understanding JSON Schema](https:/
     * [Loading a schema file from URL](#loading-a-schema-file-from-url)
     * [Pre-registering schemas by URI before schema loading](#pre-registering-schemas-by-uri-before-schema-loading)
     * [Validating in Read or Write context](#validating-in-read-or-write-context)
+    * [Applying default values](#applying-default-values)
     * [SchemaBuilder for dynamic (programmatic) schema construction](#schemabuilder-for-dynamic-programmatic-schema-construction)
     * [YAML Support](#yaml-support)
   * [Compatibility notes](#compatibility-notes)
@@ -207,6 +208,49 @@ var readContextFailure = readContextValidator.validate(instance);
 // prints failure because the write-only property "password" is present in read context
 System.out.println(readContextFailure);
 ```
+
+### Applying default values
+
+The [`"default"`](https://json-schema.org/draft/2020-12/draft-bhutton-json-schema-validation-00#rfc.section.9.2) keyword
+is only an annotation, so `validate()` ignores it. If you call `validateWithDefaults()` instead, then for each property
+that is missing from an instance object, but its subschema under `"properties"` has a `"default"`, the default value
+is added to the object. Similarly, if an instance array is shorter than its `"prefixItems"`, then the defaults of the
+missing prefix items are appended to the array. The result contains both the validation failure (if any) and the instance with the defaults
+applied (the instance passed to the validator is not modified):
+
+```java
+JsonValue schemaJson = new JsonParser("""
+{
+    "properties": {
+        "prop": {
+            "type": "number",
+            "default": 1
+        }
+    }
+}
+""").parse();
+Schema schema = new SchemaLoader(schemaJson).load();
+
+Validator validator = Validator.forSchema(schema);
+
+ValidationResult result = validator.validateWithDefaults(new JsonParser("{}").parse());
+
+System.out.println(result.getFailure()); // prints null
+System.out.println(result.getInstance()); // prints the object with "prop": 1 added
+```
+
+Some notes on how defaults are applied:
+ * the validation never sees the defaults, so the validation failure is the same as the one returned by `validate()`;
+   for example a property that is missing but has a default still fails `"required"`, and a missing prefix item still
+   fails `"minItems"`
+ * the default values themselves are not validated, so the returned instance is not guaranteed to be valid against the schema
+ * since array positions can't be skipped, the prefix item defaults are appended in order, stopping at the first
+   `"prefixItems"` subschema without a `"default"`
+ * if the instance fails to validate against a subschema, then the defaults of that subschema (including the ones of
+   nested objects and arrays) are not applied, so for example only the matching `"oneOf"` branch contributes defaults
+ * if more than one subschema has a default for the same property or array position, the first one wins
+ * if the validation fails, the returned instance is the instance passed to `validateWithDefaults()`
+ * only the `"default"` of the property subschema is used; it is not looked up through `"$ref"`
 
 ### SchemaBuilder for dynamic (programmatic) schema construction
 

@@ -196,6 +196,27 @@ class JsonParserTest {
 
     @ParameterizedTest
     @MethodSource("parsers")
+    fun `escaped unicode codepoint with trailing zeros`() {
+        val actual = JsonParser("\"\\u00A0\\u0010\\u0100\\u2020\"")().requireString().value
+        assertEquals("\u00A0\u0010\u0100\u2020", actual)
+    }
+
+    @ParameterizedTest
+    @MethodSource("parsers")
+    fun `short escapes`() {
+        val actual = JsonParser("\"a\\nb\\tc\\rd\\be\\ff\\/g\\\\h\\\"i\"")().requireString().value
+        assertEquals("a\nb\tc\rd\be\u000Cf/g\\h\"i", actual)
+    }
+
+    @ParameterizedTest
+    @MethodSource("parsers")
+    fun `escaped backslash before n`() {
+        val actual = JsonParser("\"x\\\\ny\"")().requireString().value
+        assertEquals("x\\ny", actual)
+    }
+
+    @ParameterizedTest
+    @MethodSource("parsers")
     fun `invalid unicode escape - invalid hex chars`() {
         val exception = assertThrows(JsonParseException::class.java) {
             JsonParser("\"p\\u022suffix\"")()

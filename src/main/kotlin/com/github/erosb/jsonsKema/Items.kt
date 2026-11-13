@@ -23,6 +23,6 @@ data class ItemsValidationFailure(
     schema,
     instance,
     Keyword.ITEMS,
-    itemFailures.values.toSet()
+    FailureSet(itemFailures.values)
 )
 

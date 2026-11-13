@@ -19,5 +19,5 @@ data class UnevaluatedPropertiesValidationFailure(
     schema,
     instance,
     Keyword.UNEVALUATED_PROPERTIES,
-    propertyFailures.values.toSet()
+    FailureSet(propertyFailures.values)
 )

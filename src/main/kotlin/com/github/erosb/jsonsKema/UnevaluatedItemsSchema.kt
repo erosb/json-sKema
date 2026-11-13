@@ -18,6 +18,6 @@ data class UnevaluatedItemsValidationFailure(
     schema,
     instance,
     Keyword.UNEVALUATED_ITEMS,
-    itemFailures.values.toSet()
+    FailureSet(itemFailures.values)
 )
 

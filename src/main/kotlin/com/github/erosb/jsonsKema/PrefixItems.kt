@@ -10,7 +10,7 @@ data class PrefixItemsValidationFailure(
     schema,
     instance,
     Keyword.PREFIX_ITEMS,
-    itemFailures.values.toSet()
+    FailureSet(itemFailures.values)
 )
 
 internal val prefixItemsLoader: KeywordLoader = { ctx ->

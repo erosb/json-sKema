@@ -209,4 +209,40 @@ class ValidationFailureTest {
             false
         )
     }
+
+    @Test
+    fun equalValuedAdditionalPropertiesRetainDistinctFailures() {
+        val schema = SchemaLoader("""
+            {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+        """.trimIndent())()
+
+        val instance = JsonParser("""
+            {
+              "name": "example",
+              "id": 1,
+              "version": 1
+            }
+        """.trimIndent()).parse()
+
+        val failures = Validator.forSchema(schema).validate(instance)!!.flatten()
+
+        assertThat(failures.map { it.instance.location.pointer.toString() })
+            .containsExactlyInAnyOrder("#/id", "#/version")
+    }
+
+    @Test
+    fun equalValuedArrayItemsRetainDistinctFailures() {
+        val schema = SchemaLoader("""{"items": {"type": "string"}}""")()
+
+        val failures = Validator.forSchema(schema).validate(JsonParser("[1, 1]").parse())!!.flatten()
+
+        assertThat(failures.map { it.instance.location.pointer.toString() })
+            .containsExactlyInAnyOrder("#/0", "#/1")
+    }
 }

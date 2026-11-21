@@ -463,7 +463,7 @@ private class DefaultValidator(
 
     private fun recordPropertyDefault(obj: IJsonObject, property: String, default: IJsonValue) {
         val original = if (obj is MarkableJsonObject) obj.original else obj
-        val defaults = propertyDefaults.getOrPut(original) { linkedMapOf() }
+        val defaults = propertyDefaults.getOrPut(original) { mutableMapOf() }
         val propName = JsonString(property)
         if (propName !in defaults) {
             defaults[propName] = copyOf(default)
@@ -529,16 +529,9 @@ private class DefaultValidator(
         this.instance = instance
         this.applyDefaults = applyDefaults
         dynamicPath.rootDocumentSource = rootSchema.location.documentSource
-        try {
-            val failure = rootSchema.accept(this)
-            val result = if (failure == null && recordedDefaults.isNotEmpty()) applyDefaultsTo(instance) else instance
-            return ValidationResult(failure, result)
-        } finally {
-            this.applyDefaults = false
-            propertyDefaults.clear()
-            prefixItemDefaults.clear()
-            recordedDefaults.clear()
-        }
+        val failure = rootSchema.accept(this)
+        val result = if (failure == null && recordedDefaults.isNotEmpty()) applyDefaultsTo(instance) else instance
+        return ValidationResult(failure, result)
     }
 
     override fun shouldVisitUnevaluatedSchemas(result: ValidationFailure?): Boolean = result == null

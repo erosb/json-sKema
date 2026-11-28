@@ -91,7 +91,7 @@ internal class FailureSet(failures: Iterable<ValidationFailure> = emptyList()) :
     private val byKey = LinkedHashMap<Pair<ValidationFailure, JsonPointer>, ValidationFailure>()
 
     init {
-        failures.forEach { add(it) }
+        addAll(failures)
     }
 
     override val size: Int

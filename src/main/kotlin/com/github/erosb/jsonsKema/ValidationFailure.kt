@@ -50,7 +50,7 @@ abstract class ValidationFailure(
     }
 
     internal open fun join(parent: Schema, instance: IJsonValue, other: ValidationFailure, dynamicPath: DynamicPath): ValidationFailure {
-        return AggregatingValidationFailure(parent, instance, setOf(this, other), dynamicPath)
+        return AggregatingValidationFailure(parent, instance, FailureSet(listOf(this, other)), dynamicPath)
     }
 
     fun flatten(): List<ValidationFailure> {
@@ -66,7 +66,7 @@ internal class AggregatingValidationFailure(
     override val dynamicPath: DynamicPath
 ) : ValidationFailure("multiple validation failures", schema, instance, null, causes) {
 
-    private var _causes = causes.toMutableSet()
+    private var _causes: MutableSet<ValidationFailure> = FailureSet(causes)
     override val causes: Set<ValidationFailure>
         get() {
             return _causes
@@ -74,9 +74,31 @@ internal class AggregatingValidationFailure(
 
     override fun join(parent: Schema, instance: IJsonValue, other: ValidationFailure, dynamicPath: DynamicPath): ValidationFailure {
         if (instance != this.instance) {
-            return AggregatingValidationFailure(parent, instance, _causes + other, dynamicPath)
+            return AggregatingValidationFailure(parent, instance, FailureSet(_causes).apply { add(other) }, dynamicPath)
         }
         _causes.add(other)
         return this
     }
+}
+
+/**
+ * A set of failures keyed by their value and their instance location. Failures are compared by
+ * value, and JSON values do not take their location into account, so a plain set would merge
+ * equal failures reported for different places of the instance.
+ */
+internal class FailureSet(failures: Iterable<ValidationFailure> = emptyList()) : AbstractMutableSet<ValidationFailure>() {
+
+    private val byKey = LinkedHashMap<Pair<ValidationFailure, JsonPointer>, ValidationFailure>()
+
+    init {
+        failures.forEach { add(it) }
+    }
+
+    override val size: Int
+        get() = byKey.size
+
+    override fun add(element: ValidationFailure): Boolean =
+        byKey.putIfAbsent(element to element.instance.location.pointer, element) == null
+
+    override fun iterator(): MutableIterator<ValidationFailure> = byKey.values.iterator()
 }
